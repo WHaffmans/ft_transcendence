@@ -19,3 +19,4 @@ cloudflared/*.json
 cloudflared/*.pem
 cloudflared/config.yml
 cloudflared/cert.pem
+services/user-service/data/users.db
