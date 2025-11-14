@@ -6,6 +6,14 @@
 **/*.log
 **/package-lock.json
 
+# Compiled TypeScript output
+frontend/src/**/*.js
+!frontend/src/**/*.test.js
+
+# SQLite databases
+**/data/*.db
+**/data/*.db-*
+
 # Cloudflare Tunnel credentials
 cloudflared/*.json
 cloudflared/*.pem
