@@ -1,0 +1,103 @@
+services:
+  # ============================================================================
+  # FRONTEND
+  # ============================================================================
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/package.json:/app/package.json:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+    labels:
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || Host(`localhost`)"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
+    networks:
+      - transcendence-internal
+
+  # ============================================================================
+  # BACKEND SERVICES
+  # ============================================================================
+  user-service:
+    container_name: user-service
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NODE_ENV=development
+    volumes:
+      - ./services/user-service/src:/app/src:ro
+      - ./services/user-service/package.json:/app/package.json:ro
+      - ./services/user-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/user-service/data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-service.rule=(Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || Host(`localhost`)) && PathPrefix(`/api`)"
+      - "traefik.http.routers.user-service.priority=2"
+      - "traefik.http.services.user-service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.user-service-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.user-service.middlewares=user-service-strip"
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+
+  # ============================================================================
+  # INFRASTRUCTURE
+  # ============================================================================
+  traefik:
+    container_name: traefik
+    image: traefik:v3.6.1
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - transcendence-internal
+
+  cloudflared:
+    container_name: cloudflared
+    image: cloudflare/cloudflared:2025.11.1
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+    depends_on:
+      - traefik
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:2.33.3
+    ports:
+      - "127.0.0.1:9443:9443"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+
+# ==============================================================================
+# VOLUMES
+# ==============================================================================
+volumes:
+  portainer_data:
+
+# ==============================================================================
+# NETWORKS
+# ==============================================================================
+networks:
+  transcendence-internal:
+    driver: bridge

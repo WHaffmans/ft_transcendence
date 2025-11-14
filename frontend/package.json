@@ -1,0 +1,13 @@
+{
+  "name": "transcendence-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for ft_transcendence user management",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "npm run watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

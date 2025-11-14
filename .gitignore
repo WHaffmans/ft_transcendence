@@ -1,0 +1,13 @@
+.env
+
+# Node.js dependencies (for all services)
+**/node_modules/
+**/dist/
+**/*.log
+**/package-lock.json
+
+# Cloudflare Tunnel credentials
+cloudflared/*.json
+cloudflared/*.pem
+cloudflared/config.yml
+cloudflared/cert.pem

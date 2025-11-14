@@ -1,0 +1,8 @@
+# Production override - use production Dockerfile without hot reload
+services:
+  user-service:
+    build:
+      dockerfile: Dockerfile  # Use production Dockerfile
+    volumes: []  # Remove source code volumes
+    environment:
+      - NODE_ENV=production

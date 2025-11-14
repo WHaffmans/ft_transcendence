@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "🏠 Root",
+      "path": "."
+    },
+    {
+      "name": "🎨 Frontend",
+      "path": "frontend"
+    },
+    {
+      "name": "👤 User Service",
+      "path": "services/user-service"
+    }
+    // Add more services here as you create them:
+    // {
+    //   "name": "🎮 Game Service",
+    //   "path": "services/game-service"
+    // }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    }
+  }
+}
