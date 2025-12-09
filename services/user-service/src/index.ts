@@ -1,33 +1,28 @@
 import Fastify from 'fastify';
 import { initDatabase } from './config/database.js';
-import { UserRepository } from './repositories/user.repository.js';
 import { UserService } from './services/user.service.js';
 import { userRoutes } from './routes/user.routes.js';
+import { UserRepository } from './repositories/user.repository';
+
+/**
+ * @type {import('fastify').FastifyInstance} Instance of Fastify
+ */
+const fastify = Fastify({ logger: true });
 
 async function start() {
-  const fastify = Fastify({ logger: true });
+  const port = parseInt(process.env.PORT || '3000');
+  const host = process.env.HOST || '0.0.0.0';
 
-  try {
-    // Initialize database
-    initDatabase();
+  initDatabase();
+  await userRoutes(fastify, new UserService(new UserRepository()));
 
-    // Setup dependency injection
-    const userRepository = new UserRepository();
-    const userService = new UserService(userRepository);
-
-    // Register routes
-    await userRoutes(fastify, userService);
-
-    // Start server
-    const port = parseInt(process.env.PORT || '3000');
-    const host = process.env.HOST || '0.0.0.0';
-
-    await fastify.listen({ port, host });
-    console.log(`🚀 User service is running on http://${host}:${port}`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
+  await fastify.listen({ port, host }, function (err: Error | null, address: string) {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    console.log(`user service is running on ${address}`);
+  });
 }
 
 start();
