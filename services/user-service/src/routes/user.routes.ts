@@ -3,7 +3,7 @@ import { UserService } from '../services/user.service.js';
 
 export async function userRoutes(fastify: FastifyInstance, userService: UserService) {
   // GET all users
-  fastify.get('/users', async (request, reply) => {
+  fastify.get('/users', async () => {
     const users = userService.getAllUsers();
     return { users };
   });
@@ -80,7 +80,7 @@ export async function userRoutes(fastify: FastifyInstance, userService: UserServ
   });
 
   // Health check
-  fastify.get('/health', async (request, reply) => {
+  fastify.get('/health', async () => {
     return { status: 'ok', service: 'user-service' };
   });
 }
