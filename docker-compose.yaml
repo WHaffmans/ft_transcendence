@@ -32,6 +32,8 @@ services:
       - PORT=3000
       - HOST=0.0.0.0
       - NODE_ENV=development
+    ports:
+      - "3000:3000"
     volumes:
       - ./services/user-service/src:/app/src:ro
       - ./services/user-service/package.json:/app/package.json:ro
@@ -51,18 +53,17 @@ services:
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
-  traefik:
-    container_name: traefik
-    image: traefik:v3.6.1
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
+  nginx:
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
     ports:
-      - "80:80"
-      - "127.0.0.1:8080:8080"
+      - '8080:8080'
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ./services/nginx/data:/data
+      - ./services/nginx/letsencrypt:/etc/letsencrypt
     networks:
       - transcendence-internal
 
@@ -74,7 +75,7 @@ services:
       - transcendence-internal
     restart: unless-stopped
     depends_on:
-      - traefik
+      - nginx
 
   portainer:
     container_name: portainer
