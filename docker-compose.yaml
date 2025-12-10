@@ -5,14 +5,14 @@ services:
   frontend:
     container_name: frontend
     build:
-      context: ./frontend
+      context: ./services/frontend
       dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=development
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/package.json:/app/package.json:ro
-      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/frontend/src:/app/src
+      - ./services/frontend/package.json:/app/package.json:ro
+      - ./services/frontend/tsconfig.json:/app/tsconfig.json:ro
     labels:
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || Host(`localhost`)"
       - "traefik.http.routers.frontend.priority=1"
