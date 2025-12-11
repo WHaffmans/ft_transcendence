@@ -1,0 +1,39 @@
+sequenceDiagram
+  participant Browser as User (Browser / SPA)
+  participant Traefik as Traefik (API Gateway)
+  participant Auth as Auth Service (Laravel Passport)
+  participant DB as Token/User Store (Passport DB)
+  participant API as Microservice (securitysvc)
+
+  Note over Browser,Auth: 1) User begins OAuth2 Authorization Code + PKCE flow
+
+  Browser->>Traefik: GET /oauth/authorize?response_type=code&client_id=SPA&redirect_uri=...&code_challenge=...
+  Traefik->>Auth: Proxy /oauth/authorize (preserves headers, TLS)
+  Auth->>Browser: 200 Login form
+  Browser->>Auth: POST /login {credentials}
+  Auth->>DB: validate credentials -> user
+  DB-->>Auth: user valid
+  Auth-->>Browser: 302 Redirect to redirect_uri?code=AUTH_CODE
+
+  Note over Browser,Auth: 2) Exchange code for tokens (PKCE: code_verifier)
+
+  Browser->>Traefik: POST /oauth/token {grant_type=authorization_code, code=AUTH_CODE, code_verifier=...}
+  Traefik->>Auth: Proxy /oauth/token
+  Auth->>DB: validate code, issue access_token (opaque by default) + refresh_token
+  DB-->>Auth: stored token record
+  Auth-->>Traefik: 200 {access_token, refresh_token (or refresh cookie)}
+  Traefik-->>Browser: 200 tokens delivered (refresh in httpOnly cookie recommended)
+
+  Note over Browser,API: 3) Authenticated API request using access_token
+
+  Browser->>Traefik: GET /securitysystems  Authorization: Bearer <access_token>
+  Note right of Traefik: ForwardAuth middleware active
+  Traefik->>Auth: POST /verify (ForwardAuth)  forward Authorization header
+  Auth->>DB: introspect token / check revoked / expiry
+  DB-->>Auth: token active -> user_id, scopes, roles
+  Auth-->>Traefik: 200 OK + headers: X-User-Id, X-User-Email, X-User-Roles
+  Traefik->>API: Proxy GET /securitysystems (adds X-User-* headers)
+  API->>DB: query systems where owner = X-User-Id
+  DB-->>API: results
+  API-->>Traefik: 200 {security systems}
+  Traefik-->>Browser: 200 {security systems}

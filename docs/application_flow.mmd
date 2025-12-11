@@ -1,0 +1,36 @@
+flowchart LR
+ subgraph Browser["Browser"]
+        React["Svelte UI"]
+  end
+ subgraph Edge["Edge / Platform"]
+        APIGW["API Gateway / BFF"]
+  end
+ subgraph AuthZone["Auth & Session"]
+        Auth["Auth Service / IdP"]
+        Redis[("Redis / Session Store")]
+        Introspect["Token Introspection"]
+  end
+ subgraph Services["Domain Microservices"]
+        UserSvc["User Service"]
+        CustSvc["Game Service"]
+        LocSvc["Location Service"]
+  end
+ subgraph Data["Databases"]
+        UserDB[("user_db")]
+        CustDB[("game_db")]
+  end
+    React -- POST /login credentials --> APIGW
+    APIGW --> Auth
+    Auth --> UserSvc
+    UserSvc --> UserDB
+    Auth -- "JWT + refresh or set-cookie" --> APIGW
+    APIGW -- "Set-Cookie or body" --> React
+    React -- GET /securitysystems cookie or Bearer --> APIGW
+    APIGW -- validate token --> Introspect
+    APIGW -- check session --> Redis
+    Auth -. events: game started .-> CustSvc
+    CustSvc -. events: LocationUpdated .-> LocSvc
+
+    style APIGW fill:#f8f9fa,stroke:#333
+    style Auth fill:#fff7e6
+    style Redis fill:#e6f7ff

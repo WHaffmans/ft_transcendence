@@ -1,0 +1,55 @@
+graph TD
+    %% Actors
+    User[User / Client Browser]
+    Dev[Developer / Admin]
+
+    %% Infrastructure & Utilities
+    subgraph Infrastructure [Infrastructure & Utilities]
+        Nginx[Nginx Reverse Proxy]
+        Cloudflared[Cloudflare Tunnel]
+        Portainer[Portainer]
+    end
+
+    %% Application Services
+    subgraph AppServices [Application Services]
+        Frontend[Frontend Service<br/>(Static/Landing)]
+        SvelteApp[Svelte App<br/>(Main Application)]
+        UserService[User Service<br/>(Auth & User Mgmt)]
+        GameServer[Game Server<br/>(WebSocket)]
+    end
+
+    %% Data Persistence
+    subgraph Data [Data Persistence]
+        UserDB[(User Database)]
+    end
+
+    %% Connections
+    User -->|HTTPS Requests| Nginx
+    Cloudflared -->|Tunnel Traffic| Nginx
+    
+    %% Nginx Routing
+    Nginx -->|/| Frontend
+    Nginx -->|/svelte| SvelteApp
+    Nginx -->|/user-service| UserService
+    Nginx -->|/ws| GameServer
+
+    %% Service Interactions
+    SvelteApp -->|API Calls| UserService
+    SvelteApp -->|WebSocket Connection| GameServer
+    
+    %% Data Connections
+    UserService -->|Reads/Writes| UserDB
+
+    %% Management
+    Dev -->|Manage Containers| Portainer
+    Portainer -.->|Docker Socket| Infrastructure
+    Portainer -.->|Docker Socket| AppServices
+
+    %% Styling
+    classDef service fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef infra fill:#dfd,stroke:#333,stroke-width:2px;
+    classDef data fill:#ddf,stroke:#333,stroke-width:2px;
+
+    class Frontend,SvelteApp,UserService,GameServer service;
+    class Nginx,Cloudflared,Portainer infra;
+    class UserDB data;
