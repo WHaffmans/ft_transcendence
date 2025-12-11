@@ -1,6 +1,6 @@
 "use strict";
 // API Base URL - uses relative path since we're behind Traefik
-const API_BASE = '/api';
+const API_BASE = '/user-service';
 // API Functions
 async function fetchUsers() {
     const response = await fetch(`${API_BASE}/users`);
