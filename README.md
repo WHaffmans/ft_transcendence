@@ -1,23 +1,23 @@
 *This project has been created as part of the 42 curriculum by fras, hesmolde, qmennen, whaffman, qbeukelm.*
 
-# ft_transcendence: Modular Web Application Framework
+# ft_transcendence: Achtung, die Kurve! (Web Edition)
 
 ![Project Status](https://img.shields.io/badge/Status-In%20Development-yellow)
-![Tech Stack](https://img.shields.io/badge/Stack-Fastify%20%7C%20React-blue)
-![Docker](https://img.shields.io/badge/Deployment-Docker-blue)
+![Tech Stack](https://img.shields.io/badge/Stack-Fastify%20%7C%20Svelte%20%7C%20Laravel-blue)
+![Deployment](https://img.shields.io/badge/Deployment-Docker-blue)
 
 ## 📖 Description
 
-**ft_transcendence** is the final project of the 42 Common Core curriculum. Our team is building a robust, high-performance web application designed with a **modular architecture** at its core (microservices).
+**ft_transcendence** is the final project of the 42 Common Core curriculum. Our team is building a modern, web-based adaptation of the classic DOS game **"Achtung, die Kurve!"** (Curve Fever), engineered on a robust, microservice-oriented architecture.
 
-While the specific end-user application (e.g., Pong tournament, Social Platform) is currently in the ideation phase, the engineering focus is on creating a scalable framework where individual modules communicate via internal APIs. This approach allows for rapid feature expansion, independent testing, and separation of concerns—key pillars for scalable startup technology.
+The project goes beyond simple gameplay; it is designed as a scalable platform where high-frequency game logic is decoupled from persistent user data management. We utilize a dual-backend approach: a high-performance **Node.js/Fastify** server for real-time game simulation and a **Laravel** API for robust user management and statistics, all powered by a **MariaDB** database.
 
-### Key Features (Planned)
-* **Modular Micro-Architecture:** Independent modules for User Management, Game Logic, Chat, etc.
-* **Real-time Capabilities:** Leveraging WebSockets for instant user interaction.
-* **Secure Authentication:** Robust OAuth and 2FA implementation.
-* **High Performance:** Utilization of Fastify for low-overhead backend processing.
-* **Containerized Deployment:** Fully Dockerized environment for consistent deployment.
+### Key Features
+* **"Achtung, die Kurve!" Gameplay:** Fast-paced, multiplayer survival game where players steer expanding lines to cut off opponents.
+* **Microservice Architecture:** Separation of concerns between the Game Engine (Node.js) and User Services (Laravel).
+* **TrueSkill Leaderboards:** Implementation of the TrueSkill ranking system for accurate, competitive matchmaking.
+* **Real-time Performance:** WebSocket-driven game state synchronization for smooth, lag-free gameplay.
+* **Secure Authentication:** Robust user identity management via Laravel.
 
 ---
 
@@ -27,9 +27,9 @@ Our team operates using Agile methodologies, with clear role separation to ensur
 
 | Name | Login | Role(s) | Responsibilities |
 | :--- | :--- | :--- | :--- |
-| **Ferry Ras** | `fras` | **Product Owner (PO)** & Dev | • Defines product vision and roadmap.<br>• Prioritizes the backlog and feature requirements.<br>• Manages stakeholder/evaluator expectations.<br>• Maintains Trello and board sync. |
-| **Hein Smolder** | `hesmolde` | **Project Manager (PM)** & Dev | • Tracks progress, deadlines, and team coordination.<br>• Facilitates Scrum process.<br>• Manages risks, blockers, and timelines. |
-| **Willem Haffmans** | `whaffman` | **Tech Lead (Architecture)** & Dev | • Defines technical architecture and system design.<br>• Makes final decisions on the technology stack.<br>• Ensures modular interoperability. |
+| **Ferry Ras** | `fras` | **Product Owner (PO)** & Dev | • Defines product vision and roadmap.<br>• Prioritizes the backlog and feature requirements.<br>• Maintains Trello board and syncs with PM.<br>• Validates completed work against requirements. |
+| **Hein Smolder** | `hesmolde` | **Project Manager (PM)** & Dev | • Tracks progress, deadlines, and team coordination.<br>• Coordinates with PO and Development.<br>• Facilitates Scrum process and removes blockers. |
+| **Willem Haffmans** | `whaffman` | **Tech Lead (Architecture)** & Dev | • Defines technical architecture and system design.<br>• Makes final decisions on the technology stack.<br>• Ensures modular interoperability between Node and Laravel services. |
 | **Quinten Mennen** | `qmennen` | **Tech Lead (Quality)** & Dev | • Enforces code quality standards and best practices.<br>• Reviews critical code changes.<br>• Manages CI/CD pipelines and linting rules. |
 | **Quentin Beukelman** | `qbeukelm` | **Dedicated Developer** | • Focuses on core feature implementation.<br>• Rapid prototyping and module development.<br>• End-to-end testing of implemented features. |
 
@@ -39,24 +39,58 @@ Our team operates using Agile methodologies, with clear role separation to ensur
 
 ## 🛠️ Technical Stack & Architecture
 
-We have chosen a modern, performance-oriented stack suitable for scalable applications.
+We have chosen a hybrid stack that leverages the specific strengths of different frameworks for different domains (Real-time vs. CRUD).
 
 ### Core Technologies
-* **Frontend:** **React**. Chosen for its component-based architecture which aligns perfectly with our modular project goals.
-* **Backend:** **Fastify**. Selected for its low overhead and high performance compared to Express, enabling faster API response times.
-* **Database:** *[TODO: Decide on DB, e.g., PostgreSQL/Prisma]*.
-* **Containerization:** **Docker**. Ensures the application runs with a single command across all environments.
+* **Frontend:** **Svelte / SvelteKit**. Selected for its high performance and reactivity, essential for rendering game canvas updates and managing lobby state efficiently.
+* **Game Backend:** **Node.js (Fastify)**. Handles the high-frequency game loop, WebSocket connections, collision detection, and authoritative state simulation.
+* **User Backend:** **Laravel (PHP)**. Manages RESTful API endpoints for user profiles, statistics, authentication, and achievements.
+* **Database:** **MariaDB**. The central persistent storage for user data and game history.
+* **Ranking Algorithm:** **TrueSkill**. Used for calculating player skill levels ("ELO-style") and matchmaking.
 
 ### Development Quality Tools
-To maintain a professional codebase suitable for long-term maintenance and scaling:
-* **Husky:** Manages Git hooks to ensure bad code is not committed.
-* **Commitlint:** Enforces semantic commit messages (e.g., `feat:`, `fix:`, `chore:`) to generate clean history and changelogs.
+To maintain a professional codebase suitable for long-term maintenance:
+* **Husky:** Manages Git hooks to prevent bad commits.
+* **Commitlint:** Enforces semantic commit messages (e.g., `feat:`, `fix:`, `chore:`) for clean history.
 * **ESLint:** Runs pre-commit to catch syntax and style errors early.
-* **Style Enforcer:** *[TODO: Decide on Prettier or specific Airbnb/Google style guide]*
+* **Style Enforcer:** *[TODO: Decide on Prettier/PHP-CS-Fixer configuration]*
 
 ### Architecture Overview
-The application follows a modular design pattern. Each major feature (Game, Auth, Chat) functions as a distinct logical unit with defined internal API boundaries.
-* *[TODO: Insert Diagram of Architecture once finalized]*
+The system is divided into three primary containers communicating via internal networking:
+1. **Frontend (Svelte):** Renders the Canvas, Lobby UI, and connects to both backends.
+2. **Game Service (Fastify):** WebSocket Server. Authoritative simulation. Emits state ticks to clients. Writes match results to Laravel.
+3. **User Service (Laravel):** HTTP API. Handles Auth, User Profile, Stats history, and Leaderboard calculations.
+
+The system follows a strict microservice pattern. The diagram below illustrates how the Client interacts with the two distinct backends.
+
+```mermaid
+graph TD
+    subgraph Client_Side ["Client Side (Browser)"]
+        UI[User Interface / SvelteKit]
+        GameCanvas[Game Canvas]
+    end
+
+    subgraph Docker_Container ["Docker Network"]
+        subgraph Game_Service ["Game Microservice (Node.js)"]
+            Fastify[Fastify Server]
+            GameEngine[Game Logic / Loop]
+        end
+
+        subgraph User_Service ["User Microservice (Laravel)"]
+            Laravel[Laravel API]
+            Auth[Auth & Sanctum]
+            Elo[TrueSkill Algo]
+        end
+
+        DB[(MariaDB)]
+    end
+
+    %% Connections
+    UI -- "HTTP / REST (User Data)" --> Laravel
+    GameCanvas -- "WebSockets (Real-time)" --> Fastify
+    Fastify -- "Internal API (Save Match Results)" --> Laravel
+    Laravel -- "SQL Queries" --> DB
+```
 
 ---
 
@@ -72,7 +106,7 @@ This project runs via Docker containers to ensure consistency.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-org/ft_transcendence.git](https://github.com/your-org/ft_transcendence.git)
+    git clone https://github.com/**username-or-org**/ft_transcendence.git
     cd ft_transcendence
     ```
 
@@ -80,33 +114,44 @@ This project runs via Docker containers to ensure consistency.
     Create the `.env` file from the example.
     ```bash
     cp .env.example .env
-    # Edit .env and add your API keys/Secrets
+    # Edit .env to configure DB credentials and API keys
     ```
 
 3.  **Run the Application:**
-    The entire stack can be launched with a single command:
+    The entire stack (Svelte, Node, Laravel, MariaDB) can be launched with a single command:
     ```bash
     make
     ```
 
 4.  **Access:**
-    * Frontend: `http://localhost:8080` (Default)
-    * Backend API: `http://localhost:8080/api`
+    * **Application:** `http://localhost:8080`
+    * **Laravel API:** `http://localhost:8080/api`
+    * **Game Server (WS):** `ws://localhost:3000` (Internal)
 
 ---
 
 ## 📅 Project Management
 
-We utilize a hybrid toolset to manage the macro vision and micro execution:
+We utilize a hybrid toolset to distinguish between "Product Definition" and "Technical Execution," ensuring clear separation of concerns between the PO and PM.
 
-1.  **Macro & Roadmap (Trello):** Managed primarily by the PO (Ferry) and PM (Hein). This board tracks high-level features (Epics) and sprint goals.
-2.  **Micro & Tasks (GitHub Issues):** The technical source of truth. Trello cards are broken down into specific technical tasks here.
-    * All commits must reference a GitHub Issue ID.
-    * Pull Requests must be linked to Issues.
+1.  **Product Backlog (Trello):**
+    * **Owner:** **Ferry (PO)**.
+    * **Purpose:** Defines *what* we are building. The PO populates this with Epics and User Stories, prioritizing them based on the product vision.
+2.  **Sprint Backlog (GitHub Issues):**
+    * **Owner:** **Hein (PM)**.
+    * **Purpose:** Defines *who* does it and *when*. Assigns GitHub Issues to developers, and sets milestones.
 
-**Communication:**
-* **Discord:** For daily stand-ups and quick synchronous communication.
-* **GitHub Reviews:** For code-specific discussions and architectural validation.
+## 📞 Communication & Sync Schedule
+
+**Cadence:**
+* **Weekly Sprint Planning:** Tuesdays at start of day.
+* **Daily Standups:** Wednesdays and Thursdays (13 PM).
+* **Sprint Review & Retrospective:** Thursdays at end of day.
+
+**Channels:**
+* **Trello (Macro):** Product-level planning and prioritization (PO-owned).
+* **GitHub Issues (Micro):** Sprint task breakdown and developer assignments (PM-owned).
+* **Scrum Process:** Weekly cadence with structured ceremonies for feedback and iteration.
 
 ---
 
@@ -116,24 +161,22 @@ We utilize a hybrid toolset to manage the macro vision and micro execution:
 
 | Category | Module | Pts | Status | Owner(s) | Justification/Implementation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Web** | Framework (Fastify/React) | 2 | 🚧 | All | Using industry-standard frameworks for scalability. |
-| **Web** | Realtime features WebSockets | 2 | 🚧 | All | Real-time updates across clients. Handle connections gracefully. |
-| **Web** | User Interaction | 2 | 🚧 | ALL | Basic chat, profile, friends. |
-| **Web** | Public API | 2 | 🚧 | ALL | Secured API key with ratelimiting, documentation and at least 5 endpoints |
-| **Web** | Database ORM | 1 | 💭 | TBD | *[TODO: Select ORM]* |
-| **User** | User Management & Authentification | 2 | 🚧 | All | User can add information, friends and display profile. |
-| **User** | Game Stat and History | 1 | 🚧 | All | Track user game statistics, history, achievements, leaderboard. |
-| **Game** | Complete web-based game | 2 | 🚧 | All | Build a real-time multiplayer web game with clear rules and win/loss conditions. |
-| **Game** | Remote players (two) | 2 | 🚧 | All | Support smooth, resilient real-time play between two remote players. |
-| **Game** | Multiplayer game (more than two) | 2 | 🚧 | All | Enable fair, synchronized multiplayer gameplay for 3+ players. |
-| **Devops** | Backend as Microservices | 2 | 🚧 | All | Use loosely coupled microservices with clear, single-purpose interfaces. |
-| **...** | ... | ... | ... | ... | *[TODO: Populate as we select modules]* |
+| **Web** | Framework (Laravel + Fastify/Svelte) | 2 | 🚧 | All | Using industry-standard frameworks: Laravel for API robustness, Fastify for speed, Svelte for reactive UI. |
+| **Web** | Realtime features (WebSockets) | 2 | 🚧 | All | Real-time game state updates (60 ticks/s), lobby chat, and live connection handling. |
+| **Web** | User Interaction | 2 | 🚧 | All | Basic chat, profile viewing, and friend management via Laravel API. |
+| **Web** | Public API | 2 | 🚧 | All | Secured Laravel API with rate limiting (Sanctum/Throttle), documentation, and 5+ endpoints. |
+| **Web** | Database ORM | 1 | 🚧 | All | Using Eloquent ORM (Laravel) for complex relationships and queries. |
+| **User** | User Management & Auth | 2 | 🚧 | All | Secure sign-up/login, avatar uploads, and profile management. |
+| **User** | Game Stat and History | 1 | 🚧 | All | Tracking wins/losses, match history, and TrueSkill ranking via Laravel. |
+| **Game** | Complete web-based game | 2 | 🚧 | All | "Achtung, die Kurve!": Real-time multiplayer snake-style survival game. |
+| **Game** | Remote players (two) | 2 | 🚧 | All | Smooth synchronization for 1v1 matches over the network. |
+| **Game** | Multiplayer game (3+) | 2 | 🚧 | All | Support for 3+ players simultaneously in the same arena. |
+| **Devops** | Backend as Microservices | 2 | 🚧 | All | Explicit separation: Node.js for Game Logic vs. Laravel for User Data. |
 
-Optional/TBD:
+**Optional / TBD:**
 | Category | Module | Pts | Status | Owner(s) | Justification/Implementation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **...** | ... | ... | ... | ... | *[TODO: Populate as we select modules]* |
-
 
 > **Total Points Planned:** 20 / 14 (6 more than mandatory)
 
@@ -144,7 +187,7 @@ Optional/TBD:
 In compliance with the project subject, we utilize AI (Copilot, ChatGPT, Claude) to enhance productivity while maintaining full understanding of our code.
 
 * **Boilerplate Generation:** Used to generate initial component structures and Docker configurations.
-* **Debugging:** Used to analyze stack traces and suggest fixes for obscure Fastify/React edge cases.
+* **Debugging:** Used to analyze stack traces and suggest fixes for obscure framework edge cases.
 * **Documentation:** Used to help format and spell-check this README and internal docs.
 
 **Validation Protocol:** All AI-generated code is reviewed by a peer (Tech Lead) and must be fully understood by the implementer. We do not copy-paste complex logic without line-by-line verification.
