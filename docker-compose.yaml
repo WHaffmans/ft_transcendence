@@ -20,6 +20,24 @@ services:
     networks:
       - transcendence-internal
 
+  svelte-app:
+    container_name: svelte-app
+    build:
+      context: ./services/svelte-app
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - PUBLIC_DOMAIN=${DOMAIN}
+    volumes:
+      - ./services/svelte-app/src:/app/src
+      - ./services/svelte-app/static:/app/static
+      - ./services/svelte-app/package.json:/app/package.json:ro
+      - ./services/svelte-app/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/svelte-app/svelte.config.js:/app/svelte.config.js:ro
+      - ./services/svelte-app/vite.config.ts:/app/vite.config.ts:ro
+    networks:
+      - transcendence-internal
+
   # ============================================================================
   # BACKEND SERVICES
   # ============================================================================
@@ -60,7 +78,7 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
-      - '8080:8080'
+      - "8080:8080"
     volumes:
       - ./services/nginx/data:/data
       - ./services/nginx/letsencrypt:/etc/letsencrypt

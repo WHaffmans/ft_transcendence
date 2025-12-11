@@ -16,6 +16,13 @@ async function start() {
   initDatabase();
   await userRoutes(fastify, new UserService(new UserRepository()));
 
+  fastify.addHook('onRequest', (request, reply, done) => {
+    // Allow CORS for all origins (for development purposes)
+    reply.header('Access-Control-Allow-Origin', '*');
+    reply.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    done();
+  });
+
   await fastify.listen({ port, host }, function (err: Error | null, address: string) {
     if (err) {
       fastify.log.error(err);
