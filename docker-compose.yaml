@@ -13,10 +13,6 @@ services:
       - ./services/frontend/src:/app/src
       - ./services/frontend/package.json:/app/package.json:ro
       - ./services/frontend/tsconfig.json:/app/tsconfig.json:ro
-    labels:
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || Host(`localhost`)"
-      - "traefik.http.routers.frontend.priority=1"
-      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
     networks:
       - transcendence-internal
 
@@ -57,13 +53,6 @@ services:
       - ./services/user-service/package.json:/app/package.json:ro
       - ./services/user-service/tsconfig.json:/app/tsconfig.json:ro
       - ./services/user-service/data:/app/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.user-service.rule=(Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || Host(`localhost`)) && PathPrefix(`/api`)"
-      - "traefik.http.routers.user-service.priority=2"
-      - "traefik.http.services.user-service.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.user-service-strip.stripprefix.prefixes=/api"
-      - "traefik.http.routers.user-service.middlewares=user-service-strip"
     networks:
       - transcendence-internal
     restart: unless-stopped
@@ -71,19 +60,35 @@ services:
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
-  nginx:
-    build:
-      context: ./services/nginx
-      dockerfile: Dockerfile
-    container_name: nginx
-    restart: unless-stopped
+  traefik:
+    container_name: traefik
+    image: traefik:v3.2
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8081:8080"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
     volumes:
-      - ./services/nginx/data:/data
-      - ./services/nginx/letsencrypt:/etc/letsencrypt
+      - ./services/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./services/traefik/conf:/etc/traefik/conf:ro
     networks:
       - transcendence-internal
+    restart: unless-stopped
+
+  # nginx:
+  #   build:
+  #     context: ./services/nginx
+  #     dockerfile: Dockerfile
+  #   container_name: nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./services/nginx/data:/data
+  #     - ./services/nginx/letsencrypt:/etc/letsencrypt
+  #   networks:
+  #     - transcendence-internal
 
   cloudflared:
     container_name: cloudflared
@@ -93,11 +98,11 @@ services:
       - transcendence-internal
     restart: unless-stopped
     depends_on:
-      - nginx
+      - traefik
 
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:2.33.3
+    image: portainer/portainer-ce:2.37.0
     ports:
       - "127.0.0.1:9443:9443"
       - "127.0.0.1:9000:9000"
