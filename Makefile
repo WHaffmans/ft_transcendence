@@ -1,4 +1,15 @@
+SERVICE_FOLDER = services/
+SERVICES = frontend svelte-app user-service
+
 all: build up
+
+deps:
+	@for service in $(SERVICES); do \
+		cd $(SERVICE_FOLDER)/$$service && \
+		echo "Installing dependencies for $$service" && \
+		npm install && \
+		cd -; \
+	done
 
 up:
 	docker compose up -d
@@ -8,6 +19,7 @@ down:
 
 build:
 	docker compose build
+
 rm: down
 	docker compose rm -f
 
