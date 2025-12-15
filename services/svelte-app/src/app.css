@@ -38,3 +38,11 @@
     display: none;
   }
 }
+
+body {
+    /* Sets a light gray background for light mode, and dark gray for dark mode */
+      @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white;
+    
+      /* Ensures the background covers the full screen */
+      min-height: 100vh;
+}

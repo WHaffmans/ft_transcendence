@@ -2,19 +2,19 @@ services:
   # ============================================================================
   # FRONTEND
   # ============================================================================
-  frontend:
-    container_name: frontend
-    build:
-      context: ./services/frontend
-      dockerfile: Dockerfile.dev
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - ./services/frontend/src:/app/src
-      - ./services/frontend/package.json:/app/package.json:ro
-      - ./services/frontend/tsconfig.json:/app/tsconfig.json:ro
-    networks:
-      - transcendence-internal
+  # frontend:
+  #   container_name: frontend
+  #   build:
+  #     context: ./services/frontend
+  #     dockerfile: Dockerfile.dev
+  #   environment:
+  #     - NODE_ENV=development
+  #   volumes:
+  #     - ./services/frontend/src:/app/src
+  #     - ./services/frontend/package.json:/app/package.json:ro
+  #     - ./services/frontend/tsconfig.json:/app/tsconfig.json:ro
+  #   networks:
+  #     - transcendence-internal
 
   svelte-app:
     container_name: svelte-app
@@ -24,6 +24,9 @@ services:
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
+      - PUBLIC_CLIENT_ID=${CLIENT_ID}
+    ports:
+      - "5173:5173"
     volumes:
       - ./services/svelte-app/src:/app/src
       - ./services/svelte-app/static:/app/static
@@ -56,7 +59,20 @@ services:
     networks:
       - transcendence-internal
     restart: unless-stopped
-
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./services/auth-service/src:/var/www/html
+    networks:
+      - transcendence-internal
+    depends_on:
+      - mariadb
+    restart: unless-stopped
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
@@ -75,6 +91,18 @@ services:
     networks:
       - transcendence-internal
     restart: unless-stopped
+  mariadb:
+    container_name: mariadb
+    image: mariadb:10.11
+    env_file:
+      - ./services/mariadb/conf/.env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./services/mariadb/conf/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
 
   # nginx:
   #   build:
@@ -90,15 +118,15 @@ services:
   #   networks:
   #     - transcendence-internal
 
-  cloudflared:
-    container_name: cloudflared
-    image: cloudflare/cloudflared:2025.11.1
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
-    depends_on:
-      - traefik
+  # cloudflared:
+  #   container_name: cloudflared
+  #   image: cloudflare/cloudflared:2025.11.1
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   networks:
+  #     - transcendence-internal
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - traefik
 
   portainer:
     container_name: portainer
@@ -118,6 +146,9 @@ services:
 # ==============================================================================
 volumes:
   portainer_data:
+    driver: local
+  mariadb_data:
+    driver: local
 
 # ==============================================================================
 # NETWORKS
