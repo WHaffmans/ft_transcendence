@@ -27,13 +27,14 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($validated, $request->boolean('remember'))) {
+        if (! Auth::attempt($validated, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => __('The provided credentials do not match our records.'),
             ]);
         }
 
         $request->session()->regenerate();
+
         // Redirect back to intended URL (OAuth flow) or default
         return redirect()->intended('/');
     }

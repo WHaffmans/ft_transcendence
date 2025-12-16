@@ -20,11 +20,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::get("/redirect/{provider}", function ($provider) {
+Route::get('/redirect/{provider}', function ($provider) {
     return Socialite::driver($provider)->redirect();
 })->name('social.redirect');
 
-Route::get("/callback/{provider}", function ($provider) {
+Route::get('/callback/{provider}', function ($provider) {
     $socialUser = Socialite::driver($provider)->user();
     $user = User::updateOrCreate(
         [
@@ -43,5 +43,5 @@ Route::get("/callback/{provider}", function ($provider) {
 
     Auth::login($user);
 
-    return redirect()->intended("/");
+    return redirect()->intended('/');
 });

@@ -16,7 +16,6 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
      */
     protected $scopes = ['public'];
 
-
     public function getAuthUrl($state)
     {
         return $this->buildAuthUrlFromBase('https://api.intra.42.fr/oauth/authorize', $state);
@@ -62,11 +61,11 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
             'nickname' => $user['first_name'],
             'name' => $user['displayname'],
             'email' => $user['email'],
-            'avatar' => !empty($user['image']) ? $user['image']['link'] : null,
+            'avatar' => ! empty($user['image']) ? $user['image']['link'] : null,
         ]);
     }
 
-        /**
+    /**
      * Get the default options for an HTTP request.
      *
      * @param  string  $token
@@ -82,4 +81,3 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
         ];
     }
 }
-

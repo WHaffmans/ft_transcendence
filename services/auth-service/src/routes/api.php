@@ -9,4 +9,4 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/verify', function (Request $request) {
     return response()->json(['message' => 'Authenticated'], 200, ['X-User-Id', request()->getUserInfo()]);
-})->middleware(["auth:api"]);
+})->middleware(['auth:api']);

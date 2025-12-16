@@ -18,16 +18,18 @@ class EnsureDevPassportClient extends Command
 
     public function handle(): int
     {
-        if (!app()->environment('local')) {
+        if (! app()->environment('local')) {
             $this->warn('Not in local environment, skipping.');
+
             return self::SUCCESS;
         }
 
         $id = $this->option('id') ?: env('OAUTH_DEV_CLIENT_ID') ?: (string) Str::uuid();
         $redirects = $this->option('redirect') ?: array_filter(explode(',', (string) env('OAUTH_DEV_REDIRECTS')));
 
-        if (!$redirects) {
+        if (! $redirects) {
             $this->error('No redirect URIs provided. Use --redirect or OAUTH_DEV_REDIRECTS.');
+
             return self::INVALID;
         }
 
@@ -54,6 +56,7 @@ class EnsureDevPassportClient extends Command
         }
 
         $this->line("CLIENT_ID={$id}");
+
         return self::SUCCESS;
     }
 }

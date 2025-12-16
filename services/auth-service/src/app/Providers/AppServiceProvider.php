@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
@@ -29,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
             'intra',
             function ($app) use ($socialite) {
                 $config = $app['config']['services.intra'];
+
                 return $socialite->buildProvider(IntraProvider::class, $config);
             }
         );
@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Passport::tokensExpireIn(now()->addMinutes(15));
-        Passport::authorizationView("auth.oauth.authorize");
+        Passport::authorizationView('auth.oauth.authorize');
         Passport::tokensCan([
             'user:read' => 'Read user information',
         ]);
