@@ -16,21 +16,21 @@ services:
     networks:
       - transcendence-internal
 
-  svelte-app:
-    container_name: svelte-app
+  frontend-service:
+    container_name: frontend-service
     build:
-      context: ./services/svelte-app
+      context: ./services/frontend-service
       dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
     volumes:
-      - ./services/svelte-app/src:/app/src
-      - ./services/svelte-app/static:/app/static
-      - ./services/svelte-app/package.json:/app/package.json:ro
-      - ./services/svelte-app/tsconfig.json:/app/tsconfig.json:ro
-      - ./services/svelte-app/svelte.config.js:/app/svelte.config.js:ro
-      - ./services/svelte-app/vite.config.ts:/app/vite.config.ts:ro
+      - ./services/frontend-service/src:/app/src
+      - ./services/frontend-service/static:/app/static
+      - ./services/frontend-service/package.json:/app/package.json:ro
+      - ./services/frontend-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/frontend-service/svelte.config.js:/app/svelte.config.js:ro
+      - ./services/frontend-service/vite.config.ts:/app/vite.config.ts:ro
     networks:
       - transcendence-internal
 
