@@ -24,7 +24,7 @@ services:
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
-      - PUBLIC_CLIENT_ID=${CLIENT_ID}
+      - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
     ports:
       - "5173:5173"
     volumes:
@@ -68,6 +68,14 @@ services:
       - "4000:4000"
     volumes:
       - ./services/auth-service/src:/var/www/html
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_DATABASE=${AUTH_DB_DATABASE}
+      - DB_USERNAME=${AUTH_DB_USERNAME}
+      - DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - OAUTH_DEV_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_DEV_REDIRECTS=${OAUTH_DEV_REDIRECTS}
     networks:
       - transcendence-internal
     depends_on:
@@ -95,8 +103,16 @@ services:
   mariadb:
     container_name: mariadb
     image: mariadb:10.11
-    env_file:
-      - ./services/mariadb/conf/.env
+    environment:
+      - AUTH_DB_DATABASE=${AUTH_DB_DATABASE}
+      - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
+      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - USER_SERVICE_DB=${USER_SERVICE_DB}
+      - USER_SERVICE_USERNAME=${USER_SERVICE_USERNAME}
+      - USER_SERVICE_PASSWORD=${USER_SERVICE_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
