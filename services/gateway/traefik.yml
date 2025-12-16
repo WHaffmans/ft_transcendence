@@ -14,6 +14,9 @@ entryPoints:
             sans:
               - "*.localhost"
               - "127.0.0.1"
+          - main: ${DOMAIN}
+            sans:
+              - "*.${DOMAIN}"
   metrics:
     address: ":8082"
 
@@ -26,6 +29,8 @@ tls:
   certificates:
     - certFile: /certs/localhost-cert.pem
       keyFile: /certs/localhost-key.pem
+    - certFile: /certs/cloudflare-origin-cert.pem
+      keyFile: /certs/cloudflare-origin-key.pem
 
 metrics:
   prometheus:

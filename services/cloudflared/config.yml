@@ -1,0 +1,9 @@
+tunnel: 53ccc7a1-b046-4dad-80f1-6b65887770a2
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: transcendence.duinvoetje.nl
+    service: https://gateway:443
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404

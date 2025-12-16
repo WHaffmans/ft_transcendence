@@ -3,6 +3,9 @@
 # TLS certificates for local development
 certs/
 
+# Cloudflared credentials
+services/cloudflared/credentials.json
+
 # Node.js dependencies (for all services)
 **/node_modules/
 **/dist/

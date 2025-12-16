@@ -80,7 +80,10 @@ services:
   cloudflared:
     container_name: cloudflared
     image: cloudflare/cloudflared:2025.11.1
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./services/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+      - ./services/cloudflared/credentials.json:/etc/cloudflared/credentials.json:ro
     networks:
       - transcendence-internal
     restart: unless-stopped
