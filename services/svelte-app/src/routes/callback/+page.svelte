@@ -44,7 +44,7 @@
       localStorage.setItem("access_token", tokenResponse.access_token);
       localStorage.setItem("refresh_token", tokenResponse.refresh_token);
 
-      window.location.href = `/svelte/profile`;
+      window.location.href = `/svelte/`;
     } else {
       error = "Failed to retrieve access token.";
     }

@@ -1,8 +1,12 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Laravel\Passport\Http\Middleware\CreateFreshApiToken;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -19,5 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies("*");
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (AuthenticationException $exception, Request $request): JsonResponse|RedirectResponse {
+            if (request()->is("verify") || request()->is("api/*")) {
+                return response()->json(['message' => "Unauthenticated"], 401);
+            }
+            return response()->redirectGuest("/login");
+        });
     })->create();

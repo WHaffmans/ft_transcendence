@@ -15,7 +15,8 @@ http:
         - web
       middlewares:
         - user-service-strip
-        - test-auth
+        - auth-forward
+
     svelte-app:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/svelte`)"
       service: svelte-app
@@ -62,6 +63,9 @@ http:
       stripPrefix:
         prefixes:
           - "/auth"
-    test-auth:
+    auth-forward:
       forwardAuth:
-        address: "http://auth-service:4000/verify"
+        address: "http://auth-service:4000/api/verify"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-User-Id"
