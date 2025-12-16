@@ -2,7 +2,7 @@ http:
   routers:
     frontend:
       rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)"
-      service: frontend
+      service: frontend-test
       priority: 1
       entryPoints:
         - web
@@ -24,16 +24,16 @@ http:
         - web
 
   services:
-    frontend:
+    frontend-test:
       loadBalancer:
         servers:
-          - url: "http://frontend:8080"
+          - url: "http://frontend-test:8080"
 
     user-service:
       loadBalancer:
         servers:
           - url: "http://user-service:3000"
-    
+
     svelte-app:
       loadBalancer:
         servers:
