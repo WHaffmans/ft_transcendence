@@ -2,24 +2,24 @@ services:
   # ============================================================================
   # FRONTEND
   # ============================================================================
-  # frontend:
-  #   container_name: frontend
-  #   build:
-  #     context: ./services/frontend
-  #     dockerfile: Dockerfile.dev
-  #   environment:
-  #     - NODE_ENV=development
-  #   volumes:
-  #     - ./services/frontend/src:/app/src
-  #     - ./services/frontend/package.json:/app/package.json:ro
-  #     - ./services/frontend/tsconfig.json:/app/tsconfig.json:ro
-  #   networks:
-  #     - transcendence-internal
-
-  svelte-app:
-    container_name: svelte-app
+  frontend-test:
+    container_name: frontend-test
     build:
-      context: ./services/svelte-app
+      context: ./services/frontend-test
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./services/frontend-test/src:/app/src
+      - ./services/frontend-test/package.json:/app/package.json:ro
+      - ./services/frontend-test/tsconfig.json:/app/tsconfig.json:ro
+    networks:
+      - transcendence-internal
+
+  frontend-service:
+    container_name: frontend-service
+    build:
+      context: ./services/frontend-service
       dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=development
@@ -28,12 +28,12 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./services/svelte-app/src:/app/src
-      - ./services/svelte-app/static:/app/static
-      - ./services/svelte-app/package.json:/app/package.json:ro
-      - ./services/svelte-app/tsconfig.json:/app/tsconfig.json:ro
-      - ./services/svelte-app/svelte.config.js:/app/svelte.config.js:ro
-      - ./services/svelte-app/vite.config.ts:/app/vite.config.ts:ro
+      - ./services/frontend-service/src:/app/src
+      - ./services/frontend-service/static:/app/static
+      - ./services/frontend-service/package.json:/app/package.json:ro
+      - ./services/frontend-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/frontend-service/svelte.config.js:/app/svelte.config.js:ro
+      - ./services/frontend-service/vite.config.ts:/app/vite.config.ts:ro
     networks:
       - transcendence-internal
 
@@ -76,21 +76,22 @@ services:
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
-  traefik:
-    container_name: traefik
+  gateway:
+    container_name: gateway
     image: traefik:v3.2
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
       - "127.0.0.1:8081:8080"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
-      - ./services/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./services/traefik/conf:/etc/traefik/conf:ro
+      - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./services/gateway/conf:/etc/traefik/conf:ro
     networks:
       - transcendence-internal
     restart: unless-stopped
+
   mariadb:
     container_name: mariadb
     image: mariadb:10.11
@@ -104,29 +105,15 @@ services:
       - transcendence-internal
     restart: unless-stopped
 
-  # nginx:
-  #   build:
-  #     context: ./services/nginx
-  #     dockerfile: Dockerfile
-  #   container_name: nginx
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - ./services/nginx/data:/data
-  #     - ./services/nginx/letsencrypt:/etc/letsencrypt
-  #   networks:
-  #     - transcendence-internal
-
-  # cloudflared:
-  #   container_name: cloudflared
-  #   image: cloudflare/cloudflared:2025.11.1
-  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-  #   networks:
-  #     - transcendence-internal
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - traefik
+  cloudflared:
+    container_name: cloudflared
+    image: cloudflare/cloudflared:2025.11.1
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+    depends_on:
+      - gateway
 
   portainer:
     container_name: portainer
@@ -135,17 +122,54 @@ services:
       - "127.0.0.1:9443:9443"
       - "127.0.0.1:9000:9000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - portainer_data:/data
     networks:
       - transcendence-internal
     restart: unless-stopped
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v3.0.1
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:11.4.0
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./services/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+    depends_on:
+      - prometheus
 
 # ==============================================================================
 # VOLUMES
 # ==============================================================================
 volumes:
   portainer_data:
+  prometheus_data:
+  grafana_data:
     driver: local
   mariadb_data:
     driver: local

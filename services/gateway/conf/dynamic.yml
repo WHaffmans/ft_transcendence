@@ -1,0 +1,77 @@
+http:
+  routers:
+    frontend-test:
+      rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)"
+      service: frontend-test
+      priority: 1
+      entryPoints:
+        - web
+
+    user-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/user-service`)"
+      service: user-service
+      priority: 10
+      entryPoints:
+        - web
+      middlewares:
+        - user-service-strip
+
+    frontend-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/frontend`)"
+      service: frontend-service
+      priority: 10
+      entryPoints:
+        - web
+
+    prometheus:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
+      service: prometheus
+      priority: 10
+      entryPoints:
+        - web
+      middlewares:
+        - prometheus-strip
+
+    grafana:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/grafana`)"
+      service: grafana
+      priority: 10
+      entryPoints:
+        - web
+
+  services:
+    frontend-test:
+      loadBalancer:
+        servers:
+          - url: "http://frontend-test:8080"
+
+    user-service:
+      loadBalancer:
+        servers:
+          - url: "http://user-service:3000"
+
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://frontend-service:5173"
+
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://prometheus:9090"
+
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://grafana:3000"
+
+  middlewares:
+    user-service-strip:
+      stripPrefix:
+        prefixes:
+          - "/user-service"
+
+    prometheus-strip:
+      stripPrefix:
+        prefixes:
+          - "/prometheus"
