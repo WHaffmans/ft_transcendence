@@ -1,0 +1,8 @@
+{
+	"scripts": {
+		"simulate": "tsx src/cli/simulate.ts"
+	},
+	"devDependencies": {
+		"tsx": "^4.21.0"
+	}
+}
