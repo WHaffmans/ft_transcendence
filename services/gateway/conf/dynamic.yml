@@ -27,6 +27,17 @@ http:
         - web
         - websecure
 
+    auth-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
+      service: auth-service
+      priority: 10
+      entryPoints:
+        - web
+        - websecure
+      middlewares:
+        - auth-service-strip
+
+
     prometheus:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
       service: prometheus
