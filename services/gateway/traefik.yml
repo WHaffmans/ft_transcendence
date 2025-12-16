@@ -4,9 +4,9 @@ api:
 
 entryPoints:
   web:
-    address: ":8088"
+    address: ":80"
   websecure:
-    address: ":8443"
+    address: ":443"
   metrics:
     address: ":8082"
 
