@@ -173,13 +173,13 @@ We utilize a hybrid toolset to distinguish between "Product Definition" and "Tec
 | **Game** | Multiplayer game (3+) | 2 | 🚧 | All | Support for 3+ players simultaneously in the same arena. |
 | **Devops** | Backend as Microservices | 2 | 🚧 | All | Explicit separation: Node.js for Game Logic vs. Laravel for User Data. |
 
-> **Total Points Planned:** 19 / 14 (6 more than mandatory)
+> **Total Points Planned:** 19 / 14 (5 more than mandatory)
 
 **Optional / TBD:**
 | Category | Module | Pts | Status | Owner(s) | Justification/Implementation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **AI** | AI Opponent for Game | 2 | 🚧 | All | Add a human-like, adaptable AI opponent that can occasionally win. |
-| **Web** | User Interaction | 2 | 🚧 | All |  ~~Basic chat ~~, profile viewing, and friend management via Laravel API. |
+| **Web** | User Interaction | 2 | 🚧 | All |  ~~Basic chat~~, profile viewing, and friend management via Laravel API. |
 
 > **Total Optionally Available:** 4
 
