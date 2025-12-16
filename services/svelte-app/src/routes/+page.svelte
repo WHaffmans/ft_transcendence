@@ -76,11 +76,11 @@
       </span>
     </NavBrand>
     <NavHamburger />
-    <NavUl class="md:flex md:items-center">
-      <NavLi href="/svelte" class="text-gray-300 hover:text-white">Home</NavLi>
-      <NavLi href="/svelte/profile" class="text-gray-300 hover:text-white"
+    <NavUl class="md:flex md:items-center lg:items-center justify-center">
+      <!-- <NavLi href="/svelte" class="text-gray-300 hover:text-white">Home</NavLi> -->
+      <!-- <NavLi href="/svelte/profile" class="text-gray-300 hover:text-white"
         >Profile</NavLi
-      >
+      > -->
       <NavLi>
         {#if isLoading}
           <div class="w-8 h-8 bg-gray-600 rounded-full animate-pulse"></div>
