@@ -7,6 +7,13 @@ entryPoints:
     address: ":80"
   websecure:
     address: ":443"
+    http:
+      tls:
+        domains:
+          - main: localhost
+            sans:
+              - "*.localhost"
+              - "127.0.0.1"
   metrics:
     address: ":8082"
 
@@ -14,6 +21,11 @@ providers:
   file:
     directory: /etc/traefik/conf
     watch: true
+
+tls:
+  certificates:
+    - certFile: /certs/localhost-cert.pem
+      keyFile: /certs/localhost-key.pem
 
 metrics:
   prometheus:

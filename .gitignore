@@ -1,5 +1,8 @@
 .env
 
+# TLS certificates for local development
+certs/
+
 # Node.js dependencies (for all services)
 **/node_modules/
 **/dist/

@@ -72,6 +72,7 @@ services:
     volumes:
       - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./services/gateway/conf:/etc/traefik/conf:ro
+      - ./certs:/certs:ro
     networks:
       - transcendence-internal
     restart: unless-stopped
