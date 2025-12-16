@@ -6,17 +6,30 @@
     },
     {
       "name": "🎨 Frontend",
-      "path": "frontend"
+      "path": "services/frontend"
     },
+    //auth
+    {
+      "name": "🔐 Auth Service",
+      "path": "services/auth-service"
+    }
     {
       "name": "👤 User Service",
       "path": "services/user-service"
     }
-    // Add more services here as you create them:
-    // {
-    //   "name": "🎮 Game Service",
-    //   "path": "services/game-service"
-    // }
+    ,{
+      "name": "🎮 Game Service",
+      "path": "services/game-service"
+    },
+    //proxy
+    {
+      "name": "🌐 Proxy Service",
+      "path": "services/proxy-service"
+    }
+    // docs
+    ,{
+      "name": "📚 Docs",
+      "path": "docs"
   ],
   "settings": {
     "files.exclude": {

@@ -5,6 +5,6 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
-		"allowedHosts": ["quinten.codes"]
+		"allowedHosts": ["*","quinten.codes", "transcendence.duinvoetje.nl", "localhost"]
 	}
 });
