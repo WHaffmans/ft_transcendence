@@ -28,19 +28,18 @@ Route::get("/callback/{provider}", function ($provider) {
     $githubUser = Socialite::driver($provider)->user();
     $user = User::updateOrCreate(
         [
+            'provider' => $provider,
+            'provider_id' => $githubUser->id,
+        ],
+        [
             'name' => $githubUser->name ?? $githubUser->nickname,
             'email' => $githubUser->email,
-            // 'github_token' => $githubUser->token,
-            // 'github_refresh_token' => $githubUser->refreshToken,
+            'email_verified_at' => method_exists($githubUser, 'user') && ($githubUser->user['email_verified'] ?? false) ? now() : null,
+            'password' => null,
         ]
     );
 
     Auth::login($user);
-    // $intended = session()->pull('url.intended', "/");
-    // $parsed = parse_url($intended);
-    // parse_str($parsed['query'] ?? '', $query);
-    // $code = $query['code'] ?? null;
-    // $state = $query['state'] ?? null;
-    // dd($intended, $query, $code, $state);
+
     return redirect()->intended("/");
 });

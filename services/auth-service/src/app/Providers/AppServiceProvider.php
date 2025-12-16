@@ -24,6 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $socialite = $this->app->make('Laravel\Socialite\Contracts\Factory');
+        $socialite->extend(
+            'intra',
+            function ($app) use ($socialite) {
+                $config = $app['config']['services.intra'];
+                return $socialite->buildProvider(IntraProvider::class, $config);
+            }
+        );
+
         // Ensure redirects and routes use the correct base URL
         if (config('app.url')) {
             // To make sure generated URLs use the correct base URL

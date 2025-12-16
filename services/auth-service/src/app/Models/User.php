@@ -33,6 +33,9 @@ class User extends Authenticatable implements OAuthenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'provider',
+        'provider_id',
+        'email_verified_at',
     ];
 
     /**
