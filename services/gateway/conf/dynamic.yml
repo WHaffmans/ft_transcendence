@@ -15,6 +15,7 @@ http:
         - web
       middlewares:
         - user-service-strip
+        - auth-forward
 
     frontend-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/frontend`)"
@@ -22,6 +23,8 @@ http:
       priority: 10
       entryPoints:
         - web
+      # middlewares:
+        # - frontend-service-strip
 
     prometheus:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
@@ -39,6 +42,15 @@ http:
       entryPoints:
         - web
 
+    auth-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
+      service: auth-service
+      priority: 10
+      entryPoints:
+        - web
+      middlewares:
+        - auth-service-strip
+
   services:
     frontend-test:
       loadBalancer:
@@ -54,6 +66,11 @@ http:
       loadBalancer:
         servers:
           - url: "http://frontend-service:5173"
+
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:4000"
 
     prometheus:
       loadBalancer:
@@ -71,7 +88,24 @@ http:
         prefixes:
           - "/user-service"
 
+    frontend-service-strip:
+      stripPrefix:
+        prefixes:
+          - "/frontend"
+
     prometheus-strip:
       stripPrefix:
         prefixes:
           - "/prometheus"
+
+    auth-service-strip:
+      stripPrefix:
+        prefixes:
+          - "/auth"
+
+    auth-forward:
+      forwardAuth:
+        address: "http://auth-service:4000/api/verify"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-User-Id"
