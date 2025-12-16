@@ -27,7 +27,7 @@
 
   const login = async () => {
     let client_id = `${PUBLIC_CLIENT_ID}`;
-    let redirect_uri = encodeURIComponent(`http://${PUBLIC_DOMAIN}/svelte/callback`);
+    let redirect_uri = encodeURIComponent(`https://${PUBLIC_DOMAIN}/frontend/callback`);
     let state = rString(40);
     sessionStorage.setItem("pkce_state", state);
 
@@ -40,7 +40,7 @@
 
     let response_type = "code";
     let scope = encodeURIComponent("user:read");
-    let auth_url = `http://${PUBLIC_DOMAIN}/auth/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+    let auth_url = `https://${PUBLIC_DOMAIN}/auth/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
     window.location.href = auth_url;
   };
 </script>

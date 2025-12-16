@@ -56,7 +56,7 @@
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     user = null;
-    window.location.href = "/svelte";
+    window.location.href = "/frontend";
   };
 
   if (browser) {
@@ -68,7 +68,7 @@
 
 <header>
   <Navbar class="bg-gray-800 border-gray-700">
-    <NavBrand href="/svelte">
+    <NavBrand href="/frontend">
       <span
         class="self-center whitespace-nowrap text-xl font-semibold text-white"
       >
@@ -102,7 +102,7 @@
               >
             </DropdownHeader>
             <DropdownItem
-              href="/svelte/profile"
+              href="/frontend/profile"
               class="text-gray-300 hover:bg-gray-600 hover:text-white"
             >
               My Profile
@@ -121,7 +121,7 @@
             </DropdownItem>
           </Dropdown>
         {:else}
-          <Button href="/svelte/login" size="sm" color="purple">Login</Button>
+          <Button href="/frontend/login" size="sm" color="purple">Login</Button>
         {/if}
       </NavLi>
     </NavUl>
