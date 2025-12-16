@@ -76,20 +76,6 @@ services:
       - transcendence-internal
     restart: unless-stopped
 
-  # nginx:
-  #   build:
-  #     context: ./services/nginx
-  #     dockerfile: Dockerfile
-  #   container_name: nginx
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - ./services/nginx/data:/data
-  #     - ./services/nginx/letsencrypt:/etc/letsencrypt
-  #   networks:
-  #     - transcendence-internal
-
   cloudflared:
     container_name: cloudflared
     image: cloudflare/cloudflared:2025.11.1
