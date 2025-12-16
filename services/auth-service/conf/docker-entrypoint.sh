@@ -11,6 +11,8 @@ echo "Starting Auth Service..."
 
 php artisan migrate --force
 
+php artisan passport:keys --force
+
 echo "Auth Service started successfully!"
 
 exec php artisan serve --host=0.0.0.0 --port=4000
