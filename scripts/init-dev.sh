@@ -63,7 +63,7 @@ find "$SERVICES_DIR" -maxdepth 2 -name "package.json" -type f | while read -r pa
 done
 
 # Find all services with composer.json (Laravel/PHP services)
-find "$SERVICES_DIR" -maxdepth 2 -name "composer.json" -type f | while read -r composer_file; do
+find "$SERVICES_DIR" -maxdepth 3 -name "composer.json" -type f | while read -r composer_file; do
     service_dir="$(dirname "$composer_file")"
     service_name="$(basename "$service_dir")"
 
