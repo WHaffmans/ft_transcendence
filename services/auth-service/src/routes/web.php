@@ -25,16 +25,18 @@ Route::get("/redirect/{provider}", function ($provider) {
 })->name('social.redirect');
 
 Route::get("/callback/{provider}", function ($provider) {
-    $githubUser = Socialite::driver($provider)->user();
+    $socialUser = Socialite::driver($provider)->user();
     $user = User::updateOrCreate(
         [
             'provider' => $provider,
-            'provider_id' => $githubUser->id,
+            'provider_id' => $socialUser->getId(),
         ],
         [
-            'name' => $githubUser->name ?? $githubUser->nickname,
-            'email' => $githubUser->email,
-            'email_verified_at' => method_exists($githubUser, 'user') && ($githubUser->user['email_verified'] ?? false) ? now() : null,
+            'name' => $socialUser->name ?? $socialUser->getNickname(),
+            'provider' => $provider,
+            'provider_id' => $socialUser->getId(),
+            'email' => $socialUser->getEmail(),
+            'email_verified_at' => method_exists($socialUser, 'user') && ($socialUser->user['email_verified'] ?? false) ? now() : null,
             'password' => null,
         ]
     );
