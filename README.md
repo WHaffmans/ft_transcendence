@@ -163,9 +163,9 @@ We utilize a hybrid toolset to distinguish between "Product Definition" and "Tec
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Web** | Framework (Laravel + Fastify/Svelte) | 2 | 🚧 | All | Using industry-standard frameworks: Laravel for API robustness, Fastify for speed, Svelte for reactive UI. |
 | **Web** | Realtime features (WebSockets) | 2 | 🚧 | All | Real-time game state updates (60 ticks/s), lobby chat, and live connection handling. |
-| **Web** | User Interaction | 2 | 🚧 | All | Basic chat, profile viewing, and friend management via Laravel API. |
 | **Web** | Public API | 2 | 🚧 | All | Secured Laravel API with rate limiting (Sanctum/Throttle), documentation, and 5+ endpoints. |
 | **Web** | Database ORM | 1 | 🚧 | All | Using Eloquent ORM (Laravel) for complex relationships and queries. |
+| **Web** | Server Side Rendering| 1 | 🚧 | All |  Server-Side Rendering (SSR) for improved performance. |
 | **User** | User Management & Auth | 2 | 🚧 | All | Secure sign-up/login, avatar uploads, and profile management. |
 | **User** | Game Stat and History | 1 | 🚧 | All | Tracking wins/losses, match history, and TrueSkill ranking via Laravel. |
 | **Game** | Complete web-based game | 2 | 🚧 | All | "Achtung, die Kurve!": Real-time multiplayer snake-style survival game. |
@@ -173,12 +173,16 @@ We utilize a hybrid toolset to distinguish between "Product Definition" and "Tec
 | **Game** | Multiplayer game (3+) | 2 | 🚧 | All | Support for 3+ players simultaneously in the same arena. |
 | **Devops** | Backend as Microservices | 2 | 🚧 | All | Explicit separation: Node.js for Game Logic vs. Laravel for User Data. |
 
+> **Total Points Planned:** 19 / 14 (5 more than mandatory)
+
 **Optional / TBD:**
 | Category | Module | Pts | Status | Owner(s) | Justification/Implementation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **...** | ... | ... | ... | ... | *[TODO: Populate as we select modules]* |
+| **AI** | AI Opponent for Game | 2 | 🚧 | All | Add a human-like, adaptable AI opponent that can occasionally win. |
+| **Web** | User Interaction | 2 | 🚧 | All |  ~~Basic chat~~, profile viewing, and friend management via Laravel API. |
 
-> **Total Points Planned:** 20 / 14 (6 more than mandatory)
+> **Total Optionally Available:** 4
+
 
 ---
 

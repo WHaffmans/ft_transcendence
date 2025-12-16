@@ -6,6 +6,7 @@ http:
       priority: 1
       entryPoints:
         - web
+        - websecure
 
     user-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/user-service`)"
@@ -13,6 +14,7 @@ http:
       priority: 10
       entryPoints:
         - web
+        - websecure
       middlewares:
         - user-service-strip
         - auth-forward
@@ -23,8 +25,7 @@ http:
       priority: 10
       entryPoints:
         - web
-      # middlewares:
-        # - frontend-service-strip
+        - websecure
 
     prometheus:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
@@ -32,6 +33,7 @@ http:
       priority: 10
       entryPoints:
         - web
+        - websecure
       middlewares:
         - prometheus-strip
 
@@ -41,15 +43,7 @@ http:
       priority: 10
       entryPoints:
         - web
-
-    auth-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
-      service: auth-service
-      priority: 10
-      entryPoints:
-        - web
-      middlewares:
-        - auth-service-strip
+        - websecure
 
   services:
     frontend-test:

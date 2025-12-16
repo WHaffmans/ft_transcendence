@@ -6,35 +6,49 @@
     },
     {
       "name": "🎨 Frontend",
-      "path": "services/frontend"
+      "path": "services/frontend-service"
     },
     //auth
     {
       "name": "🔐 Auth Service",
       "path": "services/auth-service"
-    }
+    },
     {
       "name": "👤 User Service",
       "path": "services/user-service"
-    }
-    ,{
+    },
+    {
       "name": "🎮 Game Service",
       "path": "services/game-service"
     },
     //proxy
     {
-      "name": "🌐 Proxy Service",
-      "path": "services/proxy-service"
+      "name": "🌐 Gateway",
+      "path": "services/gateway"
     }
     // docs
-    ,{
+    ,
+    {
       "name": "📚 Docs",
       "path": "docs"
+    },
+    //grafana
+    {
+      "name": "📊 Grafana",
+      "path": "services/grafana"
+    },
+    //prometheus
+    {
+      "name": "⏱️ Prometheus",
+      "path": "services/prometheus"
+    }
   ],
   "settings": {
     "files.exclude": {
       "**/node_modules": true,
-      "**/dist": true
+      "**/dist": true,
+      "services": true,
+      "docs": true
     },
     "makefile.configureOnOpen": false
   }
