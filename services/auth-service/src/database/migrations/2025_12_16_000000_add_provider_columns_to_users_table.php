@@ -9,15 +9,17 @@ return new class extends Migration {
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('password')->nullable()->change();
-            $table->unique(['provider', 'provider_id']);
+            $table->string('provider')->nullable();
+            $table->integer('provider_id')->nullable();
+            $table->unique(['provider_id']);
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropUnique(['provider', 'provider_id']);
-            $table->dropColumn(['provider', 'provider_id']);
+            $table->dropUnique(['provider_id']);
+            $table->dropColumn(['provider_id']);
             // Don't force non-null password on rollback; schema may vary.
         });
     }
