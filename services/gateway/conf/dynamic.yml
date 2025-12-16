@@ -1,6 +1,6 @@
 http:
   routers:
-    frontend:
+    frontend-test:
       rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)"
       service: frontend-test
       priority: 1
@@ -16,9 +16,9 @@ http:
       middlewares:
         - user-service-strip
 
-    svelte-app:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/svelte`)"
-      service: svelte-app
+    frontend-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/frontend`)"
+      service: frontend-service
       priority: 10
       entryPoints:
         - web
@@ -34,10 +34,10 @@ http:
         servers:
           - url: "http://user-service:3000"
 
-    svelte-app:
+    frontend-service:
       loadBalancer:
         servers:
-          - url: "http://svelte-app:5173"
+          - url: "http://frontend-service:5173"
 
   middlewares:
     user-service-strip:

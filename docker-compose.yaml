@@ -60,8 +60,8 @@ services:
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
-  traefik:
-    container_name: traefik
+  gateway:
+    container_name: gateway
     image: traefik:v3.2
     ports:
       - "8088:80"
@@ -70,8 +70,8 @@ services:
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
-      - ./services/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./services/traefik/conf:/etc/traefik/conf:ro
+      - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./services/gateway/conf:/etc/traefik/conf:ro
     networks:
       - transcendence-internal
     restart: unless-stopped
@@ -84,7 +84,7 @@ services:
       - transcendence-internal
     restart: unless-stopped
     depends_on:
-      - traefik
+      - gateway
 
   portainer:
     container_name: portainer
