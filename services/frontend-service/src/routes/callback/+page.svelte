@@ -10,7 +10,7 @@
 
   const getToken = async (code: string, code_verifier: string) => {
     try {
-      const response = await fetch(`https://${PUBLIC_DOMAIN}/auth/oauth/token`, {
+      const response = await fetch(`http://${PUBLIC_DOMAIN}/auth/oauth/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -19,7 +19,7 @@
           grant_type: "authorization_code",
           code: code,
           code_verifier: code_verifier,
-          redirect_uri: `https://${PUBLIC_DOMAIN}/frontend/callback`,
+          redirect_uri: `http://${PUBLIC_DOMAIN}/frontend/callback`,
           client_id: `${PUBLIC_CLIENT_ID}`,
         }),
       });
