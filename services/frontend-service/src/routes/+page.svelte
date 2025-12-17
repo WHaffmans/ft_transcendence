@@ -53,10 +53,22 @@
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    user = null;
-    window.location.href = "/frontend";
+    fetch("/auth/api/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    })
+      .then(() => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        user = null;
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+      });
   };
 
   if (browser) {
