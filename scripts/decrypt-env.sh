@@ -22,8 +22,8 @@ find "$ROOT_DIR" -type f -name ".env.encrypted" \
     
     env_file="${encrypted_file%.encrypted}"
     
-    # Decrypt the file
-    openssl enc -aes-256-cbc -d -pbkdf2 \
+    # Decrypt the file (matching -nosalt from encryption)
+    openssl enc -aes-256-cbc -d -nosalt -pbkdf2 \
         -in "$encrypted_file" \
         -out "$env_file" \
         -pass file:"$ROOT_DIR/$KEY_FILE"

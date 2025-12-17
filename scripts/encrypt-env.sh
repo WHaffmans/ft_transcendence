@@ -22,16 +22,21 @@ find "$ROOT_DIR" -type f -name ".env" \
     
     encrypted_file="${env_file}.encrypted"
     
-    # Encrypt the file
-    openssl enc -aes-256-cbc -salt -pbkdf2 \
-        -in "$env_file" \
-        -out "$encrypted_file" \
-        -pass file:"$ROOT_DIR/$KEY_FILE"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Encrypted: ${env_file#$ROOT_DIR/}"
+    # Check if encryption is needed (only if .env is newer or .encrypted doesn't exist)
+    if [ ! -f "$encrypted_file" ] || [ "$env_file" -nt "$encrypted_file" ]; then
+        # Encrypt the file (deterministic with -nosalt for git-friendly output)
+        openssl enc -aes-256-cbc -nosalt -pbkdf2 \
+            -in "$env_file" \
+            -out "$encrypted_file" \
+            -pass file:"$ROOT_DIR/$KEY_FILE"
+        
+        if [ $? -eq 0 ]; then
+            echo "✓ Encrypted: ${env_file#$ROOT_DIR/}"
+        else
+            echo "✗ Failed to encrypt: ${env_file#$ROOT_DIR/}"
+        fi
     else
-        echo "✗ Failed to encrypt: ${env_file#$ROOT_DIR/}"
+        echo "⏭ Skipped (unchanged): ${env_file#$ROOT_DIR/}"
     fi
 done
 
