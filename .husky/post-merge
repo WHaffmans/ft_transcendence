@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Auto-decrypt .env files after merge/pull (if key exists)
+if [ -f ".env.key" ]; then
+    echo "🔓 Decrypting updated .env files..."
+    bash scripts/decrypt-env.sh
+else
+    echo "⚠️  .env.key not found - skipping decryption"
+    echo "   Run 'npm run decrypt-env' after obtaining the key"
+fi

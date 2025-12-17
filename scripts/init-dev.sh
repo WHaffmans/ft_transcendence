@@ -62,6 +62,30 @@ find "$SERVICES_DIR" -maxdepth 2 -name "package.json" -type f | while read -r pa
     echo ""
 done
 
+
+#if composer is not present install composer locally
+if ! command -v composer &> /dev/null
+then
+    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+    if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]
+    then
+        >&2 echo 'ERROR: Invalid installer signature'
+        rm composer-setup.php
+        exit 1
+    fi
+    echo "  └─ Installing Composer..."
+    #installl in home bin for global access
+    php composer-setup.php --quiet --install-dir="$HOME/.local/bin" --filename=composer
+    echo "  ✅ Composer installed globally"
+    rm composer-setup.php
+else
+    echo "📥 Composer is already installed, skipping installation"
+fi
+echo ""
+
+
 # Find all services with composer.json (Laravel/PHP services)
 find "$SERVICES_DIR" -maxdepth 3 -name "composer.json" -type f | while read -r composer_file; do
     service_dir="$(dirname "$composer_file")"
@@ -71,7 +95,7 @@ find "$SERVICES_DIR" -maxdepth 3 -name "composer.json" -type f | while read -r c
     cd "$service_dir"
 
     echo "  └─ Installing composer dependencies..."
-    composer install
+    composer install || true
 
     # Copy .env if it doesn't exist
     if [ -f ".env.example" ] && [ ! -f ".env" ]; then

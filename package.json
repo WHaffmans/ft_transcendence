@@ -11,6 +11,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "lint": "npx eslint ./services/**/*.ts"
+    "lint": "npx eslint ./services/**/*.ts",
+    "encrypt-env": "bash scripts/encrypt-env.sh",
+    "decrypt-env": "bash scripts/decrypt-env.sh",
+    "setup-env": "bash scripts/setup-env-encryption.sh"
   }
 }

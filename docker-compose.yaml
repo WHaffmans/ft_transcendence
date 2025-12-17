@@ -41,6 +41,7 @@ services:
   # ============================================================================
   # BACKEND SERVICES
   # ============================================================================
+
   user-service:
     container_name: user-service
     build:
@@ -60,6 +61,7 @@ services:
     networks:
       - transcendence-internal
     restart: unless-stopped
+
   auth-service:
     container_name: auth-service
     build:

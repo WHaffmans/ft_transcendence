@@ -20,4 +20,6 @@ frontend/src/**/*.js
 **/data/*.db
 **/data/*.db-*
 
-
+# Environment encryption key
+.env.key
+.env.bak
