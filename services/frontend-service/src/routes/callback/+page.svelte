@@ -20,7 +20,7 @@
           code: code,
           code_verifier: code_verifier,
           redirect_uri: `http://${PUBLIC_DOMAIN}/frontend/callback`,
-          client_id: `${PUBLIC_CLIENT_ID}`,
+          client_id: "019b2d20-ce15-7335-828a-b184b656c035",
         }),
       });
       return await response.json();

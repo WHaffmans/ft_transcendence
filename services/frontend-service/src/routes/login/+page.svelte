@@ -26,7 +26,7 @@
   }
 
   const login = async () => {
-    let client_id = `${PUBLIC_CLIENT_ID}`;
+    let client_id = "019b2d20-ce15-7335-828a-b184b656c035";
     let redirect_uri = encodeURIComponent(`http://${PUBLIC_DOMAIN}/frontend/callback`);
     let state = rString(40);
     sessionStorage.setItem("pkce_state", state);
