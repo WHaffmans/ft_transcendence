@@ -1,6 +1,12 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
+  import { sha256 } from "js-sha256";
+  import {
+    PUBLIC_CLIENT_ID,
+    PUBLIC_DOMAIN,
+    PUBLIC_OAUTH_REDIRECT_URI,
+  } from "$env/static/public";
   import {
     Navbar,
     NavBrand,
@@ -16,9 +22,38 @@
   } from "flowbite-svelte";
   import { ChevronDownOutline } from "flowbite-svelte-icons";
   import type { User } from "$lib/types/types";
+  import { arrayToString, base64, randomString } from "../lib/utils";
 
   let user: User | null = $state(null);
   let isLoading = $state(true);
+
+  const login = async () => {
+    let client_id = `${PUBLIC_CLIENT_ID}`;
+    let redirect_uri = encodeURIComponent(`${PUBLIC_OAUTH_REDIRECT_URI}`);
+    let state = randomString(40);
+    localStorage.setItem("pkce_state", state);
+
+    let code_verifier = randomString(128);
+    localStorage.setItem("pkce_code_verifier", code_verifier);
+
+    let code_challenge = base64(
+      arrayToString(sha256.create().update(code_verifier).array())
+    );
+
+    let response_type = "code";
+    let scope = encodeURIComponent("user:read");
+    let auth_url = `http://${PUBLIC_DOMAIN}/auth/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+
+    const width = 600;
+    const height = 700;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    window.open(
+      auth_url,
+      "oauth-popup",
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
+  };
 
   const fetchUser = async () => {
     const token = localStorage.getItem("access_token");
@@ -71,11 +106,19 @@
       });
   };
 
-  if (browser) {
-    onMount(() => {
-      fetchUser();
-    });
-  }
+  onMount(() => {
+    if (!browser) return;
+    fetchUser();
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data.type === "LOGIN_SUCCESS") {
+        fetchUser(); // Refresh user data instead of reloading
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  });
 </script>
 
 <header>
@@ -89,10 +132,6 @@
     </NavBrand>
     <NavHamburger />
     <NavUl class="md:flex md:items-center lg:items-center justify-center">
-      <!-- <NavLi href="/svelte" class="text-gray-300 hover:text-white">Home</NavLi> -->
-      <!-- <NavLi href="/svelte/profile" class="text-gray-300 hover:text-white"
-        >Profile</NavLi
-      > -->
       <NavLi>
         {#if isLoading}
           <div class="w-8 h-8 bg-gray-600 rounded-full animate-pulse"></div>
@@ -124,7 +163,6 @@
             >
               Settings
             </DropdownItem>
-            <DropdownDivider class="border-gray-600" />
             <DropdownItem
               onclick={logout}
               class="text-red-400 hover:bg-gray-600 hover:text-red-300"
@@ -133,12 +171,13 @@
             </DropdownItem>
           </Dropdown>
         {:else}
-          <Button href="/login" size="sm" color="purple">Login</Button>
+          <Button onclick={login} size="sm" color="purple">Login</Button>
         {/if}
       </NavLi>
     </NavUl>
   </Navbar>
 </header>
+
 
 <section class="min-h-svh bg-gray-900 flex items-center justify-center">
   <h1 class="text-4xl text-white">Welcome to Flowbite-Svelte!</h1>
