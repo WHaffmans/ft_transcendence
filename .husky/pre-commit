@@ -1,1 +1,11 @@
 npm run lint
+
+# Encrypt .env files before commit
+bash scripts/encrypt-env.sh
+
+# Stage all .env.encrypted files (find ensures we get all of them)
+find . -type f -name "*.env.encrypted" \
+    ! -path "*/node_modules/*" \
+    ! -path "*/.git/*" \
+    ! -path "*/vendor/*" \
+    -exec git add {} \;
