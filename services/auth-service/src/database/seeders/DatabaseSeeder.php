@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $clientId = env('OAUTH_DEV_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
-        $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/frontend/callback');
+        $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/callback');
 
 
         DB::table('oauth_clients')->insert([

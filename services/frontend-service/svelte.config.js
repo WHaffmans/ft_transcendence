@@ -13,7 +13,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		paths: {
-			base: '/frontend' //TODO: this probably needs to be changed for production env.
+			// base: '/frontend' //TODO: this probably needs to be changed for production env.
 		}
 	}
 };

@@ -1,7 +1,7 @@
 http:
   routers:
     frontend-test:
-      rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)"
+      rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`) && PathPrefix(`/frontend`)"
       service: frontend-test
       priority: 1
       entryPoints:
@@ -20,7 +20,7 @@ http:
         - auth-forward
 
     frontend-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/frontend`)"
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`))"
       service: frontend-service
       priority: 10
       entryPoints:
@@ -92,11 +92,6 @@ http:
       stripPrefix:
         prefixes:
           - "/user-service"
-
-    frontend-service-strip:
-      stripPrefix:
-        prefixes:
-          - "/frontend"
 
     prometheus-strip:
       stripPrefix:
