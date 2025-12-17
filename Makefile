@@ -22,4 +22,7 @@ re: rm
 logs:
 	docker compose logs -f
 
+clean:
+	docker compose down -v --rmi all --remove-orphans
+
 .PHONY: all up down build
