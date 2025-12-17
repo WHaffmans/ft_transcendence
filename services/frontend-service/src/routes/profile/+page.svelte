@@ -97,7 +97,7 @@
 
 <header>
   <Navbar class="bg-gray-800 border-gray-700">
-    <NavBrand href="/frontend">
+    <NavBrand href="/">
       <span
         class="self-center whitespace-nowrap text-xl font-semibold text-white"
       >
