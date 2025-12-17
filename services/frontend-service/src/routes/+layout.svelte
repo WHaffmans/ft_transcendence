@@ -59,9 +59,11 @@
           <button
             class="flex items-center gap-2 text-gray-300 hover:text-white"
           >
-            <Avatar size="sm" class="cursor-pointer"
-            src={$auth.user.avatar || ""}
-            alt={$auth.user.name}
+            <Avatar
+              size="sm"
+              class="cursor-pointer"
+              src={$auth.user.avatar || ""}
+              alt={$auth.user.name}
             />
             <span class="hidden md:inline">{$auth.user.name}</span>
             <ChevronDownOutline class="w-4 h-4" />
