@@ -30,9 +30,11 @@ Route::get('/callback/{provider}', function ($provider) {
         [
             'provider' => $provider,
             'provider_id' => $socialUser->getId(),
+            // 'email' => $socialUser->getEmail(),
         ],
         [
             'name' => $socialUser->name ?? $socialUser->getNickname(),
+            'avatar' => $socialUser->getAvatar(),
             'provider' => $provider,
             'provider_id' => $socialUser->getId(),
             'email' => $socialUser->getEmail(),
