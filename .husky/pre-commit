@@ -1,1 +1,3 @@
 npm run lint
+# Encrypt .env files before commit
+bash scripts/encrypt-env.sh

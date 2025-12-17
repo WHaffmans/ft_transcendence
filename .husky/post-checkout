@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+# Auto-decrypt .env files after checkout (if key exists)
+if [ -f ".env.key" ]; then
+    echo "🔓 Decrypting .env files for this branch..."
+    bash scripts/decrypt-env.sh
+else
+    echo "⚠️  .env.key not found - skipping decryption"
+fi
