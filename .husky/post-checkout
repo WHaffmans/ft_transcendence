@@ -1,9 +1,16 @@
 #!/usr/bin/env sh
 
-# Auto-decrypt .env files after checkout (if key exists)
-if [ -f ".env.key" ]; then
-    echo "🔓 Decrypting .env files for this branch..."
-    bash scripts/decrypt-env.sh
-else
-    echo "⚠️  .env.key not found - skipping decryption"
+# Arguments: previous_head new_head branch_checkout_flag
+# Flag is 1 for branch checkout, 0 for file checkout
+CHECKOUT_TYPE=$3
+
+# Only decrypt on actual branch switches, not during commits
+if [ "$CHECKOUT_TYPE" = "1" ]; then
+    # Auto-decrypt .env files after checkout (if key exists)
+    if [ -f ".env.key" ]; then
+        echo "🔓 Decrypting .env files for this branch..."
+        bash scripts/decrypt-env.sh
+    else
+        echo "⚠️  .env.key not found - skipping decryption"
+    fi
 fi
