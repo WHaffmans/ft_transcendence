@@ -102,7 +102,7 @@
               >
             </DropdownHeader>
             <DropdownItem
-              href="/frontend/profile"
+              href="/profile"
               class="text-gray-300 hover:bg-gray-600 hover:text-white"
             >
               My Profile
@@ -121,7 +121,7 @@
             </DropdownItem>
           </Dropdown>
         {:else}
-          <Button href="/frontend/login" size="sm" color="purple">Login</Button>
+          <Button href="/login" size="sm" color="purple">Login</Button>
         {/if}
       </NavLi>
     </NavUl>

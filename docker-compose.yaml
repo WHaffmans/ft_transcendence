@@ -25,6 +25,7 @@ services:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
       - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_DEV_REDIRECT}
     ports:
       - "5173:5173"
     volumes:
@@ -68,6 +69,8 @@ services:
       - "4000:4000"
     volumes:
       - ./services/auth-service/src:/var/www/html
+    env_file:
+      - ./services/auth-service/src/.env
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
@@ -75,11 +78,12 @@ services:
       - DB_USERNAME=${AUTH_DB_USERNAME}
       - DB_PASSWORD=${AUTH_DB_PASSWORD}
       - OAUTH_DEV_CLIENT_ID=${OAUTH_CLIENT_ID}
-      - OAUTH_DEV_REDIRECTS=${OAUTH_DEV_REDIRECTS}
+      - OAUTH_DEV_REDIRECT=${OAUTH_DEV_REDIRECT}
     networks:
       - transcendence-internal
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     restart: unless-stopped
   # ============================================================================
   # INFRASTRUCTURE
@@ -120,67 +124,73 @@ services:
       - mariadb_data:/var/lib/mysql
       - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
       - ./services/mariadb/conf/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - transcendence-internal
     restart: unless-stopped
 
-  cloudflared:
-    container_name: cloudflared
-    image: cloudflare/cloudflared:2025.11.1
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
-    depends_on:
-      - gateway
+  # cloudflared:
+  #   container_name: cloudflared
+  #   image: cloudflare/cloudflared:2025.11.1
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   networks:
+  #     - transcendence-internal
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - gateway
 
-  portainer:
-    container_name: portainer
-    image: portainer/portainer-ce:2.37.0
-    ports:
-      - "127.0.0.1:9443:9443"
-      - "127.0.0.1:9000:9000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - portainer_data:/data
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
+  # portainer:
+  #   container_name: portainer
+  #   image: portainer/portainer-ce:2.37.0
+  #   ports:
+  #     - "127.0.0.1:9443:9443"
+  #     - "127.0.0.1:9000:9000"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - portainer_data:/data
+  #   networks:
+  #     - transcendence-internal
+  #   restart: unless-stopped
 
-  prometheus:
-    container_name: prometheus
-    image: prom/prometheus:v3.0.1
-    ports:
-      - "127.0.0.1:9090:9090"
-    volumes:
-      - ./services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
+  # prometheus:
+  #   container_name: prometheus
+  #   image: prom/prometheus:v3.0.1
+  #   ports:
+  #     - "127.0.0.1:9090:9090"
+  #   volumes:
+  #     - ./services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+  #     - '--web.console.templates=/usr/share/prometheus/consoles'
+  #   networks:
+  #     - transcendence-internal
+  #   restart: unless-stopped
 
-  grafana:
-    container_name: grafana
-    image: grafana/grafana:11.4.0
-    ports:
-      - "127.0.0.1:3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./services/grafana/provisioning:/etc/grafana/provisioning:ro
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
-    depends_on:
-      - prometheus
+  # grafana:
+  #   container_name: grafana
+  #   image: grafana/grafana:11.4.0
+  #   ports:
+  #     - "127.0.0.1:3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./services/grafana/provisioning:/etc/grafana/provisioning:ro
+  #   networks:
+  #     - transcendence-internal
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - prometheus
 
 # ==============================================================================
 # VOLUMES

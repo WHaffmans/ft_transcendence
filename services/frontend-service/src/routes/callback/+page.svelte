@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
-  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN } from "$env/static/public";
+  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from "$env/static/public";
 
   let error = page.url.searchParams.get("error");
   let code = page.url.searchParams.get("code");
@@ -19,7 +19,7 @@
           grant_type: "authorization_code",
           code: code,
           code_verifier: code_verifier,
-          redirect_uri: `http://${PUBLIC_DOMAIN}/frontend/callback`,
+          redirect_uri: `${PUBLIC_OAUTH_REDIRECT_URI}`,
           client_id: `${PUBLIC_CLIENT_ID}`,
         }),
       });
@@ -44,7 +44,7 @@
       localStorage.setItem("access_token", tokenResponse.access_token);
       localStorage.setItem("refresh_token", tokenResponse.refresh_token);
 
-      window.location.href = `/frontend/`;
+      window.location.href = `/`;
     } else {
       error = "Failed to retrieve access token.";
     }

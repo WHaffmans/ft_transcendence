@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "flowbite-svelte";
   import { sha256 } from "js-sha256";
-  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN } from "$env/static/public";
+  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from "$env/static/public";
 
   const rString = (length: number) => {
     let result = "";
@@ -27,7 +27,7 @@
 
   const login = async () => {
     let client_id = `${PUBLIC_CLIENT_ID}`;
-    let redirect_uri = encodeURIComponent(`http://${PUBLIC_DOMAIN}/frontend/callback`);
+    let redirect_uri = encodeURIComponent(`${PUBLIC_OAUTH_REDIRECT_URI}`);
     let state = rString(40);
     sessionStorage.setItem("pkce_state", state);
 
