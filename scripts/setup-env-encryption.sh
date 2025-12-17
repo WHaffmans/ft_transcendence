@@ -52,7 +52,6 @@ echo "✓ Made scripts executable"
 # Step 4: Update root .gitignore
 if ! grep -q ".env.key" "$ROOT_DIR/.gitignore" 2>/dev/null; then
     echo "" >> "$ROOT_DIR/.gitignore"
-    echo "# Environment file encryption" >> "$ROOT_DIR/.gitignore"
     echo ".env.key" >> "$ROOT_DIR/.gitignore"
     echo "✓ Updated .gitignore"
 else
@@ -71,7 +70,6 @@ if [ -f "$PRE_COMMIT" ]; then
         echo "" >> "$PRE_COMMIT"
         echo "# Encrypt .env files before commit" >> "$PRE_COMMIT"
         echo "bash scripts/encrypt-env.sh" >> "$PRE_COMMIT"
-        echo "git add **/.env.encrypted 2>/dev/null || true" >> "$PRE_COMMIT"
         echo "✓ Added encryption to existing pre-commit hook"
     else
         echo "✓ Pre-commit hook already has encryption"
@@ -82,9 +80,6 @@ else
 
 # Encrypt .env files before commit
 bash scripts/encrypt-env.sh
-
-# Stage encrypted files
-git add **/.env.encrypted 2>/dev/null || true
 EOF
     chmod +x "$PRE_COMMIT"
     echo "✓ Created pre-commit hook"
