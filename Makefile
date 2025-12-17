@@ -15,11 +15,14 @@ build:
 rm: down
 	docker compose rm -f
 
-re: rm
+re: clean
 	docker compose build --no-cache
 	docker compose up -d
 
 logs:
 	docker compose logs -f
 
-.PHONY: all up down build
+clean:
+	docker compose down -v --remove-orphans
+
+.PHONY: all up down build rm re logs clean deps

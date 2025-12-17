@@ -126,7 +126,7 @@
             >
           </DropdownHeader>
           <DropdownItem
-            href="/frontend/profile"
+            href="/profile"
             class="text-gray-300 hover:bg-gray-600 hover:text-white"
           >
             My Profile
