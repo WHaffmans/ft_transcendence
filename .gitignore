@@ -22,3 +22,4 @@ frontend/src/**/*.js
 
 # Environment encryption key
 .env.key
+.env.bak
