@@ -2,7 +2,11 @@
   import { page } from "$app/state";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
-  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from "$env/static/public";
+  import {
+    PUBLIC_CLIENT_ID,
+    PUBLIC_DOMAIN,
+    PUBLIC_OAUTH_REDIRECT_URI,
+  } from "$env/static/public";
 
   let error = page.url.searchParams.get("error");
   let code = page.url.searchParams.get("code");
@@ -31,8 +35,8 @@
 
   onMount(async () => {
     if (!browser) return;
-    let session_state = sessionStorage.getItem("pkce_state");
-    let code_verifier = sessionStorage.getItem("pkce_code_verifier");
+    let session_state = localStorage.getItem("pkce_state");
+    let code_verifier = localStorage.getItem("pkce_code_verifier");
 
     if (!code || !state || state !== session_state || !code_verifier) {
       error = "Invalid PKCE parameters.";
@@ -44,7 +48,18 @@
       localStorage.setItem("access_token", tokenResponse.access_token);
       localStorage.setItem("refresh_token", tokenResponse.refresh_token);
 
-      window.location.href = `/`;
+      localStorage.removeItem("pkce_state");
+      localStorage.removeItem("pkce_code_verifier");
+
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: "LOGIN_SUCCESS" },
+          window.location.origin
+        );
+        window.close();
+      } else {
+        window.location.href = `/`;
+      }
     } else {
       error = "Failed to retrieve access token.";
     }
@@ -53,8 +68,10 @@
   });
 </script>
 
-<div class="callback-container bg-gray-900 min-h-screen flex flex-col items-center justify-center text-white">
-  <h1 class="text-4xl font-bold mb-4"> Loading... </h1>
+<div
+  class="callback-container bg-gray-900 min-h-screen flex flex-col items-center justify-center text-white"
+>
+  <h1 class="text-4xl font-bold mb-4">Loading...</h1>
   <br />
   {#if error}
     <p1 class="text-red-800 font-bold">Error: {error}</p1>
