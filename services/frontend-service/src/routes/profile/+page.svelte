@@ -15,17 +15,7 @@
     TableHead,
     TableHeadCell,
     Badge,
-    Dropdown,
-    DropdownItem,
-    DropdownHeader,
-    Navbar,
-    NavBrand,
-    NavHamburger,
-    NavLi,
-    DropdownDivider,
-    NavUl,
   } from "flowbite-svelte";
-  import { ChevronDownOutline } from "flowbite-svelte-icons";
 
   let user: User | null = null;
 
@@ -94,59 +84,6 @@
     });
   }
 </script>
-
-<header>
-  <Navbar class="bg-gray-800 border-gray-700">
-    <NavBrand href="/">
-      <span
-        class="self-center whitespace-nowrap text-xl font-semibold text-white"
-      >
-        ft_transcendence
-      </span>
-    </NavBrand>
-    <NavHamburger />
-    <NavUl class="md:flex md:items-center lg:items-center justify-center">
-      <!-- <NavLi href="/svelte" class="text-gray-300 hover:text-white">Home</NavLi> -->
-      <!-- <NavLi href="/svelte/profile" class="text-gray-300 hover:text-white"
-        >Profile</NavLi
-      > -->
-      <NavLi>
-        <button class="flex items-center gap-2 text-gray-300 hover:text-white">
-          <Avatar size="sm" class="cursor-pointer"
-            >{user?.name?.charAt(0).toUpperCase() ?? "U"}</Avatar
-          >
-          <span class="hidden md:inline">{user?.name}</span>
-          <ChevronDownOutline class="w-4 h-4" />
-        </button>
-        <Dropdown class="w-48 bg-gray-700 border-gray-600">
-          <DropdownHeader>
-            <span class="block text-sm text-white">{user?.name}</span>
-            <span class="block truncate text-sm font-medium text-gray-400"
-              >{user?.email}</span
-            >
-          </DropdownHeader>
-          <DropdownItem
-            href="/profile"
-            class="text-gray-300 hover:bg-gray-600 hover:text-white"
-          >
-            My Profile
-          </DropdownItem>
-          <DropdownItem
-            class="text-gray-300 hover:bg-gray-600 hover:text-white"
-          >
-            Settings
-          </DropdownItem>
-          <DropdownDivider class="border-gray-600" />
-          <DropdownItem
-            class="text-red-400 hover:bg-gray-600 hover:text-red-300"
-          >
-            Sign out
-          </DropdownItem>
-        </Dropdown>
-      </NavLi>
-    </NavUl>
-  </Navbar>
-</header>
 
 <div class="min-h-screen bg-gray-900 text-white p-8">
   <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -221,7 +158,7 @@
           <Avatar
             size="lg"
             class="mb-3 shadow-lg"
-            src={null}
+            src={user?.avatar || ""}
             alt={user?.name}
           />
           <h5 class="mb-1 text-xl font-medium text-white">

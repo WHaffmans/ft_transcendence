@@ -63,8 +63,8 @@
     } else {
       error = "Failed to retrieve access token.";
     }
-    sessionStorage.removeItem("pkce_state");
-    sessionStorage.removeItem("pkce_code_verifier");
+    // sessionStorage.removeItem("pkce_state"); // Removed as we use localStorage now
+    // sessionStorage.removeItem("pkce_code_verifier");
   });
 </script>
 
