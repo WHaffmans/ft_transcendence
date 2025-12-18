@@ -1,0 +1,23 @@
+{
+  "name": "rating-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "rating service for ft_transcendence",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^5.6.2",
+    "fastify-plugin": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.2",
+    "tsx": "^4.19.2"
+  }
+}
