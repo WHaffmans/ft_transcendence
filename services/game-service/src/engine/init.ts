@@ -1,17 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   init.ts                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: qbeukelm <qbeukelm@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/16 11:17:53 by qbeukelm          #+#    #+#             */
-/*   Updated: 2025/12/16 12:10:59 by qbeukelm         ###   ########.fr       */
+/*                                                        ::::::::            */
+/*   init.ts                                            :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
+/*   Updated: 2025/12/22 09:32:56 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { GameConfig } from "./config.ts";
-import { makeRng } from "./random_number_generator.ts";
+import { makeRng } from "./rng.ts";
+import { SpatialHash, createSpatialHash } from "./spatial_hash.ts";
 
 export type PlayerState = {
 	id: string;
@@ -33,6 +34,7 @@ export type GameState = {
 	rngState: number;
 	players: PlayerState[];
 	segments: Segment[];
+	spatial: SpatialHash;
 };
 
 export function initGame(config: GameConfig, seed: number, playerIds: string[]): GameState {
@@ -48,11 +50,14 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		gapTicksLeft: 0,
 	}));
 
+	const cellSize = config.playerRadius * 4;
+
 	return {
 		tick: 0,
 		seed,
 		rngState: rng.state,
 		players,
 		segments: [],
+		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
 	};
 }

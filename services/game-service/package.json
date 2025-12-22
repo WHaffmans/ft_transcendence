@@ -1,8 +1,11 @@
 {
-	"scripts": {
-		"simulate": "tsx src/cli/simulate.ts"
-	},
-	"devDependencies": {
-		"tsx": "^4.21.0"
-	}
+  "scripts": {
+    "simulate": "tsx src/cli/simulate.ts",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "vitest": "^2.0.0"
+  }
 }
