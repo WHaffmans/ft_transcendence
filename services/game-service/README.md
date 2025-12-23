@@ -59,9 +59,10 @@ This representation turns "where the player has been" into a geometric set (poly
 
 ### 1) Spatial hashing (uniform grid hashed into a table)
 
-![Spatial Hashing](documentation/Index%20Hashing.png)
-
-> **Figure 1:** Diagram of objects (A - J) mapped to object index
+<figure>
+  <img src="documentation/Index%20Hashing.png" alt="Spatial Hashing" />
+  <figcaption><b>Figure 1.</b> Diagram of objects (A–J) mapped to object index.</figcaption>
+</figure>
 
 We overlay a uniform grid with cell size $h$ and store each segment $T_i$ in all grid cells overlapped by its (extended) AABB. This is a classic spatial hashing approach: expected $O(1)$ insertion/lookup.
 
@@ -87,9 +88,10 @@ $$
 
 ### 2) DDA gird traversal
 
-![DDA Algorithm](documentation/DDA%20Algorithm.png)
-
-> Figure 2: Image showing line drawn with DDA algorithm
+<figure>
+  <img src="documentation/DDA%20Algorithm.png" alt="DDA Algorithm" />
+  <figcaption><b>Figure 2.</b> Image showing line drawn with DDA algorithm.</figcaption>
+</figure>
 
 To find nearby segments for a moving player, we enumerate which grid cells the swept segment $S$ passes through. We do this with an incremental **Digital Differential Analyzer (DDA)** traversal.
 
