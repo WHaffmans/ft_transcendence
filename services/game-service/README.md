@@ -64,6 +64,8 @@ This representation turns "where the player has been" into a geometric set (poly
   <figcaption><b>Figure 1.</b> Diagram of objects (A–J) mapped to object index.</figcaption>
 </figure>
 
+<br/>
+
 We overlay a uniform grid with cell size $h$ and store each segment $T_i$ in all grid cells overlapped by its (extended) AABB. This is a classic spatial hashing approach: expected $O(1)$ insertion/lookup.
 
 We do this using a bounding box **AABB (Axis Aligned Bounding Box)**:
@@ -92,6 +94,8 @@ $$
   <img src="documentation/DDA%20Algorithm.png" alt="DDA Algorithm" />
   <figcaption><b>Figure 2.</b> Image showing line drawn with DDA algorithm.</figcaption>
 </figure>
+
+<br/>
 
 To find nearby segments for a moving player, we enumerate which grid cells the swept segment $S$ passes through. We do this with an incremental **Digital Differential Analyzer (DDA)** traversal.
 
