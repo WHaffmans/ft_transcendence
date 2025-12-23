@@ -59,10 +59,9 @@ This representation turns "where the player has been" into a geometric set (poly
 
 ### 1) Spatial hashing (uniform grid hashed into a table)
 
-<figure>
-  <img src="documentation/Index%20Hashing.png" alt="Spatial Hashing" />
-  <figcaption><b>Figure 1.</b> Diagram of objects (A–J) mapped to object index.</figcaption>
-</figure>
+![Spatial Hashing](documentation/Index%20Hashing.png)
+
+> **Figure 1:** Diagram of objects (A - J) mapped to object index
 
 <br/>
 
@@ -90,10 +89,9 @@ $$
 
 ### 2) DDA gird traversal
 
-<figure>
-  <img src="documentation/DDA%20Algorithm.png" alt="DDA Algorithm" />
-  <figcaption><b>Figure 2.</b> Image showing line drawn with DDA algorithm.</figcaption>
-</figure>
+![DDA Algorithm](documentation/DDA%20Algorithm.png)
+
+> Figure 2: Image showing line drawn with DDA algorithm
 
 <br/>
 
