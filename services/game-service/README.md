@@ -15,9 +15,20 @@ npm i -D vitest
 
 ## Problem statement
 
-At each simulation tick, each player advances from a previous position ($x_{t-1}, y_{t-1} $) to a new position ($x_t, y_t$). we model this per-tick movement as a **swept segment**:
+At each simulation tick, each player advances from a previous position ($x_{t-1}, y_{t-1} $) to a new position ($x_t, y_t$). We model this per-tick movement as $S$, a **swept segment**:
 
-The game maintains a growing set of tail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the tail / player) of any trail segment:
+$$S = \overline{P_0P_1}$$
+
+$$P_0 = (x_{t - 1}, y_{t - 1})$$
+
+$$ P_1 = (x_t, y_t)$$
+
+The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the tail / player) of any trail segment:
+
+$$\min_i d(S, T_i) \le r$$
+
+- $d(.,.)$ the minimum Ewuclidean distance between two line segments.
+- $T_i$ the i-th trail segment.
 
 A naive approac checks $S$ against all trail segments each tick, yeilding $O(N)$ tests per player per tick (where $N$ is the number of existing trail segments). Because $N$ grows over time, this becomes the dominiant cost.
 
@@ -50,15 +61,24 @@ This representation turns "where the player has been" into a geometric set (poly
 
 ![Spatial Hashing](documentation/Index%20Hashing.png)
 
-> Figure 1: Diagram of objects (A - J) mapped to object index
+> **Figure 1:** Diagram of objects (A - J) mapped to object index
 
-We overlay a uniform grid with cell size $h$ and store each segment $T_i$ in all grid cells overlapped by its AABB. This is a classic spatial hashing approach: expected $O(1)$ insertion/lookup.
+We overlay a uniform grid with cell size $h$ and store each segment $T_i$ in all grid cells overlapped by its (extended) AABB. This is a classic spatial hashing approach: expected $O(1)$ insertion/lookup.
 
-We do this using a bounding box:
+We do this using a bounding box **AABB (Axis Aligned Bounding Box)**:
  
-- A bounging box is the smallest axis-alighend rectangle that contains a single trail segment.
-- We use it to figure out which gird cells a trail segemnt touches.
-- Add the segement's id into those cells' buckets in the spacial hash.
+- A bounging box is the smallest **axis-alighend** rectangle that contains a single trail segment.
+- We expand it by $r$ so that the broad-phase is conservative.
+- We map the box to grid cell coordinates and store the segment index in each overlapped vell bucket.
+
+Expanded AABB for each segment $\overline{AB}$:
+
+$$	minX = min(a_x, b_y) - r \\
+	maxX = max(a_x, b_y) + r \\
+	minX = min(a_x, b_y) - r \\
+	maxX = max(a_x, b_y) + r $$
+
+<br/>
 
 
 ### 2) DDA gird traversal
@@ -67,15 +87,22 @@ We do this using a bounding box:
 
 > Figure 2: Image showing line drawn with DDA algorithm
 
-To find nearby segments for a moving player, we must enumerate which grid cells the swept segment passes through. We do this with an incremental Digital Differential Analyzer (DDA)-style traversal.
+To find nearby segments for a moving player, we enumerate which grid cells the swept segment $S$ passes through. We do this with an incremental **Digital Differential Analyzer (DDA)** traversal.
 
 The algorithm steps cell-by-cell along the segment direction, generating a list of nearby candidates.
 
 Candidate generation procedure:
 
 1. Traverse all cells intersected by the swept segment $S$ using DDA.
-2. For each visited cell, query the spatial hash bucket and collect segment references.
+2. For each visited cell, query the spatial hash bucket and collect segment indices.
 3. Avoid narrow-phase duplicate tests with dedulplicate references.
+
+Broad-phase cost per tick (per-player):
+
+- $k$ visited cells $⇒ O(k)$
+- $m$ unique candidates returned $⇒ O(N)$
+
+Overall: $O(k + m)$, typically far smaller than O(N).
 
 ---
 <br/>
@@ -83,11 +110,26 @@ Candidate generation procedure:
 
 ## Narrow-phase: Exact distance test using squared distances
 
-For each candidate trail segment:
+For each candidate trail segment $T$:
 
-- compute the closest distance between your movement segment and that trail segment
-- compare it to your collision radius $r$.
+- compute the minimum distance between swept segments $S$ and $T$
+- compare it to collision radius $r$.
 
-We do it with squared distance (no square roots):
+We use **squared distance** (avoids square roots):
 
-- if `distanceSquared <= r*r` -> collision
+$$ d^2 (S, T) ≤ r^2 ⇒ collision$$
+
+Each candidate check is $O(1)$, so narrow-phase is $O(m)$.
+
+---
+<br/>
+
+
+## Summary
+
+Per tick, per player:
+
+- broad-phase: traverse nearby cells and fetch candidates $ ≈ O(k + m) $
+- narrow-phase: exact checks only on candidates $ ≈ O(m) $
+
+This keeps collision cost stable as the trail grows, instead of degrading with total segment count $N$.

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        ::::::::            */
-/*   collision.ts                                       :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2025/12/18 10:10:00 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2025/12/22 15:27:30 by quentinbeuk   ########   odam.nl         */
+/*                                                        :::      ::::::::   */
+/*   collision.ts                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: qbeukelm <qbeukelm@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/12/18 10:10:00 by quentinbeuk       #+#    #+#             */
+/*   Updated: 2025/12/23 11:21:35 by qbeukelm         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,10 @@ function clamp(v: number, lo: number, hi: number) {
  *	1. Project point P onto the infinite line through A->B using dot products.
  *	2. Clamp the projection to the segment (t in [0,1]).
  *	3. Compute distance between P and the closest point on the segment.
+ *
+ * Terms:
+ *  - Dot product: measure how much two vectors point in the same direction.
+ *  - Clamp: forcing a value to stay inside a range.
  */
 function distPointToSegSq(
   	px: number, py: number,
