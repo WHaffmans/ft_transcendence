@@ -21,16 +21,16 @@ $$S = \overline{P_0P_1}$$
 
 $$P_0 = (x_{t - 1}, y_{t - 1})$$
 
-$$ P_1 = (x_t, y_t)$$
+$$P_1 = (x_t, y_t)$$
 
 The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the tail / player) of any trail segment:
 
 $$\min_i d(S, T_i) \le r$$
 
-- $d(.,.)$ the minimum Ewuclidean distance between two line segments.
+- $d(.,.)$ the minimum Euclidean distance between two line segments.
 - $T_i$ the i-th trail segment.
 
-A naive approac checks $S$ against all trail segments each tick, yeilding $O(N)$ tests per player per tick (where $N$ is the number of existing trail segments). Because $N$ grows over time, this becomes the dominiant cost.
+A naive approah checks $S$ against all trail segments each tick, yeilding $O(N)$ tests per player per tick (where $N$ is the number of existing trail segments). Because $N$ grows over time, this becomes the dominiant cost.
 
 We will adopt a common two-stage approach used in real-time collision detection:
 
@@ -45,7 +45,7 @@ We will adopt a common two-stage approach used in real-time collision detection:
 
 Trail segments as persistent primitives. Each tick appends one tail segment per alive player (with possible gaps). Each stored tail segment is:
 
-- endpoints $ A = (a_x, a_y), B = (b_x, b_y)$
+- endpoints $A=(a_x, a_y), B=(b_x, b_y)$
 - an axis-aligend bounding box (AABB) around $\overline{AB}$, extended by radius $r$.
 - an element in a spacial index.
 
@@ -73,10 +73,14 @@ We do this using a bounding box **AABB (Axis Aligned Bounding Box)**:
 
 Expanded AABB for each segment $\overline{AB}$:
 
-$$	minX = min(a_x, b_y) - r \\
-	maxX = max(a_x, b_y) + r \\
-	minX = min(a_x, b_y) - r \\
-	maxX = max(a_x, b_y) + r $$
+$$
+\begin{aligned}
+\min X &= \min(a_x,b_x) - r, \\
+\max X &= \max(a_x,b_x) + r, \\
+\min Y &= \min(a_y,b_y) - r, \\
+\max Y &= \max(a_y,b_y) + r
+\end{aligned}
+$$
 
 <br/>
 
