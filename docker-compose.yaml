@@ -87,6 +87,27 @@ services:
       mariadb:
         condition: service_healthy
     restart: unless-stopped
+  game-service:
+    container_name: game-service
+    build:
+      context: ./services/game-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - PORT=3100
+      - HOST=0.0.0.0
+      - NODE_ENV=development
+      - USER_SERVICE_URL=http://user-service:3000
+      - AUTH_SERVICE_URL=http://auth-service:4000
+    volumes:
+      - ./services/game-service/src:/app/src
+      - ./services/game-service/package.json:/app/package.json:ro
+      - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
+    depends_on:
+      - user-service
+      - auth-service
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
