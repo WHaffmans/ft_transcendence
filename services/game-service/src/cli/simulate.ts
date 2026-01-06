@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   simulate.ts                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: qbeukelm <qbeukelm@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/16 12:21:32 by qbeukelm          #+#    #+#             */
-/*   Updated: 2025/12/16 12:38:52 by qbeukelm         ###   ########.fr       */
+/*                                                        ::::::::            */
+/*   simulate.ts                                        :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2025/12/16 12:21:32 by qbeukelm      #+#    #+#                 */
+/*   Updated: 2025/12/17 10:28:01 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ for (let t = 0; t < 1; t++) {
 
 console.log({
 	tick: state.tick,
-	segs: state.segments.length,
+	segs: state.segments,
 	p1: state.players.find(p => p.id === "p1"),
 	p2: state.players.find(p => p.id === "p2"),
 });
