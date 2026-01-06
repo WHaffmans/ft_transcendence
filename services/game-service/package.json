@@ -1,5 +1,6 @@
 {
   "scripts": {
+	"dev": "tsx watch src/index.ts",
     "simulate": "tsx src/cli/simulate.ts",
     "test": "vitest",
     "test:run": "vitest run"

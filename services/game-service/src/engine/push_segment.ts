@@ -39,6 +39,5 @@ export function pushOrExtendSegment(
 	}
 
 	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId });
-	const newIndex = segments.length - 1;
 	return { kind: "extended", index: lastIndex, x1: prevX, y1: prevY, x2: x, y2: y};
 }
