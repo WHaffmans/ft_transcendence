@@ -5,10 +5,53 @@
 ```bash
 npm i -D tsx
 npm i -D vitest
+
+npm i ws
+npm i -D @types/ws
 ```
 
 ---
 <br/>
+
+# Rooms
+
+## Manual testing
+
+Install wscat globally
+
+```bash
+npm i -g wscat
+```
+
+Run game-service
+
+```bash
+cd services/game-service
+npm run dev
+```
+
+In a new terminal
+
+```bash
+wscat -c ws://localhost:3002/internal
+```
+
+Send `create_room`:
+
+```json
+{"type":"create_room","roomId":"r1","seed":1,"config":{"tickHz":30},"players":[{"playerId":"p1"},{"playerId":"p2"}]}
+```
+
+Send inputs:
+
+```json
+{"type":"input","roomId":"r1","playerId":"p1","turn":-1}
+{"type":"input","roomId":"r1","playerId":"p2","turn":1}
+```
+
+---
+<br/>
+
 
 
 # Collision Detection

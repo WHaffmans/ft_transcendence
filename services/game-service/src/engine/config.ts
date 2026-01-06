@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2025/12/17 10:46:23 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/06 16:41:16 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ export type GameConfig = {
 
 // Set default values
 export const DEFAULT_CONFIG: GameConfig = {
-	tickRate: 60,
+	tickRate: 1,
 
 	arenaWidth: 1200,
 	arenaHeight: 800,
