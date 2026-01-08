@@ -33,3 +33,7 @@ metrics:
     addEntryPointsLabels: true
     addRoutersLabels: true
     addServicesLabels: true
+
+accessLog: {}
+log:
+  level: DEBUG

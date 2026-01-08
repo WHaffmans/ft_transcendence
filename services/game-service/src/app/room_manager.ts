@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/06 16:32:58 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/07 09:30:28 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ export class RoomManager {
 		if (!room)
 			throw new Error('Unknown roomId: ${roomId}');
 		room.subscribers.add(ws);
-	} 
+	}
 
 	unsubscribeAll(ws: WebSocket) {
 		for (const room of this.rooms.values())
@@ -138,7 +138,6 @@ export class RoomManager {
 		this.rooms.delete(roomId);
 	}
 
-
 	/**
 	 * Start game loop
 	 */
@@ -162,7 +161,8 @@ export class RoomManager {
 				segments: (room.state as any).segments,
 			};
 
-			for (const ws of room.subscribers) safeSend(ws, msg);
+			for (const ws of room.subscribers)
+				safeSend(ws, msg);
 
 		}, dtMs);
 	}
