@@ -20,6 +20,7 @@ export type PlayerState = {
 	angle: number;
 	alive: boolean;
 	gapTicksLeft: number;		// Leave whole in trail
+	tailSegIndex: number;
 };
 
 export type Segment = {

@@ -12,16 +12,29 @@
 
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
+import type { GameConfig } from "../engine/config";
+import { DEFAULT_CONFIG } from "../engine/config";
 import { RoomManager } from "../app/room_manager";
 import type { TurnInput } from "../engine/step";
 
 type PublicMsg =
+	| {
+		type: "create_room";
+		roomId: string;
+		seed: number;
+		config?: Partial<GameConfig>;
+		players: { playerId: string }[];
+	}
 	| { type: "join_room"; roomId: string; playerId: string }
 	| { type: "input"; turn: TurnInput };
 
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
 		ws.send(JSON.stringify(obj));
+}
+
+function assertNever(x: never): never {
+	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
 }
 
 export function startPublicWsServer(
@@ -35,29 +48,92 @@ export function startPublicWsServer(
 		let boundPlayerId: string | null = null;
 
 		ws.on("message", (buf) => {
+			let msg: PublicMsg;
+
+			// Parse JSON
 			try {
-				const msg = JSON.parse(buf.toString()) as PublicMsg;
+				msg = JSON.parse(buf.toString()) as PublicMsg;
+			} catch {
+				safeSend(ws, { type: "error", message: "Invalid JSON" });
+				return;
+			}
 
-				if (msg.type === "join_room") {
-					boundRoomId = msg.roomId;
-					boundPlayerId = msg.playerId;
+			// Handle messages
+			try {
+				switch (msg.type) {
+					case "create_room": {
+						
+						// Check already joined
+						if (boundRoomId || boundPlayerId) {
+							throw new Error("Already joined a room; open a new socket to create a new room");
+						}
 
-					rooms.subscribe(boundRoomId, ws);
-					safeSend(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId });
-					return;
+						const playerIds = msg.players.map((p) => p.playerId);
+						if (playerIds.length === 0) {
+							throw new Error("create_room: players must not be empty");
+						}
+
+						const config: GameConfig = {
+							...DEFAULT_CONFIG,
+							...(msg.config ?? {}),
+						};
+
+						for (const [k, v] of Object.entries(config)) {
+							if (typeof v === "number" && !Number.isFinite(v)) {
+								throw new Error(`Invalid config: ${k} is ${v}`);
+							}
+						}
+
+						rooms.createRoom({
+							roomId: msg.roomId,
+							seed: msg.seed,
+							config,
+							playerIds,
+						});
+
+						// Subscribe this socket
+						rooms.subscribe(msg.roomId, ws);
+
+						safeSend(ws, { type: "room_created", roomId: msg.roomId });
+						return;
+					}
+
+					case "join_room": {
+						boundRoomId = msg.roomId;
+						boundPlayerId = msg.playerId;
+
+						rooms.subscribe(boundRoomId, ws);
+
+						safeSend(ws, {
+							type: "joined",
+							roomId: boundRoomId,
+							playerId: boundPlayerId,
+						});
+						return;
+					}
+
+					case "input": {
+						if (!boundRoomId || !boundPlayerId) {
+							throw new Error("Must join_room first");
+						}
+
+						rooms.pushInput({
+							roomId: boundRoomId,
+							playerId: boundPlayerId,
+							turn: msg.turn,
+						});
+						return;
+					}
+
+					default:
+						assertNever(msg);
 				}
-
-				if (msg.type === "input") {
-					if (!boundRoomId || !boundPlayerId)
-						throw new Error("Must join_room first");
-
-					rooms.pushInput({ roomId: boundRoomId, playerId: boundPlayerId, turn: msg.turn });
-					return;
-				}
-
-				throw new Error("Unknown message type");
 			} catch (e) {
-				safeSend(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
+				safeSend(ws, {
+					type: "error",
+					message: e instanceof Error ? e.message : String(e),
+				});
+				return;
 			}
 		});
 

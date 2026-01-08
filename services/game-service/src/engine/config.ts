@@ -34,12 +34,12 @@ export type GameConfig = {
 
 // Set default values
 export const DEFAULT_CONFIG: GameConfig = {
-	tickRate: 1,
+	tickRate: 10,
 
 	arenaWidth: 1200,
 	arenaHeight: 800,
 
-	speed: 4.0,
+	speed: 10.0,
 	turnRate: 0.08,
 	playerRadius: 4,
 

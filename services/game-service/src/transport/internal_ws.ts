@@ -71,7 +71,7 @@ export function startInternalWsServer(opts: { port: number; path?: string }, roo
 
 					// Create
           			case "create_room": {
-            			const playerIds = msg.players.map((p) => p.playerId);
+ 						const playerIds = msg.players.map((p) => p.playerId);
 
 						const config: GameConfig = {
 							...DEFAULT_CONFIG,

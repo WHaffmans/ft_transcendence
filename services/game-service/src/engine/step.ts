@@ -55,23 +55,35 @@ export function step(
 		}
 		
 		// Collision
-		if (p.gapTicksLeft === 0)
-		{
-			const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, config.playerRadius, 1);
+		const selfIgnore = new Set<number>([p.tailSegIndex]);
+		const effectiveRadius = config.playerRadius * 2;
+		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
 
-			if (hit) {
-				p.alive = false;
-				continue;
-			}
+		console.log(`COLLISION: ${hit}`);
+
+		if (hit) {
+			p.alive = false;
+			continue;
 		}
-		
+
 		// Gap handling
 		if (p.gapTicksLeft > 0) {
 			p.gapTicksLeft -= 1;
 		} else {
 			const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn);
+			
+			const segAtIndex = next.segments[delta.index];
+
+			console.log("[INSERT]", {
+				player: p.id,
+				deltaIndex: delta.index,
+				delta: { x1: delta.x1, y1: delta.y1, x2: delta.x2, y2: delta.y2 },
+				segAtIndex: segAtIndex ? { ownerId: segAtIndex.ownerId, x1: segAtIndex.x1, y1: segAtIndex.y1, x2: segAtIndex.x2, y2: segAtIndex.y2 } : null,
+				segmentsLen: next.segments.length,
+			});
 
 			// Add to spacial hash
+			p.tailSegIndex = delta.index;
 			insertSegmentDDA(next.spatial, delta.x1, delta.y1, delta.x2, delta.y2, delta.index);
 		}
 	}

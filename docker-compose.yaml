@@ -90,6 +90,9 @@ services:
 
   game-service:
     container_name: game-service
+    ports:
+      - "3002:3002"   # internal
+      - "3003:3003"   # external
     build:
       context: ./services/game-service
       dockerfile: Dockerfile.dev

@@ -131,6 +131,12 @@ function segmentsIntersect(a: Segment, b: Segment): boolean {
   	return (false);
 }
 
+function worldToCell(hash: SpatialHash, x: number, y: number) {
+  	const cx = Math.floor(x / hash.cellSize);
+  	const cy = Math.floor(y / hash.cellSize);
+  	return { cx, cy, key: `${cx},${cy}` };
+}
+
 /**
  * Collide if the swept path comes within radius of any tail segment
  */
@@ -162,7 +168,7 @@ export function checkCollisionThisTick(
 	x: number,
 	y: number,
 	radius: number,
-	ignoreLastSegmentsOfSelf = 1
+	ignoreLastSegmentsOfSelf: Set<number>,
 ): boolean {
 
 	// The swept path for this tick
@@ -181,18 +187,24 @@ export function checkCollisionThisTick(
 
 	// Narrow-phase exact checks on candidates only
 	for (const idx of candidates) {
-		const s = segments[idx];
+		if (idx == null || idx < 0 || idx >= segments.length) continue;
 
-		if (idx == null)
-			continue;
-		 
-		if (s.ownerId === ownerId) {
-			if (idx >= segments.length - ignoreLastSegmentsOfSelf)
-				continue;
-		}
+		if (ignoreLastSegmentsOfSelf.has(idx)) continue;
 
 		// True collision if the minimal distance between segments is within radius
-    	if (distSegToSegSq(move, s) <= r2)
+		const s = segments[idx];
+		const d2 = distSegToSegSq(move, s);
+
+		const moveCell1 = worldToCell(hash, move.x1, move.y1);
+		const moveCell2 = worldToCell(hash, move.x2, move.y2);
+		const candCell1 = worldToCell(hash, s.x1, s.y1);
+		const candCell2 = worldToCell(hash, s.x2, s.y2);
+
+		console.log("MOVE", move);
+		console.log("CELL move", moveCell1, moveCell2, "cand", candCell1, candCell2);
+		console.log("CAND", { idx, owner: s.ownerId, x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, d2, r2: r2 });
+
+		if (d2 <= r2)
 			return (true);
 	}
 
