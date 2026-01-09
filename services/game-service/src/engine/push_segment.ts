@@ -15,6 +15,7 @@ export function pushOrExtendSegment(
 	x: number,
 	y: number,
 	turn: TurnInput,
+	isGap: boolean,
 	color: ColorRGBA,
 	posEpsilon = 1e-9,
 ): SegmentDelta {
@@ -25,8 +26,10 @@ export function pushOrExtendSegment(
 
 	const canExtend =
 		!isTurning &&
+		!isGap &&
 		last != null &&
 		last.ownerId === ownerId &&
+		last.isGap === isGap &&						// Don't extend across boundru
 		Math.abs(last.x2 - prevX) <= posEpsilon &&
 		Math.abs(last.y2 - prevY) <= posEpsilon;
 
@@ -47,7 +50,7 @@ export function pushOrExtendSegment(
 		};
 	}
 
-	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color });
+	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color, isGap });
 
 	const newIndex = segments.length - 1;
 

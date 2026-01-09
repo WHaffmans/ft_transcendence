@@ -36,6 +36,7 @@ export type Segment = {
 	x2: number; y2: number;		// end point   (new head position)
 	ownerId: string;			// which player created it
 	color: ColorRGBA;
+	isGap: boolean,
 };
 
 export type GameState = {

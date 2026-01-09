@@ -43,9 +43,9 @@ export const DEFAULT_CONFIG: GameConfig = {
 	turnRate: 0.2,
 	playerRadius: 4,
 
-	gapChance: 0.007,
-	gapMinTicks: 10,
-	gapMaxTicks: 35,
+	gapChance: 0.03,
+	gapMinTicks: 5,
+	gapMaxTicks: 15,
 
 	spawnPadding: 60,
 	spawnAngle: 0.35,

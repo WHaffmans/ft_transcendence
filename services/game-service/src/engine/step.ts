@@ -19,6 +19,11 @@ import { insertSegmentDDA } from "./spatial_hash.ts";
 
 export type TurnInput = -1 | 0 | 1;
 
+function randIntInclusive(rng: any, min: number, max: number) {
+	const t = rng.nextFloat();
+	return min + Math.floor(t * (max - min + 1));
+}
+
 export function step(
 	state: GameState,
 	inputsById: Record<string, TurnInput>,
@@ -67,27 +72,27 @@ export function step(
 		}
 
 		// Gap handling
-		if (p.gapTicksLeft > 0) {
+		if (p.gapTicksLeft <= 0) {
+			if (rng.nextFloat() < config.gapChance) {
+				p.gapTicksLeft = randIntInclusive(rng, config.gapMinTicks, config.gapMaxTicks);
+			}
+  		}
+
+		const isGap = p.gapTicksLeft > 0;
+
+		if (isGap) {
 			p.gapTicksLeft -= 1;
-		} else {
-			const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn, p.color);
-			
-			const segAtIndex = next.segments[delta.index];
+		}
 
-			console.log("[INSERT]", {
-				player: p.id,
-				deltaIndex: delta.index,
-				delta: { x1: delta.x1, y1: delta.y1, x2: delta.x2, y2: delta.y2 },
-				segAtIndex: segAtIndex ? { ownerId: segAtIndex.ownerId, x1: segAtIndex.x1, y1: segAtIndex.y1, x2: segAtIndex.x2, y2: segAtIndex.y2 } : null,
-				segmentsLen: next.segments.length,
-			});
+		const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn, isGap, p.color);
 
-			// Add to spacial hash
+		// Add to spacial hash
+		if (!isGap) {
 			p.tailSegIndex = delta.index;
 			insertSegmentDDA(next.spatial, delta.x1, delta.y1, delta.x2, delta.y2, delta.index);
 		}
 	}
 
 	next.rngState = rng.state;
-	return next;
+	return (next);
 }

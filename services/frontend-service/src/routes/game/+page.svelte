@@ -43,7 +43,7 @@
 	}
 
 	function rgbaToColor(c: ColorRGBA): string {
-		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
+		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
 	}
 
 	function draw() {
@@ -67,6 +67,8 @@
 		ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
 
 		for (const s of latestState.segments ?? []) {
+			if (s.isGap) continue;
+
 			const x0 = s.x1;
 			const y0 = s.y1;
 			const x1 = s.x2;
@@ -76,6 +78,10 @@
 
 			ctx.strokeStyle = rgbaToColor(s.color);
 
+			ctx.lineWidth = 4;
+			ctx.lineCap = "round";
+			// ctx.lineJoin = "round";
+			
 			ctx.beginPath();
 			ctx.moveTo(x0, y0);
 			ctx.lineTo(x1, y1);
@@ -95,8 +101,6 @@
 
 			if (!p.alive) {
 				ctx.strokeStyle = rgbaToColor(p.color);
-				ctx.lineWidth = 4;
-				ctx.lineCap = "round";
 
 				ctx.beginPath();
 				ctx.moveTo(p.x - r, p.y - r);
