@@ -1,6 +1,7 @@
 
 import type { Segment } from "./init.ts";
 import type { TurnInput } from "./step.ts";
+import type { ColorRGBA } from "./init.ts";
 
 type SegmentDelta =
   | { kind: "added"; index: number; x1: number; y1: number; x2: number; y2: number }
@@ -14,7 +15,8 @@ export function pushOrExtendSegment(
 	x: number,
 	y: number,
 	turn: TurnInput,
-	posEpsilon = 1e-9
+	color: ColorRGBA,
+	posEpsilon = 1e-9,
 ): SegmentDelta {
 
 	const isTurning = turn !== 0;
@@ -45,7 +47,7 @@ export function pushOrExtendSegment(
 		};
 	}
 
-	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId });
+	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color });
 
 	const newIndex = segments.length - 1;
 

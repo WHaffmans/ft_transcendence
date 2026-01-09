@@ -3,6 +3,13 @@
 
 	type TurnInput = -1 | 0 | 1;
 
+	type ColorRGBA = {
+		r: number;
+		g: number;
+		b: number;
+		a: number;
+	};
+
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
 
@@ -35,6 +42,10 @@
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 	}
 
+	function rgbaToColor(c: ColorRGBA): string {
+		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
+	}
+
 	function draw() {
 		if (!ctx) return;
 
@@ -55,10 +66,6 @@
 		ctx.fillText(`tick: ${latestState.tick}`, 12, 20);
 		ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
 
-		ctx.strokeStyle = "rgba(255,255,255,0.8)";
-		ctx.lineWidth = 4;
-		ctx.beginPath();
-
 		for (const s of latestState.segments ?? []) {
 			const x0 = s.x1;
 			const y0 = s.y1;
@@ -67,19 +74,37 @@
 
 			if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
 
+			ctx.strokeStyle = rgbaToColor(s.color);
+
+			ctx.beginPath();
 			ctx.moveTo(x0, y0);
 			ctx.lineTo(x1, y1);
+			ctx.stroke();
 		}
 
-		ctx.stroke();
-
 		// players
+		const r = 6;
+
 		for (const p of latestState.players ?? []) {
-			ctx.fillStyle =
-				p.alive === false ? "rgba(255,80,80,0.9)" : "rgba(80,200,255,0.9)";
+			ctx.fillStyle = p.alive
+				? rgbaToColor(p.color)
+				: "rgba(10,10,10,0.5)";
 			ctx.beginPath();
-			ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+			ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
 			ctx.fill();
+
+			if (!p.alive) {
+				ctx.strokeStyle = rgbaToColor(p.color);
+				ctx.lineWidth = 4;
+				ctx.lineCap = "round";
+
+				ctx.beginPath();
+				ctx.moveTo(p.x - r, p.y - r);
+				ctx.lineTo(p.x + r, p.y + r);
+				ctx.moveTo(p.x - r, p.y + r);
+				ctx.lineTo(p.x + r, p.y - r);
+				ctx.stroke();
+			}
 		}
 	}
 

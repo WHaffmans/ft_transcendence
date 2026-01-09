@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/01/06 16:41:16 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/09 10:03:19 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG: GameConfig = {
 	arenaHeight: 800,
 
 	speed: 10.0,
-	turnRate: 0.08,
+	turnRate: 0.2,
 	playerRadius: 4,
 
 	gapChance: 0.007,

@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2025/12/22 09:31:10 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/09 09:41:42 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ export function step(
 		if (p.gapTicksLeft > 0) {
 			p.gapTicksLeft -= 1;
 		} else {
-			const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn);
+			const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn, p.color);
 			
 			const segAtIndex = next.segments[delta.index];
 

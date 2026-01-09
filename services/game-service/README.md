@@ -1,5 +1,7 @@
 # Game Service
 
+`http://localhost:5173/game`
+
 ### Setup
 
 ```bash
