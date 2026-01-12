@@ -96,7 +96,7 @@ services:
     build:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
-    additional_contexts:
+      additional_contexts:
         protocol: ./packages/protocol
     environment:
       - PORT=3100
