@@ -1,5 +1,5 @@
 {
-  "name": "@ft/protocol",
+  "name": "@ft/game-ws-protocol",
   "version": "0.0.0",
   "type": "module",
   "main": "dist/index.js",
