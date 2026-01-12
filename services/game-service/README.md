@@ -1,14 +1,104 @@
 # Game Service
 
+`http://localhost:5173/game`
+
 ### Setup
 
 ```bash
 npm i -D tsx
 npm i -D vitest
+
+npm i ws
+npm i -D @types/ws
 ```
 
 ---
 <br/>
+
+# Rooms
+
+## Manual testing
+
+Install wscat globally
+
+```bash
+npm i -g wscat
+```
+
+Run game-service
+
+```bash
+cd services/game-service
+npm run dev
+```
+
+In a new terminal
+
+```bash
+wscat -c ws://localhost:3002/internal
+```
+
+Send `create_room`:
+
+```json
+{"type":"create_room","roomId":"r1","seed":1,"config":{"tickHz":30},"players":[{"playerId":"p1"},{"playerId":"p2"}]}
+```
+
+Send inputs:
+
+```json
+{"type":"input","roomId":"r1","playerId":"p1","turn":-1}
+{"type":"input","roomId":"r1","playerId":"p2","turn":1}
+```
+
+---
+<br/>
+
+
+## Testing in Browser
+
+Open JavaScript terminal
+
+Open the web socket
+
+```JavaScript
+const ws = new WebSocket("ws://localhost:3003/ws");
+
+ws.onopen = () => console.log("WS open");
+ws.onmessage = (e) => console.log("WS msg:", e.data);
+ws.onerror = (e) => console.log("WS error:", e);
+ws.onclose = (e) => console.log("WS close:", e.code, e.reason);
+
+const send = (obj) => ws.send(JSON.stringify(obj));
+```
+
+Send `create_room`
+
+```JavaScript
+send({
+  type: "create_room",
+  roomId: "r1",
+  seed: 1,
+  config: {}, // optional overrides
+  players: [{ playerId: "p1" }, { playerId: "p2" }]
+});
+```
+
+Join the room
+
+```JavaScript
+send({ type: "join_room", roomId: "r1", playerId: "p1" });
+```
+
+Send input
+
+```JavaScript
+send({ type: "input", turn: -1 });
+```
+
+---
+<br/>
+
 
 
 # Collision Detection

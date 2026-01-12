@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2025/12/22 09:31:10 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/09 09:41:42 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,11 @@ import { checkCollisionThisTick } from "./collision.ts"
 import { insertSegmentDDA } from "./spatial_hash.ts";
 
 export type TurnInput = -1 | 0 | 1;
+
+function randIntInclusive(rng: any, min: number, max: number) {
+	const t = rng.nextFloat();
+	return min + Math.floor(t * (max - min + 1));
+}
 
 export function step(
 	state: GameState,
@@ -55,27 +60,39 @@ export function step(
 		}
 		
 		// Collision
-		if (p.gapTicksLeft === 0)
-		{
-			const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, config.playerRadius, 1);
+		const selfIgnore = new Set<number>([p.tailSegIndex]);
+		const effectiveRadius = config.playerRadius * 2;
+		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
 
-			if (hit) {
-				p.alive = false;
-				continue;
-			}
+		console.log(`COLLISION: ${hit}`);
+
+		if (hit) {
+			p.alive = false;
+			continue;
 		}
-		
-		// Gap handling
-		if (p.gapTicksLeft > 0) {
-			p.gapTicksLeft -= 1;
-		} else {
-			const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn);
 
-			// Add to spacial hash
+		// Gap handling
+		if (p.gapTicksLeft <= 0) {
+			if (rng.nextFloat() < config.gapChance) {
+				p.gapTicksLeft = randIntInclusive(rng, config.gapMinTicks, config.gapMaxTicks);
+			}
+  		}
+
+		const isGap = p.gapTicksLeft > 0;
+
+		if (isGap) {
+			p.gapTicksLeft -= 1;
+		}
+
+		const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn, isGap, p.color);
+
+		// Add to spacial hash
+		if (!isGap) {
+			p.tailSegIndex = delta.index;
 			insertSegmentDDA(next.spatial, delta.x1, delta.y1, delta.x2, delta.y2, delta.index);
 		}
 	}
 
 	next.rngState = rng.state;
-	return next;
+	return (next);
 }

@@ -35,8 +35,14 @@ http:
         - web
         - websecure
       middlewares:
-        - auth-service-strip
+        - auth-service-strip]
 
+    game-ws:
+      rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
+      service: game-service
+      priority: 50
+      entryPoints: [websecure, web]
+      tls: {}
 
     prometheus:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
@@ -76,6 +82,11 @@ http:
       loadBalancer:
         servers:
           - url: "http://auth-service:4000"
+
+    game-service:
+      loadBalancer:
+        servers:
+          - url: "http://game-service:3003"
 
     prometheus:
       loadBalancer:
