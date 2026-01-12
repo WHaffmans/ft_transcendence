@@ -18,10 +18,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory(1)->create([
-            'name' => 'Quinten',
-            'email' => 'quinten@bumbal.eu',
-        ]);
+        // User::factory(1)->create([
+        //     'name' => 'Quinten',
+        //     'email' => 'quinten@bumbal.eu',
+        // ]);
 
         if (!app()->environment('local')) {
             return;
@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
         $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/callback');
 
 
-        DB::table('oauth_clients')->insert([
+        DB::table('oauth_clients')->upsert([
             'id' => $clientId,
             'owner_id' => null,
             'owner_type' => null,
@@ -43,6 +43,6 @@ class DatabaseSeeder extends Seeder
             'revoked' => false,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ], ['id']);
     }
 }
