@@ -1,4 +1,18 @@
 {
+  "name": "ft_transcendence",
+  "private": true,
+  "workspaces": ["services/*", "packages/*"],
+
+  "scripts": {
+    "prepare": "husky",
+    "lint": "npx eslint ./services/**/*.ts",
+    "encrypt-env": "bash scripts/encrypt-env.sh",
+    "decrypt-env": "bash scripts/decrypt-env.sh",
+    "setup-env": "bash scripts/setup-env-encryption.sh"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
@@ -12,15 +26,5 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.16"
-  },
-  "scripts": {
-    "prepare": "husky",
-    "lint": "npx eslint ./services/**/*.ts",
-    "encrypt-env": "bash scripts/encrypt-env.sh",
-    "decrypt-env": "bash scripts/decrypt-env.sh",
-    "setup-env": "bash scripts/setup-env-encryption.sh"
-  },
-  "dependencies": {
-    "ws": "^8.19.0"
   }
 }
