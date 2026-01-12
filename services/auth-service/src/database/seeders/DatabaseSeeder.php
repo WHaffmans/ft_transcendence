@@ -6,6 +6,7 @@ use App\Models\User;
 use DB;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,16 +17,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory(1)->create([
-        //     'name' => 'Quinten',
-        //     'email' => 'quinten@bumbal.eu',
-        // ]);
-
         if (!app()->environment('local')) {
             return;
         }
+
+        User::factory(5)->state(fn() => [
+            'name' => fake()->name(),
+            'email' => fake()->email(),
+        ])->create();
 
         $clientId = env('OAUTH_DEV_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
         $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/callback');
@@ -44,5 +43,9 @@ class DatabaseSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ], ['id']);
+
+        $this->call([
+            GameSeeder::class,
+        ]);
     }
 }
