@@ -35,7 +35,7 @@ http:
         - web
         - websecure
       middlewares:
-        - auth-service-strip]
+        - auth-service-strip
 
     game-ws:
       rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
