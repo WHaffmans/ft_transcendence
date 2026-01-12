@@ -30,6 +30,7 @@ class GameController extends Controller
      */
     public function show(Game $game)
     {
+        $game = $game->load('users');
         return response()->json($game);
     }
 

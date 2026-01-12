@@ -2,6 +2,11 @@
 
 return [
 
+    'rating' => [
+        'default_mu' => env('RATING_DEFAULT_MU', 25.0),
+        'default_sigma' => env('RATING_DEFAULT_SIGMA', 8.333),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Name
