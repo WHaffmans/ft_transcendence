@@ -96,6 +96,8 @@ services:
     build:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
+      additional_contexts:
+        protocol: ./packages/protocol
     environment:
       - PORT=3100
       - HOST=0.0.0.0
@@ -108,6 +110,7 @@ services:
       - ./services/game-service/src:/app/src
       - ./services/game-service/package.json:/app/package.json:ro
       - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./packages/protocol:/app/protocol
     networks:
       - transcendence-internal
     restart: unless-stopped
