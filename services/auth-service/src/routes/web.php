@@ -16,10 +16,6 @@ Route::group([], function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-});
-
 Route::get('/redirect/{provider}', function ($provider) {
     return Socialite::driver($provider)->redirect();
 })->name('social.redirect');
