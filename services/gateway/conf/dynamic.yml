@@ -1,13 +1,5 @@
 http:
   routers:
-    frontend-test:
-      rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`) && PathPrefix(`/frontend`)"
-      service: frontend-test
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-
     user-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/user-service`)"
       service: user-service
@@ -63,11 +55,6 @@ http:
         - websecure
 
   services:
-    frontend-test:
-      loadBalancer:
-        servers:
-          - url: "http://frontend-test:8080"
-
     user-service:
       loadBalancer:
         servers:

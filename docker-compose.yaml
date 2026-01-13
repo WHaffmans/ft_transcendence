@@ -2,20 +2,6 @@ services:
   # ============================================================================
   # FRONTEND
   # ============================================================================
-  frontend-test:
-    container_name: frontend-test
-    build:
-      context: ./services/frontend-test
-      dockerfile: Dockerfile.dev
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - ./services/frontend-test/src:/app/src
-      - ./services/frontend-test/package.json:/app/package.json:ro
-      - ./services/frontend-test/tsconfig.json:/app/tsconfig.json:ro
-    networks:
-      - transcendence-internal
-
   frontend-service:
     container_name: frontend-service
     build:
