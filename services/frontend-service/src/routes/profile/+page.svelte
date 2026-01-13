@@ -63,7 +63,7 @@
   ];
 
   const fetchUser = async () => {
-    const response = await fetch("/auth/api/user", {
+    const response = await fetch("/api/user", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

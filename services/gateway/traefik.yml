@@ -27,13 +27,4 @@ tls:
     - certFile: /certs/localhost-cert.pem
       keyFile: /certs/localhost-key.pem
 
-metrics:
-  prometheus:
-    entryPoint: metrics
-    addEntryPointsLabels: true
-    addRoutersLabels: true
-    addServicesLabels: true
 
-accessLog: {}
-log:
-  level: DEBUG

@@ -35,7 +35,7 @@ Must be one of the following:
 ### Examples
 
 ```
-feat(user-service): add login endpoint #42
+feat(frontend-service): add login endpoint #42
 fix(frontend): resolve layout issue on mobile #12
 docs: update contributing guidelines #7
 ```

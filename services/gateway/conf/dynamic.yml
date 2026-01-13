@@ -1,24 +1,5 @@
 http:
   routers:
-    frontend-test:
-      rule: "Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`) && PathPrefix(`/frontend`)"
-      service: frontend-test
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-
-    user-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/user-service`)"
-      service: user-service
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-      middlewares:
-        - user-service-strip
-        - auth-forward
-
     frontend-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`))"
       service: frontend-service
@@ -29,13 +10,22 @@ http:
 
     auth-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
-      service: auth-service
+      service: backend-service
       priority: 10
       entryPoints:
         - web
         - websecure
       middlewares:
-        - auth-service-strip]
+        - backend-service-strip
+
+    backend-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/api`)"
+      service: backend-service
+      priority: 10
+      entryPoints:
+        - web
+        - websecure
+
 
     game-ws:
       rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
@@ -44,79 +34,31 @@ http:
       entryPoints: [websecure, web]
       tls: {}
 
-    prometheus:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/prometheus`)"
-      service: prometheus
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-      middlewares:
-        - prometheus-strip
-
-    grafana:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/grafana`)"
-      service: grafana
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-
   services:
-    frontend-test:
-      loadBalancer:
-        servers:
-          - url: "http://frontend-test:8080"
-
-    user-service:
-      loadBalancer:
-        servers:
-          - url: "http://user-service:3000"
-
     frontend-service:
       loadBalancer:
         servers:
           - url: "http://frontend-service:5173"
 
-    auth-service:
+    backend-service:
       loadBalancer:
         servers:
-          - url: "http://auth-service:4000"
+          - url: "http://backend-service:4000"
 
     game-service:
       loadBalancer:
         servers:
           - url: "http://game-service:3003"
 
-    prometheus:
-      loadBalancer:
-        servers:
-          - url: "http://prometheus:9090"
-
-    grafana:
-      loadBalancer:
-        servers:
-          - url: "http://grafana:3000"
-
   middlewares:
-    user-service-strip:
-      stripPrefix:
-        prefixes:
-          - "/user-service"
-
-    prometheus-strip:
-      stripPrefix:
-        prefixes:
-          - "/prometheus"
-
-    auth-service-strip:
+    backend-service-strip:
       stripPrefix:
         prefixes:
           - "/auth"
 
     auth-forward:
       forwardAuth:
-        address: "http://auth-service:4000/api/verify"
+        address: "http://backend-service:4000/api/verify"
         trustForwardHeader: true
         authResponseHeaders:
           - "X-User-Id"
