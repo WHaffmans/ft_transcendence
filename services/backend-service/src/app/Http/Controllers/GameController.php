@@ -56,11 +56,11 @@ class GameController extends Controller
     public function findGame(Request $request)
     {
         $open_games = Game::query()->where('status', 'pending')->with('users')->get();
-        $applicable = $open_games->find(function ($game) use ($request) {
+        $applicable = $open_games->filter(function ($game) use ($request) {
             return $game->users->contains($request->user()->id);
         });
 
-        if ($applicable) {
+        if ($applicable->isNotEmpty()) {
             return response()->json($applicable);
         }
 
