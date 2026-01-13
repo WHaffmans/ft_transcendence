@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ============================================================================
-# Auth Service Entrypoint Script
+# Backend Service Entrypoint Script
 # This script sets up the environment for the auth service
 # ============================================================================
 
 set -e
 
-echo "Starting Auth Service..."
+echo "Starting Backend Service..."
 
 php artisan migrate --force --seed
 
@@ -20,6 +20,6 @@ else
   echo "Using PASSPORT_* keys from env"
 fi
 
-echo "Auth Service started successfully!"
+echo "Backend Service started successfully!"
 
 exec php artisan serve --host=0.0.0.0 --port=4000

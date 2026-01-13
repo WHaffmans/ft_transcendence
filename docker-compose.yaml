@@ -28,17 +28,17 @@ services:
   # BACKEND SERVICES
   # ============================================================================
 
-  auth-service:
-    container_name: auth-service
+  backend-service:
+    container_name: backend-service
     build:
-      context: ./services/auth-service
+      context: ./services/backend-service
       dockerfile: Dockerfile
     ports:
       - "4000:4000"
     volumes:
-      - ./services/auth-service/src:/var/www/html
+      - ./services/backend-service/src:/var/www/html
     env_file:
-      - ./services/auth-service/src/.env
+      - ./services/backend-service/src/.env
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
@@ -68,7 +68,7 @@ services:
       - NODE_ENV=development
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
-      - AUTH_SERVICE_URL=http://auth-service:4000
+      - AUTH_SERVICE_URL=http://backend-service:4000
     volumes:
       - ./services/game-service/src:/app/src
       - ./services/game-service/package.json:/app/package.json:ro
@@ -77,7 +77,7 @@ services:
       - transcendence-internal
     restart: unless-stopped
     depends_on:
-      - auth-service
+      - backend-service
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================

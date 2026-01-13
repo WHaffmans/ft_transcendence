@@ -10,13 +10,22 @@ http:
 
     auth-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
-      service: auth-service
+      service: backend-service
       priority: 10
       entryPoints:
         - web
         - websecure
       middlewares:
-        - auth-service-strip
+        - backend-service-strip
+
+    backend-service:
+      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/api`)"
+      service: backend-service
+      priority: 10
+      entryPoints:
+        - web
+        - websecure
+
 
     game-ws:
       rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
@@ -31,10 +40,10 @@ http:
         servers:
           - url: "http://frontend-service:5173"
 
-    auth-service:
+    backend-service:
       loadBalancer:
         servers:
-          - url: "http://auth-service:4000"
+          - url: "http://backend-service:4000"
 
     game-service:
       loadBalancer:
@@ -42,14 +51,14 @@ http:
           - url: "http://game-service:3003"
 
   middlewares:
-    auth-service-strip:
+    backend-service-strip:
       stripPrefix:
         prefixes:
           - "/auth"
 
     auth-forward:
       forwardAuth:
-        address: "http://auth-service:4000/api/verify"
+        address: "http://backend-service:4000/api/verify"
         trustForwardHeader: true
         authResponseHeaders:
           - "X-User-Id"
