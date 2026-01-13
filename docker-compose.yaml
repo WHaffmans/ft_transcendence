@@ -131,10 +131,6 @@ services:
 # VOLUMES
 # ==============================================================================
 volumes:
-  portainer_data:
-  prometheus_data:
-  grafana_data:
-    driver: local
   mariadb_data:
     driver: local
 
