@@ -42,9 +42,9 @@ services:
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
-      - DB_DATABASE=${AUTH_DB_DATABASE}
-      - DB_USERNAME=${AUTH_DB_USERNAME}
-      - DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - OAUTH_DEV_CLIENT_ID=${OAUTH_CLIENT_ID}
       - OAUTH_DEV_REDIRECT=${OAUTH_DEV_REDIRECT}
     networks:
@@ -57,8 +57,8 @@ services:
   game-service:
     container_name: game-service
     ports:
-      - "3002:3002"   # internal
-      - "3003:3003"   # external
+      - "3002:3002" # internal
+      - "3003:3003" # external
     build:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
@@ -107,12 +107,9 @@ services:
     ports:
       - "3307:3306"
     environment:
-      - AUTH_DB_DATABASE=${AUTH_DB_DATABASE}
-      - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
-      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
-      - USER_SERVICE_DB=${USER_SERVICE_DB}
-      - USER_SERVICE_USERNAME=${USER_SERVICE_USERNAME}
-      - USER_SERVICE_PASSWORD=${USER_SERVICE_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
