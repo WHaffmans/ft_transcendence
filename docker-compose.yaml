@@ -28,26 +28,6 @@ services:
   # BACKEND SERVICES
   # ============================================================================
 
-  user-service:
-    container_name: user-service
-    build:
-      context: ./services/user-service
-      dockerfile: Dockerfile.dev
-    environment:
-      - PORT=3000
-      - HOST=0.0.0.0
-      - NODE_ENV=development
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./services/user-service/src:/app/src:ro
-      - ./services/user-service/package.json:/app/package.json:ro
-      - ./services/user-service/tsconfig.json:/app/tsconfig.json:ro
-      - ./services/user-service/data:/app/data
-    networks:
-      - transcendence-internal
-    restart: unless-stopped
-
   auth-service:
     container_name: auth-service
     build:
@@ -88,7 +68,6 @@ services:
       - NODE_ENV=development
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
-      - USER_SERVICE_URL=http://user-service:3000
       - AUTH_SERVICE_URL=http://auth-service:4000
     volumes:
       - ./services/game-service/src:/app/src
@@ -98,7 +77,6 @@ services:
       - transcendence-internal
     restart: unless-stopped
     depends_on:
-      - user-service
       - auth-service
   # ============================================================================
   # INFRASTRUCTURE

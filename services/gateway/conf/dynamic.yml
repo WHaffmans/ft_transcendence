@@ -1,16 +1,5 @@
 http:
   routers:
-    user-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/user-service`)"
-      service: user-service
-      priority: 10
-      entryPoints:
-        - web
-        - websecure
-      middlewares:
-        - user-service-strip
-        - auth-forward
-
     frontend-service:
       rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`))"
       service: frontend-service
@@ -55,11 +44,6 @@ http:
         - websecure
 
   services:
-    user-service:
-      loadBalancer:
-        servers:
-          - url: "http://user-service:3000"
-
     frontend-service:
       loadBalancer:
         servers:
@@ -86,11 +70,6 @@ http:
           - url: "http://grafana:3000"
 
   middlewares:
-    user-service-strip:
-      stripPrefix:
-        prefixes:
-          - "/user-service"
-
     prometheus-strip:
       stripPrefix:
         prefixes:
