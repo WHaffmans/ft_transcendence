@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->group(function () {
-
+    Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
     Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
     Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
@@ -12,7 +12,12 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('games', App\Http\Controllers\GameController::class);
 
     Route::get('/verify', function (Request $request) {
-        return response()->json(['message' => 'Authenticated'], 200, ['X-User-Id', request()->getUserInfo()]);
+        $user = $request->user();
+        return response()->json(
+            ['message' => 'Authenticated', 'user_id' => $user->id],
+            200,
+            ['X-User-Id' => $user->id]
+        );
     });
 
     Route::get('/user', function (Request $request) {
