@@ -1,64 +1,74 @@
 <script lang="ts">
-  import { page } from "$app/state";
-  import { browser } from "$app/environment";
   import { onMount } from "svelte";
-  import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from "$env/static/public";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { authStore } from "$lib/stores/auth";
 
-  let error = page.url.searchParams.get("error");
-  let code = page.url.searchParams.get("code");
-  let state = page.url.searchParams.get("state");
-
-  const getToken = async (code: string, code_verifier: string) => {
-    try {
-      const response = await fetch(`http://${PUBLIC_DOMAIN}/auth/oauth/token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code: code,
-          code_verifier: code_verifier,
-          redirect_uri: `${PUBLIC_OAUTH_REDIRECT_URI}`,
-          client_id: `${PUBLIC_CLIENT_ID}`,
-        }),
-      });
-      return await response.json();
-    } catch (err) {
-      error = "Failed to fetch token.";
-    }
-  };
+  let isProcessing = true;
+  let error = "";
 
   onMount(async () => {
-    if (!browser) return;
-    let session_state = sessionStorage.getItem("pkce_state");
-    let code_verifier = sessionStorage.getItem("pkce_code_verifier");
+    try {
+      const urlParams = $page.url.searchParams;
+      const success = await authStore.handleOAuthCallback(urlParams);
 
-    if (!code || !state || state !== session_state || !code_verifier) {
-      error = "Invalid PKCE parameters.";
-      return;
+      if (success) {
+        // Redirect to home page or dashboard
+        await goto("/", { replaceState: true });
+      } else {
+        error = "Login failed. Please try again.";
+        isProcessing = false;
+      }
+    } catch (err) {
+      console.error("OAuth callback error:", err);
+      error = "An unexpected error occurred. Please try again.";
+      isProcessing = false;
     }
-    const tokenResponse = await getToken(code, code_verifier);
-    if (tokenResponse && tokenResponse.access_token) {
-      console.log("Access Token:", tokenResponse);
-      localStorage.setItem("access_token", tokenResponse.access_token);
-      localStorage.setItem("refresh_token", tokenResponse.refresh_token);
-
-      window.location.href = `/`;
-    } else {
-      error = "Failed to retrieve access token.";
-    }
-    sessionStorage.removeItem("pkce_state");
-    sessionStorage.removeItem("pkce_code_verifier");
   });
 </script>
 
-<div class="callback-container bg-gray-900 min-h-screen flex flex-col items-center justify-center text-white">
-  <h1 class="text-4xl font-bold mb-4"> Loading... </h1>
-  <br />
-  {#if error}
-    <p1 class="text-red-800 font-bold">Error: {error}</p1>
-  {:else}
-    <p1 class="text-green-600 font-bold">Authentication successful!</p1>
-  {/if}
+<div class="min-h-screen bg-gray-900 flex items-center justify-center">
+  <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+    {#if isProcessing}
+      <div class="flex flex-col items-center">
+        <div
+          class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+        ></div>
+        <h2 class="text-white text-xl font-semibold mb-2">
+          Processing login...
+        </h2>
+        <p class="text-gray-300">
+          Please wait while we complete your authentication.
+        </p>
+      </div>
+    {:else if error}
+      <div class="flex flex-col items-center">
+        <div
+          class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-4"
+        >
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="text-white text-xl font-semibold mb-2">Login Failed</h2>
+        <p class="text-gray-300 mb-4">{error}</p>
+        <a
+          href="/login"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition-colors"
+        >
+          Try Again
+        </a>
+      </div>
+    {/if}
+  </div>
 </div>
