@@ -91,7 +91,7 @@ class GameController extends Controller
         $results = $request->input('users', []);
         foreach ($results as $result) {
             $game->users()->updateExistingPivot($result['user_id'], [
-                'ranking' => $result['ranking'],
+                'rank' => $result['rank'],
                 'rating_mu' => $result['rating_mu'],
                 'rating_sigma' => $result['rating_sigma'],
             ]);
