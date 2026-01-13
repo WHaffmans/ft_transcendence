@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@plugin 'flowbite/plugin';
-
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -27,9 +25,6 @@
   --color-secondary-800: #075985;
   --color-secondary-900: #0c4a6e;
 }
-
-@source "../node_modules/flowbite-svelte/dist";
-@source "../node_modules/flowbite-svelte-icons/dist";
 
 @layer base {
 
