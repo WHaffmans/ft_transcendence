@@ -34,15 +34,15 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // Ensure redirects and routes use the correct base URL
-        if (config('app.url')) {
-            // To make sure generated URLs use the correct base URL
-            URL::forceRootUrl(config('app.url'));
-            $path = parse_url(config('app.url'), PHP_URL_PATH);
-            if ($path) {
-                // Set the X-Forwarded-Prefix header for requests
-                $this->app['request']->headers->set('X-Forwarded-Prefix', $path);
-            }
-        }
+        // if (config('app.url')) {
+        //     // To make sure generated URLs use the correct base URL
+        //     URL::forceRootUrl(config('app.url'));
+        //     $path = parse_url(config('app.url'), PHP_URL_PATH);
+        //     if ($path) {
+        //         // Set the X-Forwarded-Prefix header for requests
+        //         $this->app['request']->headers->set('X-Forwarded-Prefix', $path);
+        //     }
+        // }
 
         Passport::tokensExpireIn(now()->addMinutes(15));
         Passport::authorizationView('auth.oauth.authorize');

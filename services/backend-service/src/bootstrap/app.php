@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web([
             CreateFreshApiToken::class,
         ]);
-        $middleware->trustProxies('*');
+        $middleware->trustProxies('*', Request::HEADER_FORWARDED | Request::HEADER_X_FORWARDED_TRAEFIK);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $exception, Request $request): JsonResponse|RedirectResponse {
