@@ -8,13 +8,13 @@
 docker-compose up -d
 
 # View logs
-docker-compose logs -f user-service
+docker-compose logs -f frontend-service
 
 # Stop services
 docker-compose down
 ```
 
-**Changes to `/services/user-service/src/**` will automatically reload!**
+**Changes to `/services/frontend-service/src/**` will automatically reload!**
 
 ### Production Mode
 ```bash
@@ -34,7 +34,7 @@ docker-compose down
 ### First Time Setup
 ```bash
 # Install dependencies for IntelliSense
-cd services/user-service
+cd services/frontend-service
 npm install
 ```
 
@@ -79,15 +79,15 @@ curl -H "Host: transcendence.duinvoetje.nl" http://localhost/api/users
 docker-compose logs -f
 
 # Specific service
-docker-compose logs -f user-service
+docker-compose logs -f frontend-service
 
 # Last 50 lines
-docker-compose logs --tail=50 user-service
+docker-compose logs --tail=50 frontend-service
 ```
 
 ### Rebuild after dependency changes
 ```bash
-docker-compose up -d --build user-service
+docker-compose up -d --build frontend-service
 ```
 
 ## 🎯 Best Practices
@@ -102,23 +102,23 @@ docker-compose up -d --build user-service
 ### Hot reload not working?
 ```bash
 # Check if tsx watch is running
-docker exec user-service ps aux | grep tsx
+docker exec frontend-service ps aux | grep tsx
 
 # Restart the service
-docker-compose restart user-service
+docker-compose restart frontend-service
 ```
 
 ### TypeScript errors in VS Code?
 ```bash
 # Ensure dependencies are installed locally
-cd services/user-service
+cd services/frontend-service
 npm install
 ```
 
 ### Service not starting?
 ```bash
 # Check logs
-docker-compose logs user-service
+docker-compose logs frontend-service
 
 # Rebuild from scratch
 docker-compose down

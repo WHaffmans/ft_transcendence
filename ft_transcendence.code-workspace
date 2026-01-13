@@ -11,12 +11,9 @@
     //auth
     {
       "name": "🔐 Auth Service",
-      "path": "services/auth-service"
+      "path": "services/backend-service"
     },
-    {
-      "name": "👤 User Service",
-      "path": "services/user-service"
-    },
+    // Game service
     {
       "name": "🎮 Game Service",
       "path": "services/game-service"

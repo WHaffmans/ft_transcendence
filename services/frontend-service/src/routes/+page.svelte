@@ -53,10 +53,22 @@
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    //TODO: handle server-side logout
+    fetch("/auth/api/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    }).then((response) => {
+      console.log("Logged out:", response);
+    }).catch((error) => {
+      console.error("Logout failed:", error);
+    }).finally(() => {
     user = null;
-    window.location.href = "/frontend";
+      window.location.href = "/";
+    });
   };
 
   if (browser) {
