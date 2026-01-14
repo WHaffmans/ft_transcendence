@@ -26,3 +26,10 @@ Route::middleware('auth:api')->group(function () {
 });
 
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);
+
+Route::get('leaderboard', function (Request $request) {
+    return App\Models\User::query()
+        ->orderBy('rating', 'desc')
+        ->take(10)
+        ->get();
+});
