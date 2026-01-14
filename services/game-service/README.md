@@ -2,6 +2,13 @@
 
 `http://localhost:5173/game`
 
+# TODO
+
+- [ ] Make unique link with id for each room
+- [ ] Use protocol for messaging in web socket
+- [ ] Only send new trail segments to frontend
+
+
 ### Setup
 
 ```bash
