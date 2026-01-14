@@ -61,7 +61,7 @@ class GameController extends Controller
         });
 
         if ($applicable->isNotEmpty()) {
-            return response()->json($applicable);
+            return response()->json($applicable->first());
         }
 
         if (! $open_games->isEmpty()) {
