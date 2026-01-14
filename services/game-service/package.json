@@ -12,6 +12,7 @@
     "vitest": "^2.0.0"
   },
   "dependencies": {
-    "ws": "^8.19.0"
+    "ws": "^8.19.0",
+    "@ft/game-ws-protocol": "file:../../packages/game-ws-protocol"
   }
 }

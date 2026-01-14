@@ -97,7 +97,7 @@ services:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
       additional_contexts:
-        protocol: ./packages/protocol
+        protocol: ./packages/game-ws-protocol
     environment:
       - PORT=3100
       - HOST=0.0.0.0

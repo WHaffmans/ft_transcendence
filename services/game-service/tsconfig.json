@@ -1,13 +1,20 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true
-  },
-  "include": ["src"]
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": true,
+
+		"types": ["node"],
+
+		"baseUrl": ".",
+		"paths": {
+			"@ft/game-ws-protocol": ["../../packages/game-ws-protocol/src/index.ts"],
+			"@ft/game-ws-protocol/*": ["../../packages/game-ws-protocol/src/*"]
+		}
+	}
 }
