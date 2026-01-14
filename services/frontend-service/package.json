@@ -12,30 +12,18 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@internationalized/date": "^3.10.0",
-		"@lucide/svelte": "^0.544.0",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.48.5",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
-		"@tailwindcss/forms": "^0.5.10",
-		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
-		"bits-ui": "^2.14.4",
-		"embla-carousel-svelte": "^8.6.0",
-		"flowbite": "^4.0.1",
-		"flowbite-svelte": "^1.30.1",
-		"flowbite-svelte-icons": "^3.0.1",
 		"svelte": "^5.43.8",
 		"svelte-check": "^4.3.4",
-		"tailwind-variants": "^3.2.2",
 		"tailwindcss": "^4.1.17",
-		"tw-animate-css": "^1.4.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.2"
 	},
 	"dependencies": {
 		"clsx": "^2.1.1",
-		"js-sha256": "^0.11.1",
 		"tailwind-merge": "^3.4.0"
 	}
 }
