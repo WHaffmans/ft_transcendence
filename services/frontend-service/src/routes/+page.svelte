@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { authStore } from "$lib/stores/auth";
+  import { apiStore } from "$lib/stores/api";
+  import { goto } from "$app/navigation";
 
   // Subscribe to the auth store
-  const auth = authStore;
+  const auth = apiStore;
 
   let game = {};
 
@@ -27,6 +28,7 @@
         console.log("Game found:", data);
         // update ui
         game = data;
+        goto(`/lobby/${data.id}`);
       })
       .catch((error) => {
         console.error("Error finding game:", error);

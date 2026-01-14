@@ -4,15 +4,19 @@ import { sha256 } from 'js-sha256';
 import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from '$env/static/public';
 import type { User } from '$lib/types/types';
 
-interface AuthState {
+interface ApiState {
   user: User | null;
+  accessToken?: string;
+  refreshToken?: string;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
 
-const createAuthStore = () => {
-  const { subscribe, set, update } = writable<AuthState>({
+const createApiStore = () => {
+  const { subscribe, set, update } = writable<ApiState>({
     user: null,
+    accessToken: undefined,
+    refreshToken: undefined,
     isLoading: true,
     isAuthenticated: false
   });
@@ -20,6 +24,40 @@ const createAuthStore = () => {
   return {
     subscribe,
     
+    async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
+      if (!browser) return null;
+
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        set({ user: null, isLoading: false, isAuthenticated: false });
+        return null;
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+        });
+
+        if (response.ok) {
+          return await response.json();
+        } else {
+          console.error(`API request failed: ${response.status} ${response.statusText}`);
+          return null;
+        }
+      } catch (error) {
+        console.error("API request error:", error);
+        return null;
+      }
+    },
+
     async fetchUser() {
       if (!browser) return;
       
@@ -181,6 +219,8 @@ const createAuthStore = () => {
           localStorage.setItem("refresh_token", refreshToken);
         }
       }
+
+      update(state => ({ ...state, accessToken, refreshToken }));
     },
 
     // Utility functions
@@ -209,4 +249,4 @@ const createAuthStore = () => {
   };
 };
 
-export const authStore = createAuthStore();
+export const apiStore = createApiStore();

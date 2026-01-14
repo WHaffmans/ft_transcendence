@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { authStore } from "$lib/stores/auth";
+  import { apiStore } from "$lib/stores/api";
 
   const login = () => {
-    authStore.login();
+    apiStore.login();
   };
 </script>
 

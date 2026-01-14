@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/auth";
+  import { apiStore } from "$lib/stores/api";
 
   let isProcessing = true;
   let error = "";
@@ -10,7 +10,7 @@
   onMount(async () => {
     try {
       const urlParams = $page.url.searchParams;
-      const success = await authStore.handleOAuthCallback(urlParams);
+      const success = await apiStore.handleOAuthCallback(urlParams);
 
       if (success) {
         // Redirect to home page or dashboard
