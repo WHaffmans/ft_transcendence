@@ -1,5 +1,14 @@
+
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+
+	// Shared protocol
+	import {
+		ClientMsgSchema,
+		ServerMsgSchema,
+		type ClientMsg,
+		type ServerMsg,
+	} from "@ft/game-ws-protocol";
 
 	type TurnInput = -1 | 0 | 1;
 
@@ -10,8 +19,8 @@
 		a: number;
 	};
 
-	let canvas: HTMLCanvasElement;
-	let ctx: CanvasRenderingContext2D;
+	let canvas!: HTMLCanvasElement;
+	let ctx!: CanvasRenderingContext2D;
 
 	let ws: WebSocket | null = null;
 	let status = "disconnected";
@@ -24,8 +33,11 @@
 		return "ws://localhost:3003/ws";
 	}
 
-	function safeSend(obj: unknown) {
-		if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+	function safeSend(msg: ClientMsg) {
+		if (ws && ws.readyState === WebSocket.OPEN) {
+			const validated = ClientMsgSchema.parse(msg);
+			ws.send(JSON.stringify(validated));
+		}
 	}
 
 	function resizeCanvas() {
@@ -80,8 +92,7 @@
 
 			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
-			// ctx.lineJoin = "round";
-			
+
 			ctx.beginPath();
 			ctx.moveTo(x0, y0);
 			ctx.lineTo(x1, y1);
@@ -128,28 +139,61 @@
 		ws.onopen = () => {
 			status = "open";
 
+			// create_room
 			safeSend({
 				type: "create_room",
 				roomId,
 				seed: 1,
-				players: [{ playerId: "p1" }, { playerId: "p2" }]
+				players: [{ playerId: "p1" }, { playerId: "p2" }],
 			});
 
-			safeSend({ type: "join_room", roomId, playerId });
+			// join_room
+			safeSend({
+				type: "join_room",
+				roomId,
+				playerId,
+			});
 		};
 
 		ws.onmessage = (e) => {
-			const msg = JSON.parse(e.data);
-
-			if (msg.type === "State") {
-				latestState = msg;
-
-				(window as any).latestState = latestState;
-
+			let obj: unknown;
+			try {
+				obj = JSON.parse(e.data);
+			} catch {
+				console.warn("WS: invalid JSON", e.data);
 				return;
 			}
 
-			console.log("WS msg:", msg);
+			const parsed = ServerMsgSchema.safeParse(obj);
+			if (!parsed.success) {
+				console.warn("WS: invalid server msg", parsed.error.message, obj);
+				return;
+			}
+
+			const msg: ServerMsg = parsed.data;
+
+			switch (msg.type) {
+				case "state": {
+					latestState = msg.snapshot;
+
+					(window as any).latestState = latestState;
+					return;
+				}
+
+				case "room_created":
+				case "joined":
+					console.log("WS msg:", msg);
+					return;
+
+				case "error":
+					console.error("WS error:", msg.message);
+					return;
+
+				default: {
+					// const _exhaustive: never = msg;
+					// console.log("WS msg:", _exhaustive);
+				}
+			}
 		};
 
 		ws.onerror = () => {
@@ -163,8 +207,12 @@
 	}
 
 	function onKeyDown(ev: KeyboardEvent) {
-		if (ev.key === "ArrowLeft") safeSend({ type: "input", turn: -1 satisfies TurnInput });
-		if (ev.key === "ArrowRight") safeSend({ type: "input", turn: 1 satisfies TurnInput });
+		if (ev.key === "ArrowLeft") {
+			safeSend({ type: "input", turn: -1 satisfies TurnInput });
+		}
+		if (ev.key === "ArrowRight") {
+			safeSend({ type: "input", turn: 1 satisfies TurnInput });
+		}
 	}
 
 	function onKeyUp(ev: KeyboardEvent) {
@@ -193,8 +241,4 @@
 	});
 </script>
 
-<canvas bind:this={canvas} style="display:block; width:100vw; height:100vh;"></canvas>
-
-<div style="position:fixed; left:12px; bottom:12px; background:rgba(0,0,0,0.5); color:white; padding:8px 10px; border-radius:8px; font:12px system-ui;">
-	{status}
-</div>
+<canvas bind:this={canvas} width={800} height={600}></canvas>

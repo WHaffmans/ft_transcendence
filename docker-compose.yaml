@@ -21,6 +21,8 @@ services:
     build:
       context: ./services/frontend-service
       dockerfile: Dockerfile.dev
+      additional_contexts:
+        protocol: ./packages/game-ws-protocol
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
@@ -110,7 +112,8 @@ services:
       - ./services/game-service/src:/app/src
       - ./services/game-service/package.json:/app/package.json:ro
       - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
-      - ./packages/protocol:/app/protocol
+      - ./packages/game-ws-protocol:/app/protocol
+      - ./services/game-service/package-lock.json:/app/package-lock.json:ro
     networks:
       - transcendence-internal
     restart: unless-stopped

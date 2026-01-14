@@ -15,28 +15,17 @@ import type WebSocket from "ws";
 import type { GameConfig } from "../engine/config";
 import { DEFAULT_CONFIG } from "../engine/config";
 import { RoomManager } from "../app/room_manager";
-import type { TurnInput } from "../engine/step";
 
 // Shared protocol
 import {
+	ClientMsgSchema,
 	type ClientMsg,
 	type ServerMsg,
 } from "@ft/game-ws-protocol";
 
-type PublicMsg =
-	| {
-		type: "create_room";
-		roomId: string;
-		seed: number;
-		config?: Partial<GameConfig>;
-		players: { playerId: string }[];
-	}
-	| { type: "join_room"; roomId: string; playerId: string }
-	| { type: "input"; turn: TurnInput };
-
-function safeSend(ws: WebSocket, obj: unknown) {
+function safeSend(ws: WebSocket, msg: ServerMsg) {
 	if (ws.readyState === ws.OPEN)
-		ws.send(JSON.stringify(obj));
+		ws.send(JSON.stringify(msg));
 }
 
 function assertNever(x: never): never {
@@ -54,21 +43,30 @@ export function startPublicWsServer(
 		let boundPlayerId: string | null = null;
 
 		ws.on("message", (buf) => {
-			let msg: PublicMsg;
+			const raw = buf.toString();
 
 			// Parse JSON
+			let obj: unknown;
 			try {
-				msg = JSON.parse(buf.toString()) as PublicMsg;
+				obj = JSON.parse(raw);
 			} catch {
 				safeSend(ws, { type: "error", message: "Invalid JSON" });
 				return;
 			}
 
+			// Validate against protocol
+			const parsed = ClientMsgSchema.safeParse(obj);
+			if (!parsed.success) {
+				safeSend(ws, { type: "error", message: parsed.error.message });
+				return;
+			}
+
+			const msg: ClientMsg = parsed.data;
+
 			// Handle messages
 			try {
 				switch (msg.type) {
 					case "create_room": {
-						
 						// Check already joined
 						if (boundRoomId || boundPlayerId) {
 							throw new Error("Already joined a room; open a new socket to create a new room");
@@ -100,7 +98,10 @@ export function startPublicWsServer(
 						// Subscribe this socket
 						rooms.subscribe(msg.roomId, ws);
 
-						safeSend(ws, { type: "room_created", roomId: msg.roomId });
+						safeSend(ws, {
+							type: "room_created",
+							roomId: msg.roomId,
+						});
 						return;
 					}
 

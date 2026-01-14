@@ -11,7 +11,10 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
+		"baseUrl": ".",
 		"paths": {
+			"@ft/game-ws-protocol": ["../../packages/game-ws-protocol/src/index.ts"],
+			"@ft/game-ws-protocol/*": ["../../packages/game-ws-protocol/src/*"]
 		}
 	}
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias

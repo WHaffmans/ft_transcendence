@@ -7,6 +7,14 @@
 - [ ] Make unique link with id for each room
 - [ ] Use protocol for messaging in web socket
 - [ ] Only send new trail segments to frontend
+- [ ] How to standerdise canvas size?
+
+Get a uuid (game id). From this I will make a link.
+Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
+How to authenticate? SSL internal?
+Websocket IO?
+Use trafeak for the web socket. Now using a socket. Should not expose a port
+
 
 
 ### Setup
