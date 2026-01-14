@@ -60,7 +60,7 @@
       <LoginSection />
 
       <!-- Leaderboard -->
-      <Leaderboard />
+      <Leaderboard players={[]} />
     </div>
   </div>
 

@@ -26,7 +26,9 @@ const createApiStore = () => {
     subscribe,
     
     async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
-      if (!browser) return null;
+      if (!browser) {
+        return;
+      }
 
       const token = localStorage.getItem("access_token");
       if (!token) {
