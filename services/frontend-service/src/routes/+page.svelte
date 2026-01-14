@@ -1,4 +1,9 @@
-<script lang="ts">
+<script>
+  import BackgroundDecorations from '$lib/components/BackgroundDecorations.svelte';
+  import LoginSection from '$lib/components/LoginSection.svelte';
+  import Leaderboard from '$lib/components/Leaderboard.svelte';
+  import Footer from '$lib/components/Footer.svelte';
+
   import { onMount } from "svelte";
   import { apiStore } from "$lib/stores/api";
   import { goto } from "$app/navigation";
@@ -40,37 +45,25 @@
   });
 </script>
 
-<header
-  class="flex flex-col items-center justify-between p-4 bg-gray-800 text-white"
->
-  ft_transcendence
+<svelte:head>
+  <title>Achtung - Landing Page</title>
+</svelte:head>
 
-  {#if $auth.isLoading}
-    <div class="w-8 h-8 bg-gray-600 rounded-full animate-pulse"></div>
-  {:else if $auth.isAuthenticated && $auth.user}
-    <span>{$auth.user.name}</span>
-    <span>{$auth.user.email}</span>
-    {#if $auth.user.avatarUrl}
-      <img
-        src={$auth.user.avatarUrl}
-        alt="User Avatar"
-        class="w-12 h-12 rounded-full"
-      />
-    {/if}
-    <button onclick={findGame}>Find Game</button>
+<div class="relative w-full min-h-screen overflow-hidden" style="background-color: #121212;">
+  <!-- Background Decorations -->
+  <BackgroundDecorations />
 
-    <button
-      onclick={() => auth.logout()}
-      class="text-red-400 hover:bg-gray-600 hover:text-red-300"
-    >
-      Sign out
-    </button>
-  {:else}
-    <a href="/login">Login</a>
-  {/if}
-  {#if game}
-    <pre>
-{JSON.stringify(game, null, 2)}
-    </pre>
-  {/if}
-</header>
+  <!-- Main Content -->
+  <div class="relative z-10 flex items-center justify-center min-h-screen px-8">
+    <div class="flex flex-col lg:flex-row gap-[180px] items-center justify-center">
+      <!-- Login Section -->
+      <LoginSection />
+
+      <!-- Leaderboard -->
+      <Leaderboard />
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <Footer />
+</div>

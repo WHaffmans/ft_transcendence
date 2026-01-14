@@ -92,7 +92,10 @@ services:
       - ./services/game-service/src:/app/src
       - ./services/game-service/package.json:/app/package.json:ro
       - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
-      - ./packages/protocol:/app/protocol
+      - ./packages/game-ws-protocol:/app/protocol
+    networks:
+      - transcendence-internal
+    restart: unless-stopped
     depends_on:
       - backend-service
     restart: unless-stopped

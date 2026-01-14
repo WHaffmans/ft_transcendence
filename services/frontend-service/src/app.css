@@ -27,17 +27,16 @@
 }
 
 @layer base {
-
-  /* disable chrome cancel button */
-  input[type="search"]::-webkit-search-cancel-button {
-    display: none;
-  }
+	body {
+		@apply text-white;
+		background-color: #121212;
+	}
 }
 
-body {
-    /* Sets a light gray background for light mode, and dark gray for dark mode */
-      @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white;
-    
-      /* Ensures the background covers the full screen */
-      min-height: 100vh;
+@layer components {
+	.glass-effect {
+		@apply backdrop-blur-xl rounded-3xl border;
+		background-color: rgba(26, 26, 26, 0.6);
+		border-color: rgba(255, 255, 255, 0.1);
+	}
 }
