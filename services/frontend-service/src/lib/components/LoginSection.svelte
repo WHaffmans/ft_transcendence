@@ -6,14 +6,14 @@
   const landingLogo = "/logo.png";
   const subtitle = "The Kurve Web Edition";
 
-  const api = $apiStore;
-
-  console.log(api.isAuthenticated, api.user);
-
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log("Sign in clicked");
-    // goto("/login");
-    apiStore.login();
+    const success = await apiStore.login();
+    if (success) {
+      console.log("Login successful!");
+    } else {
+      console.log("Login failed or was cancelled");
+    }
   };
 
   const handleLogout = () => {
@@ -41,7 +41,7 @@
   </div>
 
   <!-- Sign In Button -->
-  {#if api.isAuthenticated}
+  {#if $apiStore.isAuthenticated}
     <SignInButton onClick={handleLogout} label="Logout" />
   {:else}
     <SignInButton onClick={handleLogin} label="Login" />

@@ -1,9 +1,10 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { sha256 } from 'js-sha256';
-import { PUBLIC_CLIENT_ID, PUBLIC_DOMAIN, PUBLIC_OAUTH_REDIRECT_URI } from '$env/static/public';
+import { PUBLIC_DOMAIN, PUBLIC_CLIENT_ID, PUBLIC_OAUTH_REDIRECT_URI} from '$env/static/public';
 import type { User } from '$lib/types/types';
-import { base64UrlEncode, arrayToString, generateRandomString } from '$lib/utils';
+import { base64UrlEncode, arrayToString, generateRandomString } from '$lib/utils/utils';
+import { openPopup } from '$lib/utils/oauth';
 
 interface ApiState {
   user: User | null;
@@ -64,23 +65,14 @@ const createApiStore = () => {
     async login() {
       if (!browser) return;
 
-      const client_id = PUBLIC_CLIENT_ID;
-      const redirect_uri = encodeURIComponent(PUBLIC_OAUTH_REDIRECT_URI);
-      const state = generateRandomString(40);
-      sessionStorage.setItem("pkce_state", state);
-
-      const code_verifier = generateRandomString(128);
-      sessionStorage.setItem("pkce_code_verifier", code_verifier);
-
-      const code_challenge = base64UrlEncode(
-        arrayToString(sha256.create().update(code_verifier).array())
+      return openPopup(
+        `http://${PUBLIC_DOMAIN}/auth/oauth/authorize`,
+        'oauth2_login',
+        500,
+        600,
+        this.handleOAuthCallbackFromPopup.bind(this)
       );
-
-      const response_type = "code";
-      const scope = encodeURIComponent("user:read");
-      const auth_url = `http://${PUBLIC_DOMAIN}/auth/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
       
-      window.location.href = auth_url;
     },
 
     async handleOAuthCallback(urlParams: URLSearchParams) {
@@ -99,6 +91,12 @@ const createApiStore = () => {
         console.error('Missing code or state in OAuth callback');
         return false;
       }
+
+      return this.handleOAuthCallbackFromPopup(code, state);
+    },
+    
+    async handleOAuthCallbackFromPopup(code: string, state: string): Promise<boolean> {
+      if (!browser) return false;
 
       const storedState = sessionStorage.getItem('pkce_state');
       const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
@@ -139,15 +137,17 @@ const createApiStore = () => {
         this.setTokens(tokenData.access_token, tokenData.refresh_token);
 
         // Fetch user data
-        this.fetchApi(`/user`).then((data) => {
-          set({ user: data, isLoading: false, isAuthenticated: ! (data == null) });
-        });        return true;
+        const userData = await this.fetchApi(`/user`);
+        set({ user: userData, isLoading: false, isAuthenticated: userData !== null });
+        
+        return true;
       } catch (error) {
         console.error('OAuth token exchange failed:', error);
         set({ user: null, isLoading: false, isAuthenticated: false });
         return false;
       }
     },
+
 
     async logout() {
       const token = localStorage.getItem("access_token");

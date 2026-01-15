@@ -2,27 +2,39 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { apiStore } from "$lib/stores/api";
 
   let isProcessing = true;
   let error = "";
 
   onMount(async () => {
-    try {
-      const urlParams = $page.url.searchParams;
-      const success = await apiStore.handleOAuthCallback(urlParams);
-
-      if (success) {
-        // Redirect to home page or dashboard
-        await goto("/", { replaceState: true });
-      } else {
-        error = "Login failed. Please try again.";
-        isProcessing = false;
+    const urlParams = $page.url.searchParams;
+    const code = urlParams.get("code");
+    const state = urlParams.get("state");
+    const error = urlParams.get("error");
+    if (window.opener && window.opener !== window) {
+      if (error) {
+        // Send error to parent window
+        window.opener.postMessage(
+          {
+            type: "OAUTH_ERROR",
+            error: error,
+          },
+          window.location.origin
+        );
+      } else if (code && state) {
+        // Send success to parent window
+        window.opener.postMessage(
+          {
+            type: "OAUTH_SUCCESS",
+            code: code,
+            state: state,
+          },
+          window.location.origin
+        );
       }
-    } catch (err) {
-      console.error("OAuth callback error:", err);
-      error = "An unexpected error occurred. Please try again.";
-      isProcessing = false;
+      window.close();
+    } else {
+      goto("/", { replaceState: true });
     }
   });
 </script>
