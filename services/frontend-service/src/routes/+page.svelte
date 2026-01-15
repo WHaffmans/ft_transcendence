@@ -16,6 +16,7 @@
   } from "flowbite-svelte";
   import { ChevronDownOutline } from "flowbite-svelte-icons";
   import type { User } from "$lib/types/types";
+  import { goto } from "$app/navigation";
 
   let user: User | null = $state(null);
   let isLoading = $state(true);
@@ -75,6 +76,15 @@
     onMount(() => {
       fetchUser();
     });
+  }
+
+  // New Id for GAME
+  function newRoomId() {
+    return crypto.randomUUID();
+  }
+
+  function startGame() {
+    goto(`/game/${newRoomId()}`);
   }
 </script>
 
@@ -142,4 +152,8 @@
 
 <section class="min-h-svh bg-gray-900 flex items-center justify-center">
   <h1 class="text-4xl text-white">Welcome to Flowbite-Svelte!</h1>
+  <button
+    class="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700" on:click={startGame}>
+    game 
+  </button>
 </section>

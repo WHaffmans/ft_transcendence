@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { page } from "$app/stores";
+	import { get } from "svelte/store";
 
 	type TurnInput = -1 | 0 | 1;
 
@@ -21,7 +23,8 @@
 	let latestState: any = null;
 
 	function makeWsUrl() {
-		return "ws://localhost:3003/ws";
+		const proto = location.protocol === "https:" ? "wss" : "ws";
+		return `${proto}://${location.host}/ws`;
 	}
 
 	function safeSend(obj: unknown) {
@@ -174,6 +177,8 @@
 	}
 
 	onMount(() => {
+		roomId = get(page).params.roomId;
+		
 		ctx = canvas.getContext("2d")!;
 		resizeCanvas();
 		window.addEventListener("resize", resizeCanvas);

@@ -26,12 +26,17 @@ http:
         - web
         - websecure
 
-
-    game-ws:
+    game-ws-web:
       rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
       service: game-service
       priority: 50
-      entryPoints: [websecure, web]
+      entryPoints: [web]
+
+    game-ws-websecure:
+      rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
+      service: game-service
+      priority: 50
+      entryPoints: [websecure]
       tls: {}
 
   services:
