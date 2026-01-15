@@ -1,0 +1,45 @@
+sequenceDiagram
+    participant U as User
+    participant SPA as SPA Client
+    participant API as Backend Service
+    participant WS as Game WS Service
+    participant DB as Database
+
+    U->>SPA: Login
+    note right of SPA: User is authenticated\n(no action yet)
+
+    U->>SPA: Click "Find Game"
+    SPA->>API: HTTP POST /find-game
+
+    API->>DB: Query games registry\n(pending/active)
+    DB-->>API: Matching game or none
+
+    alt No applicable game
+        API->>DB: Create new game
+    end
+
+    API->>DB: Update user_game pivot table
+    DB-->>API: OK
+
+    API-->>SPA: gameId
+
+    SPA->>SPA: Redirect to /lobby/{gameId}
+
+    SPA->>WS: Open WebSocket connection
+    WS-->>SPA: WS connected
+
+    SPA->>WS: join_room { gameId, userId }
+
+    WS->>WS: Find or create room(channel)
+    WS->>WS: Add socket to room
+
+    WS-->>SPA: user_joined event (broadcast to room)
+
+    note over SPA: All connected clients receive event
+
+    SPA->>API: HTTP GET /games/{gameId}
+    API->>DB: Fetch game + players
+    DB-->>API: Game state
+    API-->>SPA: Updated game data
+
+    SPA->>SPA: Update lobby UI
