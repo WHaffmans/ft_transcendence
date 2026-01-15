@@ -1,8 +1,7 @@
 <script lang="ts">
   import LeaderboardEntry from "./LeaderboardEntry.svelte";
-  import { leaderboardData } from "../data/leaderboard";
   import { onMount } from "svelte";
-  import { User } from "$lib/types/types";
+  import type { User } from "$lib/types/types";
 
   let players: User[] = [];
 
