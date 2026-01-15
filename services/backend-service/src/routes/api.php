@@ -30,6 +30,6 @@ Route::apiResource('users', App\Http\Controllers\UserController::class)->except(
 Route::get('leaderboard', function (Request $request) {
     return App\Models\User::query()
         ->orderBy('rating', 'desc')
-        ->take(10)
+        ->take(5)
         ->get();
 });
