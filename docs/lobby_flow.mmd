@@ -1,0 +1,35 @@
+flowchart TD
+    A["User logs in on SPA"] --> B[Idle]
+
+    B -->|"Click Find Game"| C["HTTP: find_game request"]
+
+    C --> D["Backend: search registry of games"]
+
+    D --> E{Applicable game found?}
+    E -- No --> F["Create new game"]
+    E -- Yes --> G["Use existing game"]
+
+    F --> H["Update user_game pivot table"]
+    G --> H
+
+    H --> I["Return gameId to SPA"]
+
+    I --> J["Redirect to /lobby/{gameId}"]
+
+    J --> K["Connect to Game WS server"]
+
+    K --> L{WS connected?}
+    L -- No --> K
+    L -- Yes --> M["Send WS: join_room {gameId, userId}"]
+
+    M --> N["Game Service: find or create WS room"]
+
+    N --> O["Add socket to room"]
+
+    O --> P["Emit WS: user_joined to room"]
+
+    P --> Q["Clients receive user_joined"]
+
+    Q --> R["Clients refetch game data via HTTP"]
+
+    R --> S["Lobby updated"]

@@ -2,7 +2,7 @@
 
 # ============================================================================
 # Backend Service Entrypoint Script
-# This script sets up the environment for the auth service
+# This script sets up the environment for the backend service
 # ============================================================================
 
 set -e
@@ -19,6 +19,8 @@ if [ -z "${PASSPORT_PRIVATE_KEY}" ] || [ -z "${PASSPORT_PUBLIC_KEY}" ]; then
 else
   echo "Using PASSPORT_* keys from env"
 fi
+
+alias artisan="php /var/www/artisan"
 
 echo "Backend Service started successfully!"
 

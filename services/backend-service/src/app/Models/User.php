@@ -25,6 +25,9 @@ class User extends Authenticatable implements OAuthenticatable
     protected $fillable = [
         'name',
         'email',
+        'avatar_url',
+        'provider',
+        'provider_id',
         'rating_mu',
         'rating_sigma',
         'password',
@@ -59,7 +62,8 @@ class User extends Authenticatable implements OAuthenticatable
     public function games()
     {
         return $this->belongsToMany(Game::class, 'user_game')
-                    ->withPivot('rating_mu', 'rating_sigma', 'ranking')
+                    ->withPivot('rating_mu', 'rating_sigma', 'rank')
+                    ->as("user_game")
                     ->withTimestamps();
     }
 }

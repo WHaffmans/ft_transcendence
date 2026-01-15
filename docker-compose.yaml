@@ -12,6 +12,8 @@ services:
       - PUBLIC_DOMAIN=${DOMAIN}
       - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
       - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_DEV_REDIRECT}
+    networks:
+      - transcendence-internal
     ports:
       - "5173:5173"
     volumes:
@@ -21,8 +23,15 @@ services:
       - ./services/frontend-service/tsconfig.json:/app/tsconfig.json:ro
       - ./services/frontend-service/svelte.config.js:/app/svelte.config.js:ro
       - ./services/frontend-service/vite.config.ts:/app/vite.config.ts:ro
-    networks:
-      - transcendence-internal
+    depends_on:
+      backend-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/health"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ============================================================================
   # BACKEND SERVICES
@@ -33,25 +42,31 @@ services:
     build:
       context: ./services/backend-service
       dockerfile: Dockerfile
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./services/backend-service/src:/var/www/html
     env_file:
       - ./services/backend-service/src/.env
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
-      - DB_DATABASE=${AUTH_DB_DATABASE}
-      - DB_USERNAME=${AUTH_DB_USERNAME}
-      - DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - OAUTH_DEV_CLIENT_ID=${OAUTH_CLIENT_ID}
       - OAUTH_DEV_REDIRECT=${OAUTH_DEV_REDIRECT}
     networks:
       - transcendence-internal
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./services/backend-service/src:/var/www/html
     depends_on:
       mariadb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/up"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   game-service:
@@ -60,66 +75,67 @@ services:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
       additional_contexts:
-        protocol: ./packages/protocol
+        protocol: ./packages/game-ws-protocol
     environment:
       - NODE_ENV=development
       - HOST=0.0.0.0
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
       - AUTH_SERVICE_URL=http://backend-service:4000
-    expose:
-      - "3002" # internal ws
-      - "3003" # public ws (only reachable via traefik)
-    labels:
-        - traefik.enable=true
-        # Router: match /ws on domain
-        - traefik.http.routers.game-ws.rule=Host(`${DOMAIN}`) && PathPrefix(`/ws`)
-        - traefik.http.routers.game-ws.entrypoints=websecure
-        - traefik.http.routers.game-ws.tls=true
-        # Service: forward to the container port 3003
-        - traefik.http.services.game-ws.loadbalancer.server.port=3003
-        # Ensure traefik uses the right docker network
-        - traefik.docker.network=transcendence-internal
     networks:
       - transcendence-internal
+    ports:
+      - "3002:3002" # internal
+      - "3003:3003" # external
+    volumes:
+      - ./services/game-service/src:/app/src
+      - ./services/game-service/package.json:/app/package.json:ro
+      - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./packages/game-ws-protocol:/app/protocol
     depends_on:
       - backend-service
     restart: unless-stopped
+
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
   gateway:
     container_name: gateway
     image: traefik:v3.2
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    networks:
+      - transcendence-internal
     ports:
       - "8080:80"
       - "8443:443"
       - "127.0.0.1:8081:8080"
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
     volumes:
       - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./services/gateway/conf:/etc/traefik/conf:ro
       - ./certs:/certs:ro
-    networks:
-      - transcendence-internal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   mariadb:
     container_name: mariadb
     image: mariadb:10.11
-    ports:
-      - "3307:3306"
     environment:
-      - AUTH_DB_DATABASE=${AUTH_DB_DATABASE}
-      - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
-      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
-      - USER_SERVICE_DB=${USER_SERVICE_DB}
-      - USER_SERVICE_USERNAME=${USER_SERVICE_USERNAME}
-      - USER_SERVICE_PASSWORD=${USER_SERVICE_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    networks:
+      - transcendence-internal
+    ports:
+      - "3307:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
@@ -130,8 +146,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    networks:
-      - transcendence-internal
     restart: unless-stopped
 
 # ==============================================================================

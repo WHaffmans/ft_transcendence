@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
         User::factory(5)->state(fn() => [
             'name' => fake()->name(),
             'email' => fake()->email(),
+            'rating_mu' => fake()->randomFloat(2, 20, 30),
+            'rating_sigma' => fake()->randomFloat(2, 4, 8.333),
         ])->create();
 
         $clientId = env('OAUTH_DEV_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');

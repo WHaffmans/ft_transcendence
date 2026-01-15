@@ -27,6 +27,7 @@ Route::get('/callback/{provider}', function ($provider) {
     if (! $user) {
         $user = User::create([
             'name' => $socialUser->name ?? $socialUser->getNickname(),
+            'avatar_url' => $socialUser->getAvatar(),
             'provider' => $provider,
             'provider_id' => $socialUser->getId(),
             'email' => $socialUser->getEmail(),
