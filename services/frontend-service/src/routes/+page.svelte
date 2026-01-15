@@ -1,5 +1,4 @@
 <script>
-  import BackgroundDecorations from "$lib/components/BackgroundDecorations.svelte";
   import LoginSection from "$lib/components/LoginSection.svelte";
   import Leaderboard from "$lib/components/Leaderboard.svelte";
   import Footer from "$lib/components/Footer.svelte";
@@ -49,13 +48,6 @@
   <title>Achtung - Landing Page</title>
 </svelte:head>
 
-<!-- Background Decorations -->
-<div
-  class="absolute w-full min-h-screen overflow-hidden"
-  style="background-color: #121212;"
->
-  <BackgroundDecorations />
-</div>
 <!-- Main Content -->
 <div class="relative z-10 flex items-center justify-center min-h-screen px-8">
   <div
