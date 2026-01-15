@@ -29,5 +29,3 @@ tls:
   certificates:
     - certFile: /certs/localhost-cert.pem
       keyFile: /certs/localhost-key.pem
-
-

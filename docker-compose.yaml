@@ -77,9 +77,8 @@ services:
       additional_contexts:
         protocol: ./packages/game-ws-protocol
     environment:
-      - PORT=3100
-      - HOST=0.0.0.0
       - NODE_ENV=development
+      - HOST=0.0.0.0
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
       - AUTH_SERVICE_URL=http://backend-service:4000

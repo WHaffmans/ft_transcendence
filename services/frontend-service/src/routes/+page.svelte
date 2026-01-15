@@ -43,6 +43,15 @@
   onMount(() => {
     auth.init();
   });
+
+  // New Id for GAME
+  function newRoomId() {
+    return crypto.randomUUID();
+  }
+
+  function startGame() {
+    goto(`/game/${newRoomId()}`);
+  }
 </script>
 
 <svelte:head>
@@ -58,7 +67,10 @@
     <div class="flex flex-col lg:flex-row gap-[180px] items-center justify-center">
       <!-- Login Section -->
       <LoginSection />
-
+ <button
+    class="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700" on:click={startGame}>
+    game 
+  </button>
       <!-- Leaderboard -->
       <Leaderboard players={[]} />
     </div>
