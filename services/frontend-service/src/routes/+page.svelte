@@ -1,8 +1,8 @@
 <script>
-  import BackgroundDecorations from '$lib/components/BackgroundDecorations.svelte';
-  import LoginSection from '$lib/components/LoginSection.svelte';
-  import Leaderboard from '$lib/components/Leaderboard.svelte';
-  import Footer from '$lib/components/Footer.svelte';
+  import BackgroundDecorations from "$lib/components/BackgroundDecorations.svelte";
+  import LoginSection from "$lib/components/LoginSection.svelte";
+  import Leaderboard from "$lib/components/Leaderboard.svelte";
+  import Footer from "$lib/components/Footer.svelte";
 
   import { onMount } from "svelte";
   import { apiStore } from "$lib/stores/api";
@@ -44,33 +44,28 @@
     auth.init();
   });
 
-  // New Id for GAME
-  function newRoomId() {
-    return crypto.randomUUID();
-  }
 
-  function startGame() {
-    goto(`/game/${newRoomId()}`);
-  }
 </script>
 
 <svelte:head>
   <title>Achtung - Landing Page</title>
 </svelte:head>
 
-<div class="relative w-full min-h-screen overflow-hidden" style="background-color: #121212;">
+<div
+  class="relative w-full min-h-screen overflow-hidden"
+  style="background-color: #121212;"
+>
   <!-- Background Decorations -->
   <BackgroundDecorations />
 
   <!-- Main Content -->
   <div class="relative z-10 flex items-center justify-center min-h-screen px-8">
-    <div class="flex flex-col lg:flex-row gap-[180px] items-center justify-center">
+    <div
+      class="flex flex-col lg:flex-row gap-[180px] items-center justify-center"
+    >
       <!-- Login Section -->
       <LoginSection />
- <button
-    class="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700" on:click={startGame}>
-    game 
-  </button>
+
       <!-- Leaderboard -->
       <Leaderboard players={[]} />
     </div>
