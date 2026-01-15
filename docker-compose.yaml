@@ -56,31 +56,35 @@ services:
 
   game-service:
     container_name: game-service
-    ports:
-      - "3002:3002"   # internal
-      - "3003:3003"   # external
     build:
       context: ./services/game-service
       dockerfile: Dockerfile.dev
       additional_contexts:
         protocol: ./packages/protocol
     environment:
-      - PORT=3100
-      - HOST=0.0.0.0
       - NODE_ENV=development
+      - HOST=0.0.0.0
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
       - AUTH_SERVICE_URL=http://backend-service:4000
-    volumes:
-      - ./services/game-service/src:/app/src
-      - ./services/game-service/package.json:/app/package.json:ro
-      - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
-      - ./packages/protocol:/app/protocol
+    expose:
+      - "3002" # internal ws
+      - "3003" # public ws (only reachable via traefik)
+    labels:
+        - traefik.enable=true
+        # Router: match /ws on domain
+        - traefik.http.routers.game-ws.rule=Host(`${DOMAIN}`) && PathPrefix(`/ws`)
+        - traefik.http.routers.game-ws.entrypoints=websecure
+        - traefik.http.routers.game-ws.tls=true
+        # Service: forward to the container port 3003
+        - traefik.http.services.game-ws.loadbalancer.server.port=3003
+        # Ensure traefik uses the right docker network
+        - traefik.docker.network=transcendence-internal
     networks:
       - transcendence-internal
-    restart: unless-stopped
     depends_on:
       - backend-service
+    restart: unless-stopped
   # ============================================================================
   # INFRASTRUCTURE
   # ============================================================================
