@@ -30,16 +30,28 @@
 }
 
 @layer base {
-	body {
-		@apply text-white;
-		background-color: #121212;
-	}
+  body {
+    @apply text-white;
+    background-color: #121212;
+  }
+}
+
+/* @layer components {
+  .glass-effect {
+    @apply border backdrop-blur-xl rounded-3xl;
+    background-color: rgba(26, 26, 26, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+} */
+
+@layer components {
+  .glass {
+    @apply border border-white/10 bg-neutral-900/60 backdrop-blur-xl;
+  }
 }
 
 @layer components {
-	.glass-effect {
-		@apply backdrop-blur-xl rounded-3xl border;
-		background-color: rgba(26, 26, 26, 0.6);
-		border-color: rgba(255, 255, 255, 0.1);
-	}
+  .shadow-button {
+    @apply transition-all duration-150 shadow-glow hover:shadow-glow-strong hover:-translate-y-1 active:translate-y-0 active:shadow-glow;
+  }
 }

@@ -1,13 +1,12 @@
 <script lang="ts">
-	// import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
 
 	let { children } = $props();
 </script>
 
-<!-- <svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head> -->
+<svelte:head>
+  <title>ACHTUNG!</title>
+</svelte:head>
 
 <!-- Global app background -->
 <div class="relative min-h-screen overflow-hidden bg-neutral-950 container-type-inline-size">
@@ -16,11 +15,11 @@
     <!-- Top right green ellipse-->
     <img  src="/assets/ellipse-top-right.svg"
             alt=""
-            class="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-[70cqw]" />
+            class="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-[80cqw]" />
     <!-- Top right green ellipse-->
     <img  src="/assets/ellipse-bottom-left.svg"
             alt=""
-            class="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-[70cqw]" />
+            class="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-[80cqw]" />
   </div>
 
   <!-- App shell -->
