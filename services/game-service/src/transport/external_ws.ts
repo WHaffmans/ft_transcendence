@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/07 09:44:12 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/16 10:15:43 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,13 @@ import type { GameConfig } from "../engine/config";
 import { DEFAULT_CONFIG } from "../engine/config";
 import { RoomManager } from "../app/room_manager";
 import type { TurnInput } from "../engine/step";
+
+// Shared protocol
+import {
+	ClientMsgSchema,
+	type ClientMsg,
+	type ServerMsg,
+} from "@ft/game-ws-protocol";
 
 type PublicMsg =
 	| {

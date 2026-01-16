@@ -1,65 +1,62 @@
-// https://zod.dev/
+
 import { z } from "zod";
-import { PROTOCOL_VERSION, RoomId, PlayerId, Seq, Tick } from "../common/primitives";
-import { asNonEmptyTuple, formatZodError, parseJson } from "../common/envelope";
-import { ErrorPayloadSchema } from "../common/errors";
+import type { ZodIssue } from "zod";
+import { RoomId, PlayerId } from "../common/primitives.js";
+
+export const ErrorPayloadSchema = z.object({
+	message: z.string(),
+});
 
 /**
  * =========================
  * Server → Client payload schemas
  * =========================
  */
-export const ServerPayloadSchemas = {
-	joined: z.object({
-		playerId: PlayerId,
-		seed: z.number().int(),
-		config: z.unknown(),
-		snapshot: z.unknown(),
-	}),
 
-	state: z.object({
-		snapshot: z.unknown(),
-	}),
-
-	error: ErrorPayloadSchema,
-} as const;
-
-export type ServerMsgType = keyof typeof ServerPayloadSchemas;
-export type ServerPayload<T extends ServerMsgType> = z.infer<(typeof ServerPayloadSchemas)[T]>;
-
-/**
- * =========================
- * Server → Client envelope
- * =========================
- */
-const ServerEnvelopeBase = z.object({
-	v: z.literal(PROTOCOL_VERSION),
-	type: z.string(),
+export const RoomCreatedMsgSchema = z.object({
+	type: z.literal("room_created"),
 	roomId: RoomId,
-	serverTick: Tick,
-	ackSeq: Seq.optional(),		// acknowladged sequence
-	payload: z.unknown(),
 });
 
-export const ServerMsgSchema = z.discriminatedUnion(
-	"type",
-	asNonEmptyTuple(
-		(Object.keys(ServerPayloadSchemas) as ServerMsgType[]).map((type) =>
-			ServerEnvelopeBase.extend({
-				type: z.literal(type),
-				payload: ServerPayloadSchemas[type],
-			})
-		)
-	)
-);
+export const JoinedMsgSchema = z.object({
+	type: z.literal("joined"),
+	roomId: RoomId,
+	playerId: PlayerId,
+});
+
+export const StateMsgSchema = z.object({
+	type: z.literal("state"),
+	snapshot: z.unknown(),
+});
+
+export const ErrorMsgSchema = z.object({
+	type: z.literal("error"),
+	...ErrorPayloadSchema.shape,
+});
+
+
+// Export message types
+export const ServerMsgSchema = z.discriminatedUnion("type", [
+	RoomCreatedMsgSchema,
+	JoinedMsgSchema,
+	StateMsgSchema,
+	ErrorMsgSchema,
+]);
 
 export type ServerMsg = z.infer<typeof ServerMsgSchema>;
+export type ServerMsgType = ServerMsg["type"];
 
 export function parseServerMsg(raw: string): ServerMsg {
-	const obj = parseJson(raw);
+	let obj: unknown;
+	try {
+		obj = JSON.parse(raw);
+	} catch {
+		throw new Error("Invalid JSON");
+	}
+
 	const res = ServerMsgSchema.safeParse(obj);
 	if (!res.success) {
-		throw new Error(formatZodError(res.error));
+		throw new Error(res.error.issues.map((i: ZodIssue) => i.message).join("; "));
 	}
 	return res.data;
 }

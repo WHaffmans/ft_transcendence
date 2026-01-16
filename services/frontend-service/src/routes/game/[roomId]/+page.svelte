@@ -3,6 +3,14 @@
 	import { page } from "$app/stores";
 	import { get } from "svelte/store";
 
+	// Shared protocol
+	import {
+		ClientMsgSchema,
+		ServerMsgSchema,
+		type ClientMsg,
+		type ServerMsg,
+	} from "@ft/game-ws-protocol";
+
 	type TurnInput = -1 | 0 | 1;
 
 	type ColorRGBA = {

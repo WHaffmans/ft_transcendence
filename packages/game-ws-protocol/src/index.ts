@@ -1,7 +1,3 @@
 
-// packages/protocol/src/index.ts
-export * from "./common/primitives";
-export * from "./common/errors";
-export * from "./common/envelope";
-
-export * from "./game";
+export * from "./common/primitives.js";
+export * from "./game/index.js";
