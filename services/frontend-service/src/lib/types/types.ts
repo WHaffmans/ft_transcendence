@@ -16,3 +16,31 @@ export interface Game {
     updated_at: string;
     users: User[];
 }
+
+export interface RankingPlayer {
+    position: number;
+    username: string;
+    rank: number;
+    avatar: string;
+}
+
+export interface MatchResult {
+    opponent: string;
+    result: 'WIN' | 'LOSS';
+    timestamp?: string;
+}
+
+export interface DashboardData {
+    currentUser: {
+        username: string;
+        avatar: string;
+        rank: number;
+        position: number;
+    };
+    lastMatch: MatchResult;
+    globalRanking: RankingPlayer[];
+    serverStatus: {
+        name: string;
+        playersOnline: number;
+    };
+}
