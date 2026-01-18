@@ -22,12 +22,12 @@
   };
 </script>
 
-<div class="flex flex-col items-center w-[600px] shrink-0">
+<div class="flex flex-col items-center w-150 shrink-0">
   <!-- Logo and Subtitle Frame -->
-  <div class="relative w-[600px] h-[327px] mb-8">
+  <div class="relative w-150 h-81.75 mb-8">
     <!-- Subtitle (overlaps under logo) -->
     <p
-      class="absolute left-4/9 top-[210px] -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap"
+      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap"
     >
       {subtitle}
     </p>
