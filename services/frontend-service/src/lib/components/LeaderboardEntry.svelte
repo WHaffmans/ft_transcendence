@@ -3,7 +3,7 @@
 </script>
 
 <!-- Item layout -->
-<li class="grid grid-cols-[auto_1fr_auto] items-center w-full min-w-0 px-4 py-2">
+<div class="grid grid-cols-[auto_1fr_auto] items-center w-full min-w-0 px-4 py-2">
   <!-- Avatar -->
   <div class="shrink-0 size-11">
     {#if player.avatar_url}
@@ -30,4 +30,4 @@
   <span class="ml-4 text-sm font-bold text-green-400 shrink-0">
     {player.rating}
   </span>
-</li>
+</div>

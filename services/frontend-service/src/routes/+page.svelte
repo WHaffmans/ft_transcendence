@@ -6,8 +6,10 @@
   import { onMount } from "svelte";
   import { apiStore } from "$lib/stores/api";
   import { goto } from "$app/navigation";
-    import { textSpanIntersection } from "typescript";
 
+  // Passing +page.ts data
+  let { data } = $props();
+  
   // Subscribe to the auth store
   const auth = apiStore;
 
@@ -62,7 +64,7 @@
 
       <!-- Leaderboard -->
       <div class="flex justify-center">
-        <Leaderboard players={[]} />
+        <Leaderboard players={data.players} />
       </div>
     </section>
   </div>
