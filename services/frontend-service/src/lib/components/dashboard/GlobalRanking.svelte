@@ -25,7 +25,7 @@
 	});
 </script>
 
-<div class="glass h-[var(--height-ranking)] w-full lg:w-[var(--width-ranking)] rounded-2xl flex flex-col relative">
+<div class="glass h-ranking w-full lg:w-ranking rounded-2xl flex flex-col relative">
 	<!-- Header -->
 	<div class="flex flex-col gap-2.5 px-6 pt-6">
 		<p class="text-xs font-bold text-[#888] uppercase">Global Ranking</p>
@@ -34,7 +34,7 @@
 
 	<!-- Column Headers -->
 	<div class="flex items-center justify-between px-6 text-[10px] font-medium text-[#666] mt-3 mb-2">
-		<div class="flex items-center gap-[52px]">
+		<div class="flex items-center gap-13">
 			<span>#</span>
 			<span>PLAYER</span>
 		</div>

@@ -10,7 +10,7 @@
 	let { title, children, class: className = '' }: Props = $props();
 </script>
 
-<div class="glass h-[var(--height-card)] rounded-2xl flex-1 min-w-0 {className}">
+<div class="glass h-card rounded-2xl flex-1 min-w-0 {className}">
 	<div class="p-6 flex flex-col h-full">
 		<p class="text-xs font-bold text-[#888] uppercase mb-4">
 			{title}
