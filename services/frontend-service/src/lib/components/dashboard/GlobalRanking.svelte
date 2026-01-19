@@ -23,7 +23,7 @@
 	});
 </script>
 
-<div class="glass h-[704px] w-full lg:w-[358px] rounded-2xl flex flex-col relative">
+<div class="glass h-[var(--height-ranking)] w-full lg:w-[var(--width-ranking)] rounded-2xl flex flex-col relative">
 	<!-- Header -->
 	<div class="flex flex-col gap-2.5 px-6 pt-6">
 		<p class="text-xs font-bold text-[#888] uppercase">Global Ranking</p>

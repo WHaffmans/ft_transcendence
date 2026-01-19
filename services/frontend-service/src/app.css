@@ -27,6 +27,11 @@
 
   --shadow-glow: 0px 10px 20px 0px rgba(255, 255, 255, 0.25);
   --shadow-glow-strong: 0px 5px 15px 0px rgba(255, 255, 255, 0.50);
+
+  /* Dashboard specific heights */
+  --height-card: 340px;
+  --height-ranking: 704px;
+  --width-ranking: 358px;
 }
 
 @layer base {

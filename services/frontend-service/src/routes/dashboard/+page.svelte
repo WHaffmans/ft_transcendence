@@ -62,7 +62,7 @@
 				<!-- Left Section -->
 				<div class="flex flex-col gap-6 w-full lg:w-[850px]">
 					<!-- Play Game Card -->
-					<div class="glass h-[340px] rounded-2xl relative overflow-hidden">
+				<div class="glass h-[var(--height-card)] rounded-2xl relative overflow-hidden">
 						<div class="absolute inset-0 p-10 flex flex-col justify-start">
 							<h2 class="text-[48px] font-bold text-white leading-tight mb-1">
 								Ready to Curve?
@@ -85,7 +85,7 @@
 					<!-- Bottom Cards Row -->
 					<div class="flex flex-col sm:flex-row gap-6">
 						<!-- Current Rank Card -->
-						<div class="glass h-[340px] rounded-2xl flex-1 min-w-0">
+					<div class="glass h-[var(--height-card)] rounded-2xl flex-1 min-w-0">
 							<div class="p-6 flex flex-col h-full">
 								<p class="text-xs font-bold text-[#888] uppercase mb-4">
 									Current Rank
@@ -99,7 +99,7 @@
 						</div>
 
 						<!-- Last Match Card -->
-						<div class="glass h-[340px] rounded-2xl flex-1 min-w-0">
+					<div class="glass h-[var(--height-card)] rounded-2xl flex-1 min-w-0">
 							<div class="p-6 flex flex-col h-full">
 								<p class="text-xs font-bold text-[#888] uppercase mb-4">
 									Last Match
