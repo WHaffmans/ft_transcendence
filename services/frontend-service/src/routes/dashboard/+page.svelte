@@ -32,7 +32,8 @@
 			<img
 				src="/assets/ellipse-top-right.svg"
 				alt=""
-				class="w-full h-full object-contain"
+				class="w-full h-full object-contain opacity-80"
+				style="filter: blur(40px) brightness(1.2);"
 			/>
 		</div>
 
@@ -41,7 +42,8 @@
 			<img
 				src="/assets/ellipse-bottom-left.svg"
 				alt=""
-				class="w-full h-full object-contain"
+				class="w-full h-full object-contain opacity-80"
+				style="filter: blur(40px) brightness(1.2);"
 			/>
 		</div>
 	</div>
