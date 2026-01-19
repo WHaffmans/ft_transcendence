@@ -18,6 +18,7 @@ export interface Game {
 }
 
 export interface RankingPlayer {
+    id: number;
     position: number;
     username: string;
     rank: number;
@@ -25,19 +26,26 @@ export interface RankingPlayer {
 }
 
 export interface MatchResult {
+    id: string;
     opponent: string;
+    opponentId: number;
     result: 'WIN' | 'LOSS';
-    timestamp?: string;
+    timestamp: string;
+    score?: {
+        player: number;
+        opponent: number;
+    };
 }
 
 export interface DashboardData {
     currentUser: {
+        id: number;
         username: string;
         avatar: string;
         rank: number;
         position: number;
     };
-    lastMatch: MatchResult;
+    lastMatch: MatchResult | null;
     globalRanking: RankingPlayer[];
     serverStatus: {
         name: string;

@@ -5,6 +5,7 @@
 	interface Props {
 		topPlayers: RankingPlayer[];
 		currentUser: {
+			id: number;
 			username: string;
 			avatar: string;
 			rank: number;
@@ -16,6 +17,7 @@
 
 	// Create current user player object
 	const currentUserPlayer: RankingPlayer = $derived({
+		id: currentUser.id,
 		position: currentUser.position,
 		username: currentUser.username,
 		rank: currentUser.rank,

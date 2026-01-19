@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DashboardNav from '$lib/components/dashboard/DashboardNav.svelte';
 	import GlobalRanking from '$lib/components/dashboard/GlobalRanking.svelte';
+	import StatCard from '$lib/components/dashboard/StatCard.svelte';
 	import { mockDashboardData } from '$lib/data/dashboard';
 	import { goto } from '$app/navigation';
 
@@ -85,37 +86,41 @@
 					<!-- Bottom Cards Row -->
 					<div class="flex flex-col sm:flex-row gap-6">
 						<!-- Current Rank Card -->
-					<div class="glass h-[var(--height-card)] rounded-2xl flex-1 min-w-0">
-							<div class="p-6 flex flex-col h-full">
-								<p class="text-xs font-bold text-[#888] uppercase mb-4">
-									Current Rank
-								</p>
+						<StatCard title="Current Rank">
+							{#snippet children()}
 								<div class="flex-1 flex items-center justify-center">
 									<p class="text-[64px] font-bold text-white leading-none">
 										{data.currentUser.rank}
 									</p>
 								</div>
-							</div>
-						</div>
+							{/snippet}
+						</StatCard>
 
 						<!-- Last Match Card -->
-					<div class="glass h-[var(--height-card)] rounded-2xl flex-1 min-w-0">
-							<div class="p-6 flex flex-col h-full">
-								<p class="text-xs font-bold text-[#888] uppercase mb-4">
-									Last Match
-								</p>
-								<div class="flex-1 flex items-start pt-6">
-									<div class="flex items-center justify-between w-full">
-										<p class="text-lg font-medium text-white">
-											vs. {data.lastMatch.opponent}
-										</p>
-										<span class="text-sm font-bold {data.lastMatch.result === 'WIN' ? 'text-[#0f8]' : 'text-red-500'}">
-											{data.lastMatch.result}
-										</span>
+						{#if data.lastMatch}
+							<StatCard title="Last Match">
+								{#snippet children()}
+									<div class="flex-1 flex items-start pt-6">
+										<div class="flex items-center justify-between w-full">
+											<p class="text-lg font-medium text-white">
+												vs. {data.lastMatch.opponent}
+											</p>
+											<span class="text-sm font-bold {data.lastMatch.result === 'WIN' ? 'text-[#0f8]' : 'text-red-500'}">
+												{data.lastMatch.result}
+											</span>
+										</div>
 									</div>
-								</div>
-							</div>
-						</div>
+								{/snippet}
+							</StatCard>
+						{:else}
+							<StatCard title="Last Match">
+								{#snippet children()}
+									<div class="flex-1 flex items-center justify-center">
+										<p class="text-base text-[#888]">No matches yet</p>
+									</div>
+								{/snippet}
+							</StatCard>
+						{/if}
 					</div>
 				</div>
 
