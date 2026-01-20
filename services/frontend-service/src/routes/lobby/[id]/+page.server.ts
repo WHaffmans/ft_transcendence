@@ -1,9 +1,9 @@
-import { apiStore } from '../../../lib/stores/api.js';
+import type { PageServerLoad } from './$types';
 
-export function load({ params }) {
+export const load: PageServerLoad = ({ params }) => {
     const { id } = params;
 
     return {
         lobbyId: id,
     };
-}
+};

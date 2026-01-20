@@ -1,9 +1,7 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { sha256 } from 'js-sha256';
 import { PUBLIC_DOMAIN, PUBLIC_CLIENT_ID, PUBLIC_OAUTH_REDIRECT_URI} from '$env/static/public';
 import type { User } from '$lib/types/types';
-import { base64UrlEncode, arrayToString, generateRandomString } from '$lib/utils/utils';
 import { openPopup } from '$lib/utils/oauth';
 
 interface ApiState {
@@ -25,7 +23,7 @@ const createApiStore = () => {
 
   return {
     subscribe,
-    
+
     async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
       if (!browser) {
         return;
@@ -72,7 +70,7 @@ const createApiStore = () => {
         600,
         this.handleOAuthCallbackFromPopup.bind(this)
       );
-      
+
     },
 
     async handleOAuthCallback(urlParams: URLSearchParams) {
@@ -94,7 +92,7 @@ const createApiStore = () => {
 
       return this.handleOAuthCallbackFromPopup(code, state);
     },
-    
+
     async handleOAuthCallbackFromPopup(code: string, state: string): Promise<boolean> {
       if (!browser) return false;
 
@@ -139,7 +137,7 @@ const createApiStore = () => {
         // Fetch user data
         const userData = await this.fetchApi(`/user`);
         set({ user: userData, isLoading: false, isAuthenticated: userData !== null });
-        
+
         return true;
       } catch (error) {
         console.error('OAuth token exchange failed:', error);
@@ -151,7 +149,7 @@ const createApiStore = () => {
 
     async logout() {
       const token = localStorage.getItem("access_token");
-      
+
       try {
         await fetch("/auth/api/logout", {
           method: "POST",
