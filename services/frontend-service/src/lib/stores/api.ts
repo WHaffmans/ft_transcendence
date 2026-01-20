@@ -1,8 +1,8 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { PUBLIC_DOMAIN, PUBLIC_CLIENT_ID, PUBLIC_OAUTH_REDIRECT_URI} from '$env/static/public';
 import type { User } from '$lib/types/types';
 import { openPopup } from '$lib/utils/oauth';
+import { env } from "$env/dynamic/public";
 
 interface ApiState {
   user: User | null;
@@ -64,7 +64,7 @@ const createApiStore = () => {
       if (!browser) return;
 
       return openPopup(
-        `http://${PUBLIC_DOMAIN}/auth/oauth/authorize`,
+        `http://${env.PUBLIC_DOMAIN}/auth/oauth/authorize`,
         'oauth2_login',
         500,
         600,
@@ -120,9 +120,9 @@ const createApiStore = () => {
           },
           body: JSON.stringify({
             grant_type: 'authorization_code',
-            client_id: PUBLIC_CLIENT_ID,
+            client_id: env.PUBLIC_CLIENT_ID,
             code: code,
-            redirect_uri: PUBLIC_OAUTH_REDIRECT_URI,
+            redirect_uri: env.PUBLIC_OAUTH_REDIRECT_URI,
             code_verifier: codeVerifier,
           }),
         });
