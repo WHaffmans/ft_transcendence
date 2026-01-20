@@ -14,12 +14,12 @@
   <div class="absolute inset-0 pointer-events-none">
     <!-- Top right green ellipse-->
     <img  src="/assets/ellipse-top-right.svg"
-            alt=""
-            class="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-[80cqw]" />
+          alt=""
+          class="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-[80cqw]" />
     <!-- Top right green ellipse-->
     <img  src="/assets/ellipse-bottom-left.svg"
-            alt=""
-            class="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-[80cqw]" />
+          alt=""
+          class="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-[80cqw]" />
   </div>
 
   <!-- App shell -->

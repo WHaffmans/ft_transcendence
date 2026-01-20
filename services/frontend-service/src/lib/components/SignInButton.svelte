@@ -1,5 +1,4 @@
 <script>
-  // export let onClick = () => {};
   let { onClick, label } = $props();
 </script>
 

@@ -22,28 +22,24 @@
   };
 </script>
 
-<div class="flex flex-col items-center w-150 shrink-0">
+<section class="flex flex-col items-center w-150 shrink-0">
   <!-- Logo and Subtitle Frame -->
-  <div class="relative w-150 h-81.75 mb-8">
+  <header class="relative w-150 h-81.75 mb-8">
+    <!-- Logo Image -->
+    <img  src={landingLogo}
+          alt="Achtung Logo"
+          class="absolute inset-0 object-cover w-full h-full pointer-events-none" />
+          
     <!-- Subtitle (overlaps under logo) -->
-    <p
-      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap"
-    >
+    <p class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap">
       {subtitle}
     </p>
+  </header>
 
-    <!-- Logo Image -->
-    <img
-      src={landingLogo}
-      alt="Achtung Logo"
-      class="absolute inset-0 w-full h-full object-cover pointer-events-none"
-    />
-  </div>
-
-  <!-- Sign In Button -->
-  {#if $apiStore.isAuthenticated}
-    <SignInButton onClick={handleLogout} label="Logout" />
-  {:else}
-    <SignInButton onClick={handleLogin} label="Login" />
-  {/if}
-</div>
+  <!-- Primary call to action -->
+     {#if $apiStore.isAuthenticated}
+       <SignInButton onClick={handleLogout} label="Logout" />
+     {:else}
+       <SignInButton onClick={handleLogin} label="Login" />
+     {/if}
+</section>
