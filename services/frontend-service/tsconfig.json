@@ -25,7 +25,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src"
+    "src",
+    ".svelte-kit/ambient.d.ts"
   ],
   "references": [
     {
