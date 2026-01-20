@@ -27,6 +27,11 @@
 
   --shadow-glow: 0px 10px 20px 0px rgba(255, 255, 255, 0.25);
   --shadow-glow-strong: 0px 5px 15px 0px rgba(255, 255, 255, 0.50);
+
+  /* Dashboard specific heights */
+  --height-card: 340px;
+  --height-ranking: 704px;
+  --width-ranking: 358px;
 }
 
 @layer base {
@@ -46,7 +51,9 @@
 
 @layer components {
   .glass {
-    @apply border border-white/10 bg-neutral-900/60 backdrop-blur-xl;
+    @apply border border-white/10 bg-[rgba(26,26,26,0.6)] backdrop-blur-[20px];
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   }
 }
 
