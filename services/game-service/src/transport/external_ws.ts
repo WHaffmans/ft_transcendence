@@ -42,7 +42,7 @@ export function startPublicWsServer(
 	opts: { port: number; path?: string },
 	rooms: RoomManager
 ) {
-	const wss = new WebSocketServer({ port: opts.port, path: opts.path ?? "/ws" });
+	const wss : WebSocketServer = new WebSocketServer({ port: opts.port, path: opts.path ?? "/ws" });
 
 	wss.on("connection", (ws) => {
 		let boundRoomId: string | null = null;
