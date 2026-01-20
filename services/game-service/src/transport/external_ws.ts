@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/07 09:44:12 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/20 15:47:32 by qmennen       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,8 @@ type PublicMsg =
 		players: { playerId: string }[];
 	}
 	| { type: "join_room"; roomId: string; playerId: string }
-	| { type: "input"; turn: TurnInput };
+	| { type: "input"; turn: TurnInput }
+	| {type: "leave_room"; roomId: string;};
 
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
@@ -104,11 +105,24 @@ export function startPublicWsServer(
 
 						rooms.subscribe(boundRoomId, ws);
 
-						safeSend(ws, {
-							type: "joined",
-							roomId: boundRoomId,
-							playerId: boundPlayerId,
-						});
+						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
+
+						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId });
+						// safeSend(ws, {
+						// 	type: "joined",
+						// 	roomId: boundRoomId,
+						// 	playerId: boundPlayerId,
+						// });
+						return;
+					}
+
+					case "leave_room": {
+						console.log(`Player left room ${msg.roomId}`);
+						rooms.broadcast(msg.roomId, { type: "left", roomId: msg.roomId});
+						rooms.unsubscribe(msg.roomId, ws);
+
+						boundRoomId = null;
+						boundPlayerId = null;
 						return;
 					}
 
