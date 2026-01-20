@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FinishGameRequest;
+use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
 use Illuminate\Http\Request;
 
@@ -64,7 +65,7 @@ class GameController extends Controller
             return response()->json($applicable->first());
         }
 
-        if (! $open_games->isEmpty()) {
+        if (!$open_games->isEmpty()) {
             $game = $open_games->first();
             $game->users()->attach($request->user()->id);
             return response()->json($game->load('users'));
@@ -72,7 +73,13 @@ class GameController extends Controller
 
         $new_game = Game::create(['status' => 'pending']);
         $new_game->users()->attach($request->user()->id);
-        return response()->json($new_game->load('users'));
+        return response()->json($new_game->load('users'), 201);
+    }
+
+    public function leaveGame(LeaveGameRequest $request, Game $game)
+    {
+        $game->users()->detach($request->input('user_id'));
+        return response()->json($game->load('users'));
     }
 
     public function startGame(Request $request, Game $game)
