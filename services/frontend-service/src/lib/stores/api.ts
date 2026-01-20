@@ -24,25 +24,27 @@ const createApiStore = () => {
   return {
     subscribe,
 
-    async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
-      if (!browser) {
-        return;
-      }
-
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        set({ user: null, isLoading: false, isAuthenticated: false });
-        return null;
-      }
+    async fetchApi<T>(endpoint: string, method: string = 'GET', body?: any, token?: string, auth: boolean = true): Promise<T | null> {
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: `Bearer ${token}`,
       };
 
+      if (auth) {
+        const accessToken = token ?? (browser ? localStorage.getItem("access_token") : null);
+        if (!accessToken) {
+          set({ user: null, isLoading: false, isAuthenticated: false });
+          return null;
+        }
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
+      const url = browser ? `/api${endpoint}` : `http://backend-service:4000/api${endpoint}`;
+
+
       try {
-        const response = await fetch(`/api${endpoint}`, {
+        const response = await fetch(url , {
           method,
           headers,
           body: body ? JSON.stringify(body) : undefined,

@@ -2,30 +2,19 @@
   import LeaderboardEntry from "./LeaderboardEntry.svelte";
   import { onMount } from "svelte";
   import type { User } from "$lib/types/types";
+  import { apiStore } from "$lib/stores/api";
 
   let players: User[] = [];
+  let api = apiStore;
 
   onMount(() => {
     // In a real application, you would fetch this data from an API
-    fetch("/api/leaderboard", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch leaderboard data");
-        }
-        return response.json();
-      })
+    api.fetchApi<User[]>("/leaderboard", "GET")
       .then((data) => {
         console.log("Leaderboard data:", data);
         players = data;
       })
-      .catch((error) => {
-        console.error("Error fetching leaderboard data:", error);
-      });
+
   });
 </script>
 
