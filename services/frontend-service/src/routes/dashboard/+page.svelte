@@ -29,7 +29,7 @@
 	<!-- Background decorations -->
 	<div class="absolute inset-0 pointer-events-none overflow-hidden">
 		<!-- Top right ellipse -->
-		<div class="absolute -top-[300px] -right-[300px] w-[600px] h-[600px]">
+		<div class="absolute -top-75 -right-75 w-150 h-150">
 			<img
 				src="/assets/ellipse-top-right.svg"
 				alt=""
@@ -39,7 +39,7 @@
 		</div>
 
 		<!-- Bottom left ellipse -->
-		<div class="absolute -bottom-[300px] -left-[300px] w-[600px] h-[600px]">
+		<div class="absolute -bottom-75 -left-75 w-150 h-150">
 			<img
 				src="/assets/ellipse-bottom-left.svg"
 				alt=""
@@ -57,13 +57,13 @@
 	/>
 
 	<!-- Main content -->
-	<main class="relative z-10 pt-[88px] pb-10 px-6">
-		<div class="max-w-[1232px] mx-auto">
+	<main class="relative z-10 pt-22 pb-10 px-6">
+		<div class="max-w-308 mx-auto">
 			<div class="flex flex-col lg:flex-row items-start justify-between gap-6">
 				<!-- Left Section -->
-				<div class="flex flex-col gap-6 w-full lg:w-[850px]">
+				<div class="flex flex-col gap-6 w-full lg:w-212.5">
 					<!-- Play Game Card -->
-				<div class="glass h-[var(--height-card)] rounded-2xl relative overflow-hidden">
+				<div class="glass h-card rounded-2xl relative overflow-hidden">
 						<div class="absolute inset-0 p-10 flex flex-col justify-start">
 							<h2 class="text-[48px] font-bold text-white leading-tight mb-1">
 								Ready to Curve?
@@ -125,7 +125,7 @@
 				</div>
 
 				<!-- Right Section - Global Ranking -->
-				<div class="w-full lg:w-auto flex-shrink-0">
+				<div class="w-full lg:w-auto shrink-0">
 					<GlobalRanking
 						topPlayers={data.globalRanking}
 						currentUser={data.currentUser}
