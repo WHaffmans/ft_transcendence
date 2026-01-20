@@ -20,20 +20,12 @@ import type { TurnInput } from "../engine/step";
 // Shared protocol
 import {
 	ClientMsgSchema,
-	type ClientMsg,
-	type ServerMsg,
+	type ClientMsg
 } from "@ft/game-ws-protocol";
 
-type PublicMsg =
-	| {
-		type: "create_room";
-		roomId: string;
-		seed: number;
-		config?: Partial<GameConfig>;
-		players: { playerId: string }[];
-	}
-	| { type: "join_room"; roomId: string; playerId: string }
-	| { type: "input"; turn: TurnInput };
+// ---------------------
+// helpers
+// ---------------------
 
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
@@ -43,6 +35,10 @@ function safeSend(ws: WebSocket, obj: unknown) {
 function assertNever(x: never): never {
 	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
 }
+
+// ---------------------
+// server
+// ---------------------
 
 export function startPublicWsServer(
 	opts: { port: number; path?: string },
@@ -55,15 +51,24 @@ export function startPublicWsServer(
 		let boundPlayerId: string | null = null;
 
 		ws.on("message", (buf) => {
-			let msg: PublicMsg;
+			let raw: unknown;
 
 			// Parse JSON
 			try {
-				msg = JSON.parse(buf.toString()) as PublicMsg;
+				raw = JSON.parse(buf.toString());
 			} catch {
 				safeSend(ws, { type: "error", message: "Invalid JSON" });
 				return;
 			}
+
+			// Validate message shape
+			const parsed = ClientMsgSchema.safeParse(raw);
+			if (!parsed.success) {
+				safeSend(ws, { type: "error", message: "Invalid message shape" });
+				return;
+			}
+
+			const msg: ClientMsg = parsed.data;
 
 			// Handle messages
 			try {
@@ -80,9 +85,14 @@ export function startPublicWsServer(
 							throw new Error("create_room: players must not be empty");
 						}
 
+						// Partial GameConfig
+						const partial = msg.config && typeof msg.config === "object" && msg.config !== null
+							? (msg.config as Partial<GameConfig>)
+							: undefined;
+
 						const config: GameConfig = {
 							...DEFAULT_CONFIG,
-							...(msg.config ?? {}),
+							...(partial ?? {}),
 						};
 
 						for (const [k, v] of Object.entries(config)) {

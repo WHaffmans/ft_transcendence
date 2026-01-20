@@ -35,7 +35,6 @@ export const InputMsgSchema = z.object({
 	turn: TurnInputSchema,
 });
 
-
 // Export message types
 export const ClientMsgSchema = z.discriminatedUnion("type", [
 	CreateRoomMsgSchema,
