@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { apiStore } from "../../../lib/stores/api.js";
+  import { apiStore } from "$lib/stores/api";
   import type { Game } from "$lib/types/types";
 
   let { data } = $props();
