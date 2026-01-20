@@ -176,6 +176,10 @@ const createApiStore = () => {
         localStorage.removeItem("refresh_token");
         sessionStorage.removeItem("pkce_state");
         sessionStorage.removeItem("pkce_code_verifier");
+
+        // Clear cookies
+        document.cookie = 'access_token=; path=/; max-age=0';
+        document.cookie = 'refresh_token=; path=/; max-age=0';
       }
     },
 
@@ -185,15 +189,18 @@ const createApiStore = () => {
         if (refreshToken) {
           localStorage.setItem("refresh_token", refreshToken);
         }
+        document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        if (refreshToken) {
+          document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+        }
       }
-
       update(state => ({ ...state, accessToken, refreshToken }));
     },
 
     init() {
       if (browser) {
         this.fetchApi(`/user`).then((data) => {
-          set({ user: data, isLoading: false, isAuthenticated: ! (data == null) });
+          set({ user: data, isLoading: false, isAuthenticated: !(data == null) });
         });
       }
     }
@@ -201,3 +208,35 @@ const createApiStore = () => {
 };
 
 export const apiStore = createApiStore();
+
+// In SvelteKit server - side code(+page.server.ts, +layout.server.ts, server hooks), you can access it via the cookies object:
+
+// export async function load({ cookies, fetch }) {
+//   const token = cookies.get('access_token');
+
+//   if (!token) {
+//     return { user: null };
+//   }
+
+//   // Make authenticated API request
+//   const response = await fetch('/api/user', {
+//     headers: {
+//       'Authorization': `Bearer ${token}`
+//     }
+//   });
+
+//   return { user: await response.json() };
+// }
+
+// Or in a server hook:
+
+// export async function handle({ event, resolve }) {
+//   const token = event.cookies.get('access_token');
+
+//   if (token) {
+//     event.locals.token = token;
+//   }
+
+//   return resolve(event);
+// }
+
