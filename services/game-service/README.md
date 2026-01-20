@@ -30,6 +30,12 @@ php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"\nphp -
 - [ ] How to authenticate? SSL internal?
 - [ ] Websocket IO?
 
+### New notes
+
+- First player in lobby creates room.
+- Join room callback, refrech lobby list for all players.
+- Move to canvas, wait to start. Call to start.
+
 
 ### Setup
 
