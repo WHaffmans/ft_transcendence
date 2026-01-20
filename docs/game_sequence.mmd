@@ -6,12 +6,12 @@ sequenceDiagram
     participant DB as Database
 
     U->>SPA: Login
-    note right of SPA: User is authenticated\n(no action yet)
+    note right of SPA: User is authenticated (no action yet)
 
     U->>SPA: Click "Find Game"
     SPA->>API: HTTP POST /find-game
 
-    API->>DB: Query games registry\n(pending/active)
+    API->>DB: Query games registry(pending/active)
     DB-->>API: Matching game or none
 
     alt No applicable game
@@ -29,10 +29,8 @@ sequenceDiagram
     WS-->>SPA: WS connected
 
     SPA->>WS: join_room { gameId, userId }
-
     WS->>WS: Find or create room(channel)
     WS->>WS: Add socket to room
-
     WS-->>SPA: user_joined event (broadcast to room)
 
     note over SPA: All connected clients receive event
@@ -41,5 +39,28 @@ sequenceDiagram
     API->>DB: Fetch game + players
     DB-->>API: Game state
     API-->>SPA: Updated game data
-
     SPA->>SPA: Update lobby UI
+
+    %% --- Start Game flow ---
+    alt Host clicks "Start Game"
+        U->>SPA: Click "Start Game"
+        SPA->>API: HTTP POST /games/{gameId}/start
+
+        API->>DB: Validate permissions + state\n(status == lobby)
+        API->>DB: Update games.status=started
+
+
+
+        API->>WS: HTTP POST /internal/games/{gameId}/started
+        WS-->>API: 200 OK
+        API-->>SPA: 200 OK (started)
+        WS->>WS: Mark room as "in-game" -> start game tick / state broadcaster
+        WS-->>SPA: game_started {gameId, startedAt} (broadcast to room)
+        SPA->>SPA: Redirect to /game/{gameId}
+        WS-->>SPA: game_state snapshot (optional)
+    end
+
+
+    loop During game
+        WS-->>SPA: game_state_update / tick messages
+    end
