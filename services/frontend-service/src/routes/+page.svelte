@@ -13,33 +13,6 @@
 
   let game = {};
 
-  const findGame = () => {
-    // api call to backend to find a game
-    fetch("/api/games/find", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-      credentials: "include",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to find a game");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Game found:", data);
-        // update ui
-        game = data;
-        goto(`/lobby/${data.id}`);
-      })
-      .catch((error) => {
-        console.error("Error finding game:", error);
-      });
-  };
-
   onMount(() => {
     auth.init();
   });
