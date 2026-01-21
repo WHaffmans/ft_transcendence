@@ -52,3 +52,20 @@ export interface DashboardData {
         playersOnline: number;
     };
 }
+
+export type LobbyPlayerStatus = 'host' | 'ready' | 'not-ready';
+
+export interface LobbyPlayer {
+    id: number;
+    username: string;
+    avatar: string;
+    rank: number;
+    status: LobbyPlayerStatus;
+    isCurrentUser: boolean;
+}
+
+export interface LobbyData {
+    players: (LobbyPlayer | null)[]; // null represents empty slot
+    maxPlayers: number;
+    currentUserId: number;
+}
