@@ -22,7 +22,7 @@
 	};
 </script>
 
-<div class="glass h-[var(--height-ranking)] rounded-2xl w-full flex flex-col">
+<div class="glass h-ranking rounded-2xl w-full flex flex-col">
 	<!-- Header -->
 	<div class="flex flex-col gap-2.5 px-6 pt-6">
 		<p class="text-xs font-bold text-[#888] uppercase">Match Settings</p>
