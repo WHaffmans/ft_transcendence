@@ -1,10 +1,8 @@
 import { sha256 } from "js-sha256";
 import { arrayToString, base64UrlEncode, generateRandomString } from "./utils";
-import {
-  PUBLIC_CLIENT_ID,
-  PUBLIC_OAUTH_REDIRECT_URI,
-} from "$env/static/public";
+import { env } from "$env/dynamic/public";
 
+//TODO: BIG REFACTOR
 export function openPopup(
   url: string,
   name: string,
@@ -13,8 +11,8 @@ export function openPopup(
   callback: (code: string, state: string) => Promise<boolean>
 ) {
   return new Promise((resolve) => {
-    const client_id = PUBLIC_CLIENT_ID;
-    const redirect_uri = encodeURIComponent(PUBLIC_OAUTH_REDIRECT_URI);
+    const client_id = env.PUBLIC_CLIENT_ID;
+    const redirect_uri = encodeURIComponent(env.PUBLIC_OAUTH_REDIRECT_URI);
     const state = generateRandomString(40);
     sessionStorage.setItem("pkce_state", state);
 
@@ -27,7 +25,6 @@ export function openPopup(
 
     const response_type = "code";
     const scope = encodeURIComponent("user:read");
-    // const auth_url = `http://${PUBLIC_DOMAIN}/auth/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
 
     const popup = window.open(
         `${url}?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`,
