@@ -69,6 +69,3 @@
     </section>
   </div>
 </main>
-
-<!-- Global footer -->
-<Footer />
