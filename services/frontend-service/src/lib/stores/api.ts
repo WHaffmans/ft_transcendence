@@ -68,7 +68,7 @@ const createApiStore = () => {
         'oauth2_login',
         500,
         600,
-        this.handleOAuthCallbackFromPopup.bind(this)
+        (code, state) => this.handleOAuthCallbackFromPopup(code, state)
       );
 
     },
