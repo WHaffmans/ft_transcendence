@@ -4,15 +4,15 @@
   import type { User } from "$lib/types/types";
   import { apiStore } from "$lib/stores/api";
 
-  let players: User[] = [];
+  let players: User[] | null = null;
   let api = apiStore;
 
   onMount(() => {
     // In a real application, you would fetch this data from an API
-    api.fetchApi<User[]>("/leaderboard", "GET")
+    api.fetchApi<User[]>("/leaderboard", "GET", undefined,undefined,false)
       .then((data) => {
-        console.log("Leaderboard data:", data);
-        players = data;
+      console.log("Leaderboard data:", data);
+      players = data;
       })
 
   });
@@ -36,7 +36,7 @@
   <div class="flex flex-col gap-[5px] items-center w-full shrink-0">
     {#each players as player, index}
       <LeaderboardEntry {player} />
-      {#if index < players.length - 1}
+      {#if index < players!.length - 1}
         <div
           class="w-[274px] h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent opacity-60"
         >
