@@ -33,6 +33,24 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
         ], ['email']);
 
+        User::upsert([
+            'name' => 'Ferry',
+            'email' => 'test3@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
+        User::upsert([
+            'name' => 'Hein',
+            'email' => 'test4@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
+        User::upsert([
+            'name' => 'Quentin',
+            'email' => 'test5@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
         $clientId = env('OAUTH_DEV_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
         $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/callback');
 
