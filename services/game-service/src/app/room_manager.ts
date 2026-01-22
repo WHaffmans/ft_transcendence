@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/07 09:30:28 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/01/20 15:39:51 by qmennen       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,7 @@ export class RoomManager {
 		};
 
 		this.rooms.set(roomId, room);
-		this.startLoop(roomId, config.tickRate);
+		// this.startLoop(roomId, config.tickRate);
 	};
 
 	/**
@@ -96,8 +96,18 @@ export class RoomManager {
 	subscribe(roomId: string, ws: WebSocket) {
 		const room = this.rooms.get(roomId);
 		if (!room)
-			throw new Error('Unknown roomId: ${roomId}');
+			throw new Error(`Unknown roomId: ${roomId}`);
 		room.subscribers.add(ws);
+	}
+
+	/**
+	 * Remove a web socket from list of subscribers
+	 */
+	unsubscribe(roomId: string, ws: WebSocket) {
+		const room = this.rooms.get(roomId);
+		if (!room)
+			throw new Error(`Unknown roomId: ${roomId}`);
+		room.subscribers.delete(ws);
 	}
 
 	unsubscribeAll(ws: WebSocket) {
@@ -136,6 +146,15 @@ export class RoomManager {
 		}
 
 		this.rooms.delete(roomId);
+	}
+
+	broadcast(roomId: string, msg: unknown) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		for (const ws of room.subscribers) {
+			safeSend(ws, msg);
+		}
 	}
 
 	/**

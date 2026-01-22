@@ -1,8 +1,10 @@
 {
   "name": "ft_transcendence",
   "private": true,
-  "workspaces": ["services/*", "packages/*"],
-
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
   "scripts": {
     "prepare": "husky",
     "lint": "npx eslint ./services/**/*.ts",

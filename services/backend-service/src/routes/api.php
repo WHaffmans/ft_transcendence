@@ -8,9 +8,9 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
     Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
+    Route::post('/games/{game}/leave', [App\Http\Controllers\GameController::class, 'leaveGame']);
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
     Route::apiResource('games', App\Http\Controllers\GameController::class);
-
     Route::get('/verify', function (Request $request) {
         $user = $request->user();
         return response()->json(

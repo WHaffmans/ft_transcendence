@@ -1,10 +1,8 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { sha256 } from 'js-sha256';
-import { PUBLIC_DOMAIN, PUBLIC_CLIENT_ID, PUBLIC_OAUTH_REDIRECT_URI} from '$env/static/public';
 import type { User } from '$lib/types/types';
-import { base64UrlEncode, arrayToString, generateRandomString } from '$lib/utils/utils';
 import { openPopup } from '$lib/utils/oauth';
+import { env } from "$env/dynamic/public";
 
 interface ApiState {
   user: User | null;
@@ -25,7 +23,7 @@ const createApiStore = () => {
 
   return {
     subscribe,
-    
+
     async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
       if (!browser) {
         return;
@@ -66,13 +64,13 @@ const createApiStore = () => {
       if (!browser) return;
 
       return openPopup(
-        `http://${PUBLIC_DOMAIN}/auth/oauth/authorize`,
+        `http://${env.PUBLIC_DOMAIN}/auth/oauth/authorize`,
         'oauth2_login',
         500,
         600,
-        this.handleOAuthCallbackFromPopup.bind(this)
+        (code, state) => this.handleOAuthCallbackFromPopup(code, state)
       );
-      
+
     },
 
     async handleOAuthCallback(urlParams: URLSearchParams) {
@@ -94,7 +92,7 @@ const createApiStore = () => {
 
       return this.handleOAuthCallbackFromPopup(code, state);
     },
-    
+
     async handleOAuthCallbackFromPopup(code: string, state: string): Promise<boolean> {
       if (!browser) return false;
 
@@ -122,9 +120,9 @@ const createApiStore = () => {
           },
           body: JSON.stringify({
             grant_type: 'authorization_code',
-            client_id: PUBLIC_CLIENT_ID,
+            client_id: env.PUBLIC_CLIENT_ID,
             code: code,
-            redirect_uri: PUBLIC_OAUTH_REDIRECT_URI,
+            redirect_uri: env.PUBLIC_OAUTH_REDIRECT_URI,
             code_verifier: codeVerifier,
           }),
         });
@@ -139,7 +137,7 @@ const createApiStore = () => {
         // Fetch user data
         const userData = await this.fetchApi(`/user`);
         set({ user: userData, isLoading: false, isAuthenticated: userData !== null });
-        
+
         return true;
       } catch (error) {
         console.error('OAuth token exchange failed:', error);
@@ -151,7 +149,7 @@ const createApiStore = () => {
 
     async logout() {
       const token = localStorage.getItem("access_token");
-      
+
       try {
         await fetch("/auth/api/logout", {
           method: "POST",

@@ -1,7 +1,7 @@
 http:
   routers:
     frontend-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`))"
+      rule: "PathPrefix(`/`)"
       service: frontend-service
       priority: 1
       entryPoints:
@@ -9,7 +9,7 @@ http:
         - websecure
 
     auth-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/auth`)"
+      rule: "PathPrefix(`/auth`)"
       service: backend-service
       priority: 10
       entryPoints:
@@ -19,7 +19,7 @@ http:
         - backend-service-strip
 
     backend-service:
-      rule: "(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/api`)"
+      rule: "PathPrefix(`/api`)"
       service: backend-service
       priority: 10
       entryPoints:
@@ -27,13 +27,13 @@ http:
         - websecure
 
     game-ws-web:
-      rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
+      rule: 'PathPrefix(`/ws`)'
       service: game-service
       priority: 50
       entryPoints: [web]
 
     game-ws-websecure:
-      rule: '(Host(`{{ env "DOMAIN" }}`) || Host(`www.{{ env "DOMAIN" }}`) || Host(`localhost`)) && PathPrefix(`/ws`)'
+      rule: 'PathPrefix(`/ws`)'
       service: game-service
       priority: 50
       entryPoints: [websecure]
