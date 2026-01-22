@@ -16,3 +16,9 @@ export interface Game {
     updated_at: string;
     users: User[];
 }
+
+
+export interface WSMessage {
+  type: string;
+  [key: string]: any;
+}
