@@ -19,6 +19,10 @@
       );
       fetchGameData();
     }
+    if (msg.type === "started") {
+      console.log("Game started, navigating to game page.");
+      goto(`/game/${data.lobbyId}`);
+    }
   });
 
   async function fetchGameData() {
@@ -80,6 +84,10 @@
     });
   }
 
+  function startGame() {
+    wsStore.safeSend({ type: "start", room_id: data.lobbyId });
+  }
+
   onMount(() => {
     console.log("Lobby page mounted with ID:", data.lobbyId);
     wsStore.connect();
@@ -102,7 +110,7 @@
         <li>{user.name}</li>
       {/each}
     </ul>
-    <button onclick={() => goto(`/game/${game!.id}`)}>Start Game</button>
+    <button onclick={() => startGame()}>Start Game</button>
     <button onclick={() => leaveRoom()}>Leave Game</button>
   </div>
 {:else}

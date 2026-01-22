@@ -26,6 +26,7 @@ type PublicMsg =
 		players: { playerId: string }[];
 	}
 	| { type: "join_room"; roomId: string; playerId: string }
+	| { type: "start"; roomId: string }
 	| { type: "input"; turn: TurnInput }
 	| {type: "leave_room"; roomId: string;};
 
@@ -113,6 +114,20 @@ export function startPublicWsServer(
 						// 	roomId: boundRoomId,
 						// 	playerId: boundPlayerId,
 						// });
+						return;
+					}
+
+					case "start": {
+						const room = rooms.get(msg.roomId);
+						if (!room) {
+							throw new Error(`Room not found: ${msg.roomId}: all rooms: ${[...rooms.rooms.keys()].join(", ")}`);
+						}
+
+						rooms.startRoom(msg.roomId);
+
+						console.log(`Room started: ${msg.roomId}`);
+
+						rooms.broadcast(msg.roomId, { type: "started", roomId: msg.roomId });
 						return;
 					}
 
