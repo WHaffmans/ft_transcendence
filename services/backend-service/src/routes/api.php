@@ -25,6 +25,16 @@ Route::middleware('auth:api')->group(function () {
     });
 });
 
+// Internal routes (protected by X-Internal-Api-Key header)
+Route::middleware('auth.internal')->group(function () {
+    // Define internal routes here
+    Route::get('/test-internal', function () {
+        return response()->json(['message' => 'Internal route accessed'], 200);
+    });
+
+});
+
+
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);
 
 Route::get('leaderboard', function (Request $request) {
@@ -33,3 +43,4 @@ Route::get('leaderboard', function (Request $request) {
         ->take(5)
         ->get();
 });
+
