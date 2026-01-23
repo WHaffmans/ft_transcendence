@@ -23,6 +23,7 @@
 		"tailwindcss": "^4.1.17",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.2",
+		"vite-plugin-checker": "^0.12.0",
 		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
 	},
 	"dependencies": {

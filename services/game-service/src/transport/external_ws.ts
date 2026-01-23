@@ -44,7 +44,7 @@ export function startPublicWsServer(
 	opts: { port: number; path?: string },
 	rooms: RoomManager
 ) {
-	const wss = new WebSocketServer({ port: opts.port, path: opts.path ?? "/ws" });
+	const wss : WebSocketServer = new WebSocketServer({ port: opts.port, path: opts.path ?? "/ws" });
 
 	wss.on("connection", (ws) => {
 		let boundRoomId: string | null = null;
@@ -121,11 +121,24 @@ export function startPublicWsServer(
 
 						rooms.subscribe(boundRoomId, ws);
 
-						safeSend(ws, {
-							type: "joined",
-							roomId: boundRoomId,
-							playerId: boundPlayerId,
-						});
+						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
+
+						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId });
+						// safeSend(ws, {
+						// 	type: "joined",
+						// 	roomId: boundRoomId,
+						// 	playerId: boundPlayerId,
+						// });
+						return;
+					}
+
+					case "leave_room": {
+						console.log(`Player left room ${msg.roomId}`);
+						rooms.broadcast(msg.roomId, { type: "left", roomId: msg.roomId});
+						rooms.unsubscribe(msg.roomId, ws);
+
+						boundRoomId = null;
+						boundPlayerId = null;
 						return;
 					}
 
