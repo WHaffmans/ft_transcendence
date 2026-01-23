@@ -7,8 +7,12 @@
 		isHost?: boolean;
 	}
 
-	let { onStartGame, onLeaveGame, isHost = false }: Props = $props();
+	let { onStartGame, onLeaveGame, isHost: _isHost = false }: Props = $props();
+	// Explicitly mark isHost as intentionally unused (possible future feature)
 
+	// TODO: Implement host check logic
+	// const isHost = $derived(lobby.players[0]?.id === $apiStore.user?.id);
+	
 	const handleStartGame = () => {
 		if (onStartGame) {
 			onStartGame();

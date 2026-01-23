@@ -103,10 +103,10 @@
 									<div class="flex-1 flex items-start pt-6">
 										<div class="flex items-center justify-between w-full">
 											<p class="text-lg font-medium text-white">
-												vs. {data.lastMatch.opponent}
+												vs. {data.lastMatch?.opponent}
 											</p>
-											<span class="text-sm font-bold {data.lastMatch.result === 'WIN' ? 'text-[#0f8]' : 'text-red-500'}">
-												{data.lastMatch.result}
+											<span class="text-sm font-bold {data.lastMatch?.result === 'WIN' ? 'text-[#0f8]' : 'text-red-500'}">
+												{data.lastMatch?.result}
 											</span>
 										</div>
 									</div>

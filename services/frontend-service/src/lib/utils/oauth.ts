@@ -11,8 +11,8 @@ export function openPopup(
   callback: (code: string, state: string) => Promise<boolean>
 ) {
   return new Promise((resolve) => {
-    const client_id = env.PUBLIC_CLIENT_ID;
-    const redirect_uri = encodeURIComponent(env.PUBLIC_OAUTH_REDIRECT_URI);
+    const client_id = env.PUBLIC_CLIENT_ID ?? '';
+    const redirect_uri = encodeURIComponent(env.PUBLIC_OAUTH_REDIRECT_URI ?? '');
     const state = generateRandomString(40);
     sessionStorage.setItem("pkce_state", state);
 
