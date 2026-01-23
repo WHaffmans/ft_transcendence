@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { goto } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
   import SignInButton from "./SignInButton.svelte";
@@ -11,6 +11,7 @@
     const success = await apiStore.login();
     if (success) {
       console.log("Login successful!");
+      goto("/dashboard");
     } else {
       console.log("Login failed or was cancelled");
     }
