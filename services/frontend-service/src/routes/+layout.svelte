@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Toaster } from 'svelte-sonner';
 	import '../app.css';
 
 	let { children } = $props();
@@ -7,6 +8,8 @@
 <svelte:head>
   <title>ACHTUNG!</title>
 </svelte:head>
+
+<Toaster />
 
 <!-- Global app background -->
 <div class="relative min-h-screen overflow-hidden bg-neutral-950 container-type-inline-size">

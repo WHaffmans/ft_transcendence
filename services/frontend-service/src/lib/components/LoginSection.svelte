@@ -7,16 +7,10 @@
   const subtitle = "The Kurve Web Edition";
 
   const handleLogin = async () => {
-    console.log("Sign in clicked");
     const success = await apiStore.login();
     if (success) {
       goto('/dashboard');
     }
-  };
-
-  const handleLogout = () => {
-    apiStore.logout();
-    goto("/");
   };
 </script>
 
@@ -35,9 +29,5 @@
   </header>
 
   <!-- Primary call to action -->
-     {#if $apiStore.isAuthenticated}
-       <SignInButton onClick={handleLogout} label="Logout" />
-     {:else}
-       <SignInButton onClick={handleLogin} label="Login" />
-     {/if}
+  <SignInButton onClick={handleLogin} label="Login" />
 </section>

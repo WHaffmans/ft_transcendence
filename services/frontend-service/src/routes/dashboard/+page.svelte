@@ -1,21 +1,36 @@
 <script lang="ts">
+	import { toast } from 'svelte-sonner';
 	import DashboardNav from '$lib/components/dashboard/DashboardNav.svelte';
 	import GlobalRanking from '$lib/components/dashboard/GlobalRanking.svelte';
 	import StatCard from '$lib/components/dashboard/StatCard.svelte';
 	import { mockDashboardData } from '$lib/data/dashboard';
 	import { goto } from '$app/navigation';
-
+	import { apiStore } from "$lib/stores/api";
+	
 	// Get mock data
 	const data = $state(mockDashboardData);
-
+	
 	const handleFindMatch = () => {
 		console.log('Finding match...');
-		// TODO: Implement match finding logic
+
+		if (!$apiStore.isAuthenticated) {
+			toast.error("You must be logged in to find a game.");
+			return;
+		}
+
+		apiStore.fetchApi("/games/find")
+      .then((game) => {
+		  	console.log("Game found:", game);
+		  	goto(`/lobby/${game.id}`);
+		  })
+      .catch((error) => {
+		  	console.error("Error finding game:", error);
+		  	toast.error("Failed to find a game. Please try again later.");});
 	};
 
 	const handleLogout = () => {
 		console.log('Logging out...');
-		// TODO: Implement logout logic
+		apiStore.logout();
 		goto('/');
 	};
 </script>
