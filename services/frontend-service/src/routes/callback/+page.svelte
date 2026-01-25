@@ -21,6 +21,9 @@
           },
           window.location.origin
         );
+        isProcessing = false;
+        // Show error for 2 seconds before closing
+        setTimeout(() => window.close(), 2000);
       } else if (code && state) {
         // Send success to parent window
         window.opener.postMessage(
@@ -31,8 +34,9 @@
           },
           window.location.origin
         );
+        // Added: Small delay to ensure message is received before closing
+        setTimeout(() => window.close(), 100);
       }
-      window.close();
     } else {
       goto("/", { replaceState: true });
     }

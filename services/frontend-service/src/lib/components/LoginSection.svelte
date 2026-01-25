@@ -10,10 +10,7 @@
     console.log("Sign in clicked");
     const success = await apiStore.login();
     if (success) {
-      console.log("Login successful!");
-      goto("/dashboard");
-    } else {
-      console.log("Login failed or was cancelled");
+      goto('/dashboard');
     }
   };
 
