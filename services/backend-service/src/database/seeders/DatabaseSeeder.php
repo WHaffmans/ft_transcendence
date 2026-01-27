@@ -33,6 +33,24 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
         ], ['email']);
 
+        User::upsert([
+            'name' => 'Ferry',
+            'email' => 'test3@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
+        User::upsert([
+            'name' => 'Hein',
+            'email' => 'test4@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
+        User::upsert([
+            'name' => 'Quentin',
+            'email' => 'test5@lobby.nl',
+            'password' => bcrypt('password'),
+        ], ['email']);
+
         // create 10 random users with random names and emails and rating
         User::factory()->count(10)->create();
 

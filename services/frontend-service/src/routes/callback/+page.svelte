@@ -19,6 +19,8 @@
           },
           window.location.origin
         );
+        isProcessing = false;
+        setTimeout(() => window.close(), 100);
       } else {
         window.opener.postMessage(
           {
@@ -26,8 +28,9 @@
           },
           window.location.origin
         );
+        // Added: Small delay to ensure message is received before closing
+        setTimeout(() => window.close(), 100);
       }
-      window.close();
     } else {
       goto("/", { replaceState: true });
     }
