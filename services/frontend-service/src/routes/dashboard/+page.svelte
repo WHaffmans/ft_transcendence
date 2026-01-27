@@ -57,12 +57,14 @@
               <p class="text-lg font-medium text-white">
                 vs. {data.lastMatch.opponent}
               </p>
-              <span class="text-sm font-bold">
+              <span class="text-sm font-bold text-[#0f8]">
                 {data.lastMatch.result}
               </span>
             </div>
           {:else}
-            <p class="text-neutral-400">No matches yet</p>
+            <div class="flex items-center justify-center flex-1">
+              <p class="text-[#888] text-base">No matches yet</p>
+            </div>
           {/if}
         {/snippet}
       </StatCard>
