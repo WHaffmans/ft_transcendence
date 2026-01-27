@@ -12,7 +12,7 @@ class OAuthController extends Controller
     public function initiate(Request $request)
     {
         $clientId = config('services.oauth.client_id');
-        if (! $clientId) {
+        if (!$clientId) {
             abort(500, 'OAuth client ID not configured.');
         }
 
@@ -35,18 +35,18 @@ class OAuthController extends Controller
             'code_challenge_method' => 'S256',
         ]);
 
-        return redirect()->to(url('/oauth/authorize').'?'.$query);
+        return redirect()->to(url('/oauth/authorize') . '?' . $query);
     }
 
     public function callback(Request $request)
     {
         if ($request->filled('error')) {
-            return redirect(config('app.frontend_url', '/').'?error='.urlencode((string) $request->input('error')));
+            return redirect(config('app.frontend_url', '/') . '?error=' . urlencode((string) $request->input('error')));
         }
 
         $clientId = config('services.oauth.client_id');
 
-        if (! $clientId) {
+        if (!$clientId) {
             abort(500, 'OAuth client ID not configured.');
         }
 
@@ -54,13 +54,13 @@ class OAuthController extends Controller
         $storedState = (string) $request->session()->pull('pkce_state');
         $codeVerifier = (string) $request->session()->pull('pkce_code_verifier');
 
-        if (! $state || ! $storedState || $state !== $storedState || ! $codeVerifier) {
+        if (!$state || !$storedState || $state !== $storedState || !$codeVerifier) {
             abort(400, 'Invalid OAuth state.');
         }
 
         $code = (string) $request->input('code');
 
-        if (! $code) {
+        if (!$code) {
             dd('NO CODE');
             abort(400, 'Missing authorization code.');
         }
@@ -78,15 +78,15 @@ class OAuthController extends Controller
         $internalRequest = Request::create('/oauth/token', 'POST', $requestData);
         $response = app()->handle($internalRequest);
         if ($response->getStatusCode() !== Response::HTTP_OK) {
-            return redirect(config('app.frontend_url', '/').'?error=token_exchange_failed');
+            return redirect(config('app.frontend_url', '/') . '?error=token_exchange_failed');
         }
 
         $tokenData = json_decode($response->getContent(), true);
         $accessToken = $tokenData['access_token'] ?? null;
         $refreshToken = $tokenData['refresh_token'] ?? null;
 
-        if (! $accessToken) {
-            return redirect(config('app.frontend_url', '/').'?error=token_missing');
+        if (!$accessToken) {
+            return redirect(config('app.frontend_url', '/') . '?error=token_missing');
         }
 
         $accessMinutes = max(1, (int) floor(((int) ($tokenData['expires_in'] ?? 900)) / 60));
@@ -102,7 +102,7 @@ class OAuthController extends Controller
             $cookies[] = cookie('refresh_token', $refreshToken, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        return redirect(config('app.frontend_url', '/').'/callback')
+        return redirect("http://" . config('app.frontend_url', '/') . '/callback') // todo: need better way to handle http/https
             ->withCookies($cookies);
     }
 
