@@ -87,7 +87,7 @@ const createApiStore = () => {
 
     async logout() {
       try {
-        await fetch("/auth/api/logout", {
+        await fetch("/api/logout", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
