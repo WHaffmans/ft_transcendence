@@ -43,5 +43,4 @@
   </div>
 </main>
 
-<!-- Global footer -->
 <Footer />
