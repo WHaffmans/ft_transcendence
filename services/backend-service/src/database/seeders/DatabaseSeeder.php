@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Game;
 use DB;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -31,6 +32,13 @@ class DatabaseSeeder extends Seeder
             'email' => 'test2@lobby.nl',
             'password' => bcrypt('password'),
         ], ['email']);
+
+        // create 10 random users with random names and emails and rating
+        User::factory()->count(10)->create();
+
+        //now create 20 random games
+        Game::factory()->count(20)->create();
+
 
         $clientId = env('OAUTH_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
         $redirects = env('OAUTH_REDIRECT', 'http://localhost:8080/callback');

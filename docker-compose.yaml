@@ -41,7 +41,7 @@ services:
     container_name: backend-service
     build:
       context: ./services/backend-service
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     env_file:
       - ./services/backend-service/src/.env
     environment:
@@ -53,6 +53,8 @@ services:
       - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
       - OAUTH_REDIRECT=${OAUTH_DEV_REDIRECT}
       - APP_FRONTEND_URL=${DOMAIN}
+      - BUILD=DEV
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     networks:
       - transcendence-internal
     ports:

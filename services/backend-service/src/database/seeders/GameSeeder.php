@@ -16,5 +16,7 @@ class GameSeeder extends Seeder
         ]);
         $users = \App\Models\User::all();
         $game->users()->saveMany($users);
+
+
     }
 }

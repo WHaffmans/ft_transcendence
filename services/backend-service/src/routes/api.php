@@ -34,3 +34,4 @@ Route::get('leaderboard', function (Request $request) {
         ->take(5)
         ->get();
 });
+
