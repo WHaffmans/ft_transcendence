@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class GameSeeder extends Seeder
@@ -17,5 +16,7 @@ class GameSeeder extends Seeder
         ]);
         $users = \App\Models\User::all();
         $game->users()->saveMany($users);
+
+
     }
 }

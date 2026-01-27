@@ -13,6 +13,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('games', App\Http\Controllers\GameController::class);
     Route::get('/verify', function (Request $request) {
         $user = $request->user();
+
         return response()->json(
             ['message' => 'Authenticated', 'user_id' => $user->id],
             200,
@@ -33,3 +34,4 @@ Route::get('leaderboard', function (Request $request) {
         ->take(5)
         ->get();
 });
+

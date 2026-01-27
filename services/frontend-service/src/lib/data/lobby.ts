@@ -1,4 +1,4 @@
-import type { LobbyData, LobbyPlayer } from '$lib/types/types';
+import type { LobbyData } from '$lib/types/types';
 
 // Mock lobby data with 4 player slots (2x2 grid)
 export const mockLobbyData: LobbyData = {

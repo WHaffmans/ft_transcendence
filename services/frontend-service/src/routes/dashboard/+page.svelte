@@ -1,13 +1,31 @@
 <script lang="ts">
-  import GlobalRanking from '$lib/components/dashboard/GlobalRanking.svelte';
-  import StatCard from '$lib/components/dashboard/StatCard.svelte';
-  import { mockDashboardData } from '$lib/data/dashboard';
+	import { toast } from 'svelte-sonner';
+	import GlobalRanking from '$lib/components/dashboard/GlobalRanking.svelte';
+	import StatCard from '$lib/components/dashboard/StatCard.svelte';
+	import { mockDashboardData } from '$lib/data/dashboard';
+	import { goto } from '$app/navigation';
+	import { apiStore } from "$lib/stores/api";
+	
+	// Get mock data
+	const data = $state(mockDashboardData);
+	
+	const handleFindMatch = () => {
+		console.log('Finding match...');
 
-  const data = $state(mockDashboardData);
+		if (!$apiStore.isAuthenticated) {
+			toast.error("You must be logged in to find a game.");
+			return;
+		}
 
-  const handleFindMatch = () => {
-    console.log('Finding match...');
-  };
+		apiStore.fetchApi("/games/find")
+      .then((game) => {
+		  	console.log("Game found:", game);
+		  	goto(`/lobby/${game.id}`);
+		  })
+      .catch((error) => {
+		  	console.error("Error finding game:", error);
+		  	toast.error("Failed to find a game. Please try again later.");});
+	};
 </script>
 
 <svelte:head>
@@ -55,10 +73,10 @@
           {#if data.lastMatch}
             <div class="flex items-center justify-between w-full pt-6">
               <p class="text-lg font-medium text-white">
-                vs. {data.lastMatch.opponent}
+                vs. {data.lastMatch?.opponent}
               </p>
               <span class="text-sm font-bold text-[#0f8]">
-                {data.lastMatch.result}
+                {data.lastMatch?.result}
               </span>
             </div>
           {:else}

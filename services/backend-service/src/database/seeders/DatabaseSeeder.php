@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Game;
 use DB;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!app()->environment('local')) {
+        if (! app()->environment('local')) {
             return;
         }
 
@@ -51,9 +51,15 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
         ], ['email']);
 
-        $clientId = env('OAUTH_DEV_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
-        $redirects = env('OAUTH_DEV_REDIRECT', 'http://localhost:8080/callback');
+        // create 10 random users with random names and emails and rating
+        User::factory()->count(10)->create();
 
+        //now create 20 random games
+        Game::factory()->count(20)->create();
+
+
+        $clientId = env('OAUTH_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
+        $redirects = env('OAUTH_REDIRECT', 'http://localhost:8080/callback');
 
         DB::table('oauth_clients')->upsert([
             'id' => $clientId,
@@ -62,7 +68,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Frontend Service',
             'secret' => null,
             'provider' => null,
-            'redirect_uris' => '[' . implode(',', array_map(fn($url) => '"' . trim($url) . '"', explode(',', $redirects))) . ']',
+            'redirect_uris' => '['.implode(',', array_map(fn ($url) => '"'.trim($url).'"', explode(',', $redirects))).']',
             'grant_types' => '["authorization_code", "refresh_token"]',
             'revoked' => false,
             'created_at' => now(),

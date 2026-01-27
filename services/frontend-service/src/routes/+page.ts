@@ -1,7 +1,6 @@
 
-
 // Import types
-import type { PageLoad } from "./$types";
+import type { PageLoad } from './$types';
 import type { User } from "$lib/types/types";
 
 // Fetch data for leaderboard

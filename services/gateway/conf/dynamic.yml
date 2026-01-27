@@ -18,9 +18,9 @@ http:
       middlewares:
         - backend-service-strip
 
-    backend-service:
+    svelte-kit-api:
       rule: "PathPrefix(`/api`)"
-      service: backend-service
+      service: frontend-service
       priority: 10
       entryPoints:
         - web

@@ -4,8 +4,8 @@ import type { DashboardData } from '$lib/types/types';
 export const mockDashboardData: DashboardData = {
 	currentUser: {
 		id: 1,
-		username: 'fras',
-		avatar: '/placeholders/avatars/fras.png',
+		username: 'User123 \'Placeholder\'',
+		avatar: '/placeholders/avatars/placeholder.png',
 		rank: 1240,
 		position: 42
 	},

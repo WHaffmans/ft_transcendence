@@ -1,205 +1,215 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
-	import { page } from "$app/stores";
-	import { get } from "svelte/store";
+  import { onMount, onDestroy } from "svelte";
+  import { page } from "$app/stores";
+  import { get } from "svelte/store";
+  import { wsStore } from "$lib/stores/ws";
+  //   import { apiStore } from "$lib/stores/api.js";
 
-	type TurnInput = -1 | 0 | 1;
+  type TurnInput = -1 | 0 | 1;
 
-	type ColorRGBA = {
-		r: number;
-		g: number;
-		b: number;
-		a: number;
-	};
+  type ColorRGBA = {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+  };
 
-	let canvas: HTMLCanvasElement;
-	let ctx: CanvasRenderingContext2D;
+  let ws = wsStore;
+  //   let { data } = $props();
 
-	let ws: WebSocket | null = null;
-	let status = "disconnected";
-	let roomId = "r1";
-	let playerId = "p1";
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D;
 
-	let latestState: any = null;
+  // let ws: WebSocket | null = null;
+  let status = "open";
 
-	function makeWsUrl() {
-		const proto = location.protocol === "https:" ? "wss" : "ws";
-		return `${proto}://${location.host}/ws`;
-	}
+  let roomId: string | null = null;
+  //   let playerId = $apiStore.user?.id;
 
-	function safeSend(obj: unknown) {
-		if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
-	}
+  let latestState: any = null;
 
-	function resizeCanvas() {
-		const dpr = window.devicePixelRatio || 1;
-		const w = window.innerWidth;
-		const h = window.innerHeight;
+  // function makeWsUrl() {
+  // 	const proto = location.protocol === "https:" ? "wss" : "ws";
+  // 	return `${proto}://${location.host}/ws`;
+  // }
 
-		canvas.style.width = `${w}px`;
-		canvas.style.height = `${h}px`;
-		canvas.width = Math.floor(w * dpr);
-		canvas.height = Math.floor(h * dpr);
+  // function safeSend(obj: unknown) {
+  // 	if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+  // }
 
-		// draw in CSS pixels
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-	}
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-	function rgbaToColor(c: ColorRGBA): string {
-		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
-	}
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
 
-	function draw() {
-		if (!ctx) return;
+    // draw in CSS pixels
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
-		// Clear in CSS pixels
-		const W = window.innerWidth;
-		const H = window.innerHeight;
-		ctx.clearRect(0, 0, W, H);
+  function rgbaToColor(c: ColorRGBA): string {
+    return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
+  }
 
-		// background
-		ctx.fillStyle = "#0b0b0b";
-		ctx.fillRect(0, 0, W, H);
+  function draw() {
+    if (!ctx) return;
 
-		if (!latestState) return;
+    // Clear in CSS pixels
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    ctx.clearRect(0, 0, W, H);
 
-		// HUD
-		ctx.fillStyle = "white";
-		ctx.font = "14px system-ui";
-		ctx.fillText(`tick: ${latestState.tick}`, 12, 20);
-		ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
+    // background
+    ctx.fillStyle = "#0b0b0b";
+    ctx.fillRect(0, 0, W, H);
 
-		for (const s of latestState.segments ?? []) {
-			if (s.isGap) continue;
+    if (!latestState) return;
 
-			const x0 = s.x1;
-			const y0 = s.y1;
-			const x1 = s.x2;
-			const y1 = s.y2;
+    // HUD
+    ctx.fillStyle = "white";
+    ctx.font = "14px system-ui";
+    ctx.fillText(`tick: ${latestState.tick}`, 12, 20);
+    ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
 
-			if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
+    for (const s of latestState.segments ?? []) {
+      if (s.isGap) continue;
 
-			ctx.strokeStyle = rgbaToColor(s.color);
+      const x0 = s.x1;
+      const y0 = s.y1;
+      const x1 = s.x2;
+      const y1 = s.y2;
 
-			ctx.lineWidth = 4;
-			ctx.lineCap = "round";
-			// ctx.lineJoin = "round";
-			
-			ctx.beginPath();
-			ctx.moveTo(x0, y0);
-			ctx.lineTo(x1, y1);
-			ctx.stroke();
-		}
+      if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
 
-		// players
-		const r = 6;
+      ctx.strokeStyle = rgbaToColor(s.color);
 
-		for (const p of latestState.players ?? []) {
-			ctx.fillStyle = p.alive
-				? rgbaToColor(p.color)
-				: "rgba(10,10,10,0.5)";
-			ctx.beginPath();
-			ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-			ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      // ctx.lineJoin = "round";
 
-			if (!p.alive) {
-				ctx.strokeStyle = rgbaToColor(p.color);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    }
 
-				ctx.beginPath();
-				ctx.moveTo(p.x - r, p.y - r);
-				ctx.lineTo(p.x + r, p.y + r);
-				ctx.moveTo(p.x - r, p.y + r);
-				ctx.lineTo(p.x + r, p.y - r);
-				ctx.stroke();
-			}
-		}
-	}
+    // players
+    const r = 6;
 
-	let raf = 0;
-	function loop() {
-		draw();
-		raf = requestAnimationFrame(loop);
-	}
+    for (const p of latestState.players ?? []) {
+      ctx.fillStyle = p.alive ? rgbaToColor(p.color) : "rgba(10,10,10,0.5)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
 
-	function connect() {
-		status = "connecting";
-		ws = new WebSocket(makeWsUrl());
+      if (!p.alive) {
+        ctx.strokeStyle = rgbaToColor(p.color);
 
-		(window as any).gameWs = ws;
-		(window as any).sendGame = (obj: unknown) => ws?.send(JSON.stringify(obj));
+        ctx.beginPath();
+        ctx.moveTo(p.x - r, p.y - r);
+        ctx.lineTo(p.x + r, p.y + r);
+        ctx.moveTo(p.x - r, p.y + r);
+        ctx.lineTo(p.x + r, p.y - r);
+        ctx.stroke();
+      }
+    }
+  }
 
-		ws.onopen = () => {
-			status = "open";
+  let raf = 0;
+  function loop() {
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
 
-			safeSend({
-				type: "create_room",
-				roomId,
-				seed: 1,
-				players: [{ playerId: "p1" }, { playerId: "p2" }]
-			});
+  // function connect() {
+  // 	status = "connecting";
+  // 	ws = new WebSocket(makeWsUrl());
 
-			safeSend({ type: "join_room", roomId, playerId });
-		};
+  // 	(window as any).gameWs = ws;
+  // 	(window as any).sendGame = (obj: unknown) => ws?.send(JSON.stringify(obj));
 
-		ws.onmessage = (e) => {
-			const msg = JSON.parse(e.data);
+  // 	ws.onopen = () => {
+  // 		status = "open";
 
-			if (msg.type === "State") {
-				latestState = msg;
+  // 		safeSend({
+  // 			type: "create_room",
+  // 			roomId,
+  // 			seed: 1,
+  // 			players: [{ playerId: "p1" }, { playerId: "p2" }]
+  // 		});
 
-				(window as any).latestState = latestState;
+  // 		safeSend({ type: "join_room", roomId, playerId });
+  // 	};
 
-				return;
-			}
+  // 	ws.onmessage = (e) => {
+  // 		const msg = JSON.parse(e.data);
 
-			console.log("WS msg:", msg);
-		};
+  // 		if (msg.type === "State") {
+  // 			latestState = msg;
 
-		ws.onerror = () => {
-			status = "error";
-		};
+  // 			(window as any).latestState = latestState;
 
-		ws.onclose = () => {
-			status = "closed";
-			ws = null;
-		};
-	}
+  // 			return;
+  // 		}
 
-	function onKeyDown(ev: KeyboardEvent) {
-		if (ev.key === "ArrowLeft") safeSend({ type: "input", turn: -1 satisfies TurnInput });
-		if (ev.key === "ArrowRight") safeSend({ type: "input", turn: 1 satisfies TurnInput });
-	}
+  // 		console.log("WS msg:", msg);
+  // 	};
 
-	function onKeyUp(ev: KeyboardEvent) {
-		if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
-			safeSend({ type: "input", turn: 0 satisfies TurnInput });
-		}
-	}
+  // 	ws.onerror = () => {
+  // 		status = "error";
+  // 	};
 
-	onMount(() => {
-		roomId = get(page).params.roomId;
-		
-		ctx = canvas.getContext("2d")!;
-		resizeCanvas();
-		window.addEventListener("resize", resizeCanvas);
-		window.addEventListener("keydown", onKeyDown);
-		window.addEventListener("keyup", onKeyUp);
+  // 	ws.onclose = () => {
+  // 		status = "closed";
+  // 		ws = null;
+  // 	};
+  // }
 
-		connect();
-		loop();
-	});
+  function onKeyDown(ev: KeyboardEvent) {
+    if (ev.key === "ArrowLeft")
+      ws.safeSend({ type: "input", turn: -1 satisfies TurnInput });
+    if (ev.key === "ArrowRight")
+      ws.safeSend({ type: "input", turn: 1 satisfies TurnInput });
+  }
 
-	onDestroy(() => {
-		cancelAnimationFrame(raf);
-		window.removeEventListener("resize", resizeCanvas);
-		window.removeEventListener("keydown", onKeyDown);
-		window.removeEventListener("keyup", onKeyUp);
-		ws?.close();
-	});
+  function onKeyUp(ev: KeyboardEvent) {
+    if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+      ws.safeSend({ type: "input", turn: 0 satisfies TurnInput });
+    }
+  }
+
+  onMount(() => {
+    roomId = get(page).params.roomId;
+
+    ctx = canvas.getContext("2d")!;
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+
+    // connect();
+    // ws.safeSend({ type: "start", roomId });
+    loop();
+  });
+
+  onDestroy(() => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener("resize", resizeCanvas);
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+    // ws?.close();
+  });
 </script>
 
-<canvas bind:this={canvas} style="display:block; width:100vw; height:100vh;"></canvas>
+<canvas bind:this={canvas} style="display:block; width:100vw; height:100vh;"
+></canvas>
 
-<div style="position:fixed; left:12px; bottom:12px; background:rgba(0,0,0,0.5); color:white; padding:8px 10px; border-radius:8px; font:12px system-ui;">
-	{status}
+<div
+  style="position:fixed; left:12px; bottom:12px; background:rgba(0,0,0,0.5); color:white; padding:8px 10px; border-radius:8px; font:12px system-ui;"
+>
+  {status}
 </div>

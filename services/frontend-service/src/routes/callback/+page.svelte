@@ -8,31 +8,29 @@
 
   onMount(async () => {
     const urlParams = $page.url.searchParams;
-    const code = urlParams.get("code");
-    const state = urlParams.get("state");
-    const error = urlParams.get("error");
+    const errorParam = urlParams.get("error");
+
     if (window.opener && window.opener !== window) {
-      if (error) {
-        // Send error to parent window
+      if (errorParam) {
         window.opener.postMessage(
           {
             type: "OAUTH_ERROR",
-            error: error,
+            error: errorParam,
           },
           window.location.origin
         );
-      } else if (code && state) {
-        // Send success to parent window
+        isProcessing = false;
+        setTimeout(() => window.close(), 100);
+      } else {
         window.opener.postMessage(
           {
             type: "OAUTH_SUCCESS",
-            code: code,
-            state: state,
           },
           window.location.origin
         );
+        // Added: Small delay to ensure message is received before closing
+        setTimeout(() => window.close(), 100);
       }
-      window.close();
     } else {
       goto("/", { replaceState: true });
     }

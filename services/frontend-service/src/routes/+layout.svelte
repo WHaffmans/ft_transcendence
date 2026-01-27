@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { Toaster } from 'svelte-sonner';
 	import '../app.css';
-  import Footer from "$lib/components/Footer.svelte";
 
 	let { children } = $props();
 </script>
@@ -8,6 +8,8 @@
 <svelte:head>
   <title>ACHTUNG!</title>
 </svelte:head>
+
+<Toaster />
 
 <!-- Global app background -->
 <div class="relative min-h-screen overflow-hidden bg-neutral-950 container-type-inline-size">
@@ -30,6 +32,3 @@
 		</main>
   </div>
 </div>
-
-<!-- Global footer -->
-<Footer />

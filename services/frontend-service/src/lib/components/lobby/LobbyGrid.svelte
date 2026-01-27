@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { LobbyPlayer } from '$lib/types/types';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

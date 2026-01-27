@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { goto } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
   import SignInButton from "./SignInButton.svelte";
@@ -7,18 +7,13 @@
   const subtitle = "The Kurve Web Edition";
 
   const handleLogin = async () => {
-    console.log("Sign in clicked");
     const success = await apiStore.login();
     if (success) {
-      console.log("Login successful!");
+      console.log("Login successful, navigating to dashboard.");
+      goto('/dashboard');
     } else {
-      console.log("Login failed or was cancelled");
+      console.error("Login failed.");
     }
-  };
-
-  const handleLogout = () => {
-    apiStore.logout();
-    goto("/");
   };
 </script>
 
@@ -37,9 +32,5 @@
   </header>
 
   <!-- Primary call to action -->
-     {#if $apiStore.isAuthenticated}
-       <SignInButton onClick={handleLogout} label="Logout" />
-     {:else}
-       <SignInButton onClick={handleLogin} label="Login" />
-     {/if}
+  <SignInButton onClick={handleLogin} label="Login" />
 </section>

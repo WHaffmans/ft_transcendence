@@ -59,6 +59,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'frontend_url' => env('APP_FRONTEND_URL', 'http://localhost:8080'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -103,6 +105,7 @@ return [
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
+    'internal_api_key' => env('INTERNAL_API_KEY'),
 
     'previous_keys' => [
         ...array_filter(

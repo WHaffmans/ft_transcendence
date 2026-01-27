@@ -1,24 +1,32 @@
 <script lang="ts">
   import Navbar from '$lib/components/dashboard/Navbar.svelte';
   import { goto } from '$app/navigation';
-
+  import { mockDashboardData } from '$lib/data/dashboard';
+  import { apiStore } from "$lib/stores/api";
+  
   let { children } = $props();
+  
+  // Get mock data
+	const data = $state(mockDashboardData);
 
-  const handleLogout = () => {
-    goto('/');
-  };
+	const handleLogout = () => {
+		console.log('Logging out...');
+		apiStore.logout(); //-- implement new api logic none-apistore 
+		goto('/');
+	};
 
   const handleOpenSettings = () => {
-    goto('/dashboard/settings');
+    // goto('/dashboard/settings');
   };
+  
 </script>
 
 <!-- Dashboard shell -->
 <div class="relative z-10 flex flex-col min-h-screen">
   <!-- Persistent dashboard navigation -->
   <Navbar
-    username="Player"
-    avatar="/assets/avatar-placeholder.png"
+    username={data.currentUser.username}
+    avatar={data.currentUser.avatar}
     onLogout={handleLogout}
     onOpenSettings={handleOpenSettings}
   />

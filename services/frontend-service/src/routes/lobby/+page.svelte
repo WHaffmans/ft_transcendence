@@ -92,7 +92,7 @@
 				</LobbyGrid>
 
 				<!-- Right Section - Match Settings -->
-				<div class="w-full lg:w-[var(--width-ranking)] shrink-0">
+				<div class="w-full lg:w-ranking shrink-0">
 					<MatchSettings
 						{isHost}
 						onStartGame={handleStartGame}
