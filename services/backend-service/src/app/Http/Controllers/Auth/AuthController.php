@@ -48,6 +48,7 @@ class AuthController extends Controller
 
         cookie()->forget('access_token');
         cookie()->forget('refresh_token');
+
         return response()->json(['message' => 'Logged out']);
     }
 }

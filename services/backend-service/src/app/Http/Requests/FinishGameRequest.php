@@ -19,7 +19,7 @@ class FinishGameRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-      // ['users' => [{userid :1, rank:2, rating_mu: 24, rating_sigma:3}, {}], 'game_id' => 1]
+    // ['users' => [{userid :1, rank:2, rating_mu: 24, rating_sigma:3}, {}], 'game_id' => 1]
     public function rules(): array
     {
         return [

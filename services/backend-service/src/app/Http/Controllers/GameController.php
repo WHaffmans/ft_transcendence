@@ -17,13 +17,13 @@ class GameController extends Controller
         return response()->json(Game::all());
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $game = Game::create($request->all());
+
         return response()->json($game, 201);
     }
 
@@ -33,6 +33,7 @@ class GameController extends Controller
     public function show(Game $game)
     {
         $game = $game->load('users');
+
         return response()->json($game);
     }
 
@@ -42,6 +43,7 @@ class GameController extends Controller
     public function update(Request $request, Game $game)
     {
         $game->update($request->all());
+
         return response()->json($game);
     }
 
@@ -51,6 +53,7 @@ class GameController extends Controller
     public function destroy(Game $game)
     {
         $game->delete();
+
         return response()->json(null, 204);
     }
 
@@ -65,20 +68,23 @@ class GameController extends Controller
             return response()->json($applicable->first());
         }
 
-        if (!$open_games->isEmpty()) {
+        if (! $open_games->isEmpty()) {
             $game = $open_games->first();
             $game->users()->attach($request->user()->id);
+
             return response()->json($game->load('users'));
         }
 
         $new_game = Game::create(['status' => 'pending']);
         $new_game->users()->attach($request->user()->id);
+
         return response()->json($new_game->load('users'), 201);
     }
 
     public function leaveGame(LeaveGameRequest $request, Game $game)
     {
         $game->users()->detach($request->input('user_id'));
+
         return response()->json($game->load('users'));
     }
 
