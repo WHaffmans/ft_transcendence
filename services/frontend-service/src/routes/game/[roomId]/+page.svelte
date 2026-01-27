@@ -3,16 +3,16 @@
 	import { page } from "$app/stores";
 	import { get } from "svelte/store";
 
-	// Shared protocol
-	import {
-		ClientMsgSchema,
-		ServerMsgSchema,
-		type ClientMsg,
-		type ServerMsg,
-	} from "@ft/game-ws-protocol";
+	import { wsStore } from "$lib/stores/ws";
+	import type { ServerMsg } from "@ft/game-ws-protocol";
 
-	type TurnInput = -1 | 0 | 1;
+	type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
+	let showStartHint = true;
+
+	// ---------------------
+	// types
+	// ---------------------
 	type ColorRGBA = {
 		r: number;
 		g: number;
@@ -20,26 +20,15 @@
 		a: number;
 	};
 
+	// ---------------------
+	// canvas
+	// ---------------------
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
 
-	let ws: WebSocket | null = null;
-	let status = "disconnected";
-	let roomId = "r1";
-	let playerId = "p1";
-
-	let latestState: any = null;
-
-	function makeWsUrl() {
-		const proto = location.protocol === "https:" ? "wss" : "ws";
-		return `${proto}://${location.host}/ws`;
-	}
-
-	function safeSend(obj: unknown) {
-		if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
-	}
-
 	function resizeCanvas() {
+		if (!canvas || !ctx) return;
+
 		const dpr = window.devicePixelRatio || 1;
 		const w = window.innerWidth;
 		const h = window.innerHeight;
@@ -57,27 +46,31 @@
 		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
 	}
 
-	function draw() {
+	// ---------------------
+	// draw
+	// ---------------------
+	function draw(snapshot: StateMsg["snapshot"] | null) {
 		if (!ctx) return;
 
-		// Clear in CSS pixels
 		const W = window.innerWidth;
 		const H = window.innerHeight;
+
 		ctx.clearRect(0, 0, W, H);
 
 		// background
 		ctx.fillStyle = "#0b0b0b";
 		ctx.fillRect(0, 0, W, H);
 
-		if (!latestState) return;
+		if (!snapshot) return;
 
 		// HUD
 		ctx.fillStyle = "white";
 		ctx.font = "14px system-ui";
-		ctx.fillText(`tick: ${latestState.tick}`, 12, 20);
-		ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
+		ctx.fillText(`tick: ${snapshot.tick}`, 12, 20);
+		ctx.fillText(`room: ${snapshot.roomId}`, 12, 40);
 
-		for (const s of latestState.segments ?? []) {
+		// segments
+		for (const s of snapshot.segments ?? []) {
 			if (s.isGap) continue;
 
 			const x0 = s.x1;
@@ -88,11 +81,9 @@
 			if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
 
 			ctx.strokeStyle = rgbaToColor(s.color);
-
 			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
-			// ctx.lineJoin = "round";
-			
+
 			ctx.beginPath();
 			ctx.moveTo(x0, y0);
 			ctx.lineTo(x1, y1);
@@ -102,16 +93,18 @@
 		// players
 		const r = 6;
 
-		for (const p of latestState.players ?? []) {
+		for (const p of snapshot.players ?? []) {
 			ctx.fillStyle = p.alive
 				? rgbaToColor(p.color)
 				: "rgba(10,10,10,0.5)";
+
 			ctx.beginPath();
 			ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
 			ctx.fill();
 
 			if (!p.alive) {
 				ctx.strokeStyle = rgbaToColor(p.color);
+				ctx.lineWidth = 2;
 
 				ctx.beginPath();
 				ctx.moveTo(p.x - r, p.y - r);
@@ -125,75 +118,56 @@
 
 	let raf = 0;
 	function loop() {
-		draw();
+		draw($wsStore.latestState);
 		raf = requestAnimationFrame(loop);
 	}
 
-	function connect() {
-		status = "connecting";
-		ws = new WebSocket(makeWsUrl());
-
-		(window as any).gameWs = ws;
-		(window as any).sendGame = (obj: unknown) => ws?.send(JSON.stringify(obj));
-
-		ws.onopen = () => {
-			status = "open";
-
-			safeSend({
-				type: "create_room",
-				roomId,
-				seed: 1,
-				players: [{ playerId: "p1" }, { playerId: "p2" }]
-			});
-
-			safeSend({ type: "join_room", roomId, playerId });
-		};
-
-		ws.onmessage = (e) => {
-			const msg = JSON.parse(e.data);
-
-			if (msg.type === "State") {
-				latestState = msg;
-
-				(window as any).latestState = latestState;
-
-				return;
-			}
-
-			console.log("WS msg:", msg);
-		};
-
-		ws.onerror = () => {
-			status = "error";
-		};
-
-		ws.onclose = () => {
-			status = "closed";
-			ws = null;
-		};
-	}
-
+	// ---------------------
+	// input
+	// ---------------------
 	function onKeyDown(ev: KeyboardEvent) {
-		if (ev.key === "ArrowLeft") safeSend({ type: "input", turn: -1 satisfies TurnInput });
-		if (ev.key === "ArrowRight") safeSend({ type: "input", turn: 1 satisfies TurnInput });
+		if (ev.code === "Space") {
+			ev.preventDefault();
+
+			// TODO: Validation before game start
+			if (showStartHint) {
+				showStartHint = false;
+				wsStore.startGame?.();
+			}
+			return;
+		}
+
+		if (ev.key === "ArrowLeft")
+			wsStore.sendClient({ type: "input", turn: -1 });
+
+		if (ev.key === "ArrowRight")
+			wsStore.sendClient({ type: "input", turn: 1 });
 	}
 
 	function onKeyUp(ev: KeyboardEvent) {
 		if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
-			safeSend({ type: "input", turn: 0 satisfies TurnInput });
+			wsStore.sendClient({ type: "input", turn: 0 });
 		}
 	}
 
+	// ---------------------
+	// lifecycle
+	// ---------------------
 	onMount(() => {
-		roomId = get(page).params.roomId;
-		
+		const p = get(page);
+
+		const roomId = p.params.roomId;
+		const playerId = p.url.searchParams.get("playerId") ?? "p1";
+
 		ctx = canvas.getContext("2d")!;
+
 		resizeCanvas();
 		window.addEventListener("resize", resizeCanvas);
 		window.addEventListener("keydown", onKeyDown);
 		window.addEventListener("keyup", onKeyUp);
 
-		connect();
+		wsStore.joinRoom(roomId, playerId);
+
 		loop();
 	});
 
@@ -202,12 +176,54 @@
 		window.removeEventListener("resize", resizeCanvas);
 		window.removeEventListener("keydown", onKeyDown);
 		window.removeEventListener("keyup", onKeyUp);
-		ws?.close();
+
+		// Leave room when exiting the game page
+		wsStore.leaveRoom?.();
 	});
 </script>
 
-<canvas bind:this={canvas} style="display:block; width:100vw; height:100vh;"></canvas>
+<canvas
+	bind:this={canvas}
+	style="display:block; width:100vw; height:100vh;"
+></canvas>
 
-<div style="position:fixed; left:12px; bottom:12px; background:rgba(0,0,0,0.5); color:white; padding:8px 10px; border-radius:8px; font:12px system-ui;">
-	{status}
+<div
+	style="
+		position:fixed;
+		left:12px;
+		bottom:12px;
+		background:rgba(0,0,0,0.5);
+		color:white;
+		padding:8px 10px;
+		border-radius:8px;
+		font:12px system-ui;
+	"
+>
+	{$wsStore.status}
 </div>
+
+{#if showStartHint}
+  <div
+    style="
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    "
+  >
+    <div
+      style="
+        background:rgba(0,0,0,0.55);
+        color:white;
+        padding:14px 18px;
+        border-radius:12px;
+        font:14px system-ui;
+        letter-spacing:0.2px;
+      "
+    >
+      Press <b>Space</b> to start
+    </div>
+  </div>
+{/if}

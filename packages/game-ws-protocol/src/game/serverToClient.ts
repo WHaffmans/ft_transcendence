@@ -2,6 +2,7 @@
 import { z } from "zod";
 import type { ZodIssue } from "zod";
 import { RoomId, PlayerId } from "../common/primitives.js";
+import { GameStateSnapshotSchema } from "./snapshot.js";
 
 export const ErrorPayloadSchema = z.object({
 	message: z.string(),
@@ -24,9 +25,14 @@ export const JoinedMsgSchema = z.object({
 	playerId: PlayerId,
 });
 
+export const GameStartedMsgSchema = z.object({
+	type: z.literal("game_started"),
+	roomId: RoomId,
+})
+
 export const StateMsgSchema = z.object({
 	type: z.literal("state"),
-	snapshot: z.unknown(),
+	snapshot: GameStateSnapshotSchema,
 });
 
 export const ErrorMsgSchema = z.object({
@@ -39,6 +45,7 @@ export const ErrorMsgSchema = z.object({
 export const ServerMsgSchema = z.discriminatedUnion("type", [
 	RoomCreatedMsgSchema,
 	JoinedMsgSchema,
+	GameStartedMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,
 ]);

@@ -30,6 +30,17 @@ export const JoinRoomMsgSchema = z.object({
 	playerId: PlayerId,
 });
 
+export const StartGameMsgSchema = z.object({
+	type: z.literal("start_game"),
+	roomId: RoomId,
+})
+
+export const LeaveRoomMsgSchema = z.object({
+	type: z.literal("leave_room"),
+	roomId: RoomId,
+	playerId: PlayerId
+});
+
 export const InputMsgSchema = z.object({
 	type: z.literal("input"),
 	turn: TurnInputSchema,
@@ -39,6 +50,8 @@ export const InputMsgSchema = z.object({
 export const ClientMsgSchema = z.discriminatedUnion("type", [
 	CreateRoomMsgSchema,
 	JoinRoomMsgSchema,
+	StartGameMsgSchema,
+	LeaveRoomMsgSchema,
 	InputMsgSchema,
 ]);
 

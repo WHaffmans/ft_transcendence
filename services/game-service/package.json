@@ -3,21 +3,22 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "simulate": "tsx src/cli/simulate.ts",
-	"build": "npx tsc -p tsconfig.json",
+    "build": "npx tsc -p tsconfig.json",
     "test": "vitest",
     "test:run": "vitest run"
   },
   "devDependencies": {
+    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
     "@types/ws": "^8.18.1",
+    "esbuild": "0.27.2",
     "tsx": "^4.21.0",
+    "typescript": "^5.6.0",
     "vitest": "^2.0.0",
-	"ws": "^8.19.0",
-	"typescript": "^5.6.0",
-	"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
+    "ws": "^8.19.0"
   },
   "dependencies": {
-    "ws": "^8.19.0",
-	"typescript": "^5.6.0",
-	"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
+    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+    "esbuild": "0.27.2",
+    "typescript": "^5.6.0"
   }
 }

@@ -160,7 +160,7 @@ export class RoomManager {
 	/**
 	 * Start game loop
 	 */
-	private startLoop(roomId: string, tickHz: number) {
+	startLoop(roomId: string, tickHz: number) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
@@ -185,5 +185,4 @@ export class RoomManager {
 
 		}, dtMs);
 	}
-
 };

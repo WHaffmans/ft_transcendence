@@ -11,10 +11,10 @@
 /* ************************************************************************** */
 
 import { RoomManager } from "./app/room_manager";
-import { startInternalWsServer } from "./transport/internal_ws";
 import { startPublicWsServer } from "./transport/external_ws";
 
 const rooms = new RoomManager();
 
-startInternalWsServer({ port: 3002, path: "/internal" }, rooms);
-startPublicWsServer({ port: 3003, path: "/ws" }, rooms);
+const publicPort = Number(3003);
+console.log("Starting PUBLIC WS on", { host: "0.0.0.0", port: publicPort, path: "/ws" });
+startPublicWsServer({ port: publicPort, path: "/ws" }, rooms);

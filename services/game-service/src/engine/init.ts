@@ -100,7 +100,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		tick: 0,
 		seed,
 		rngState: rng.state,
-		players,
+		players,				// TODO: Player[] type incorrect
 		segments: [],
 		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
 	};

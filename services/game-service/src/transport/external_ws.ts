@@ -15,12 +15,16 @@ import type WebSocket from "ws";
 import type { GameConfig } from "../engine/config";
 import { DEFAULT_CONFIG } from "../engine/config";
 import { RoomManager } from "../app/room_manager";
-import type { TurnInput } from "../engine/step";
 
-// Shared protocol
+// ---------------------
+// define
+// ---------------------
+
 import {
 	ClientMsgSchema,
-	type ClientMsg
+	type ClientMsg,
+	ServerMsgSchema,
+	type ServerMsg
 } from "@ft/game-ws-protocol";
 
 // ---------------------
@@ -30,6 +34,17 @@ import {
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
 		ws.send(JSON.stringify(obj));
+}
+
+function safeSendServer(ws: WebSocket, msg: ServerMsg) {
+	if (ws.readyState !== ws.OPEN) return;
+	
+	const parsed = ServerMsgSchema.safeParse(msg);
+	if (!parsed.success) {
+		console.error("BUG: invalid ServerMsg being sent", parsed.error.format(), msg);
+		return;
+	}
+	ws.send(JSON.stringify(parsed.data));
 }
 
 function assertNever(x: never): never {
@@ -44,9 +59,15 @@ export function startPublicWsServer(
 	opts: { port: number; path?: string },
 	rooms: RoomManager
 ) {
-	const wss : WebSocketServer = new WebSocketServer({ port: opts.port, path: opts.path ?? "/ws" });
+	const wss: WebSocketServer = new WebSocketServer({
+		host: "0.0.0.0",
+		port: opts.port,
+		path: opts.path ?? "/ws",
+	});
 
 	wss.on("connection", (ws) => {
+		console.log("public WS: client connected");
+
 		let boundRoomId: string | null = null;
 		let boundPlayerId: string | null = null;
 
@@ -81,6 +102,7 @@ export function startPublicWsServer(
 						}
 
 						const playerIds = msg.players.map((p) => p.playerId);
+						console.log(`Room ${msg.roomId} will try to create room with: ${playerIds.join(",")}`);
 						if (playerIds.length === 0) {
 							throw new Error("create_room: players must not be empty");
 						}
@@ -108,10 +130,9 @@ export function startPublicWsServer(
 							playerIds,
 						});
 
-						// Subscribe this socket
 						rooms.subscribe(msg.roomId, ws);
-
-						safeSend(ws, { type: "room_created", roomId: msg.roomId });
+						console.log(`Room ${msg.roomId} created with players: ${playerIds.join(",")}`);
+						safeSendServer(ws, { type: "room_created", roomId: msg.roomId });
 						return;
 					}
 
@@ -120,25 +141,30 @@ export function startPublicWsServer(
 						boundPlayerId = msg.playerId;
 
 						rooms.subscribe(boundRoomId, ws);
-
 						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
+						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						return;
+					}
 
-						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId });
-						// safeSend(ws, {
-						// 	type: "joined",
-						// 	roomId: boundRoomId,
-						// 	playerId: boundPlayerId,
-						// });
+					case "start_game": {
+						if (!boundRoomId)
+							throw new Error("Must join_room first");
+						if (msg.roomId !== boundRoomId)
+							throw new Error("start_game: room mismatch");
+
+						console.log(`Room ${boundRoomId} has started`);
+						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
+						rooms.startGame(msg.roomId);
 						return;
 					}
 
 					case "leave_room": {
-						console.log(`Player left room ${msg.roomId}`);
-						rooms.broadcast(msg.roomId, { type: "left", roomId: msg.roomId});
-						rooms.unsubscribe(msg.roomId, ws);
+						boundRoomId = msg.roomId;
+						boundPlayerId = msg.playerId;
 
-						boundRoomId = null;
-						boundPlayerId = null;
+						console.log(`Player ${boundPlayerId} left room ${boundRoomId}`);
+						rooms.broadcast(boundRoomId, { type: "left", roomId: boundRoomId});
+						rooms.unsubscribe(boundRoomId, ws);
 						return;
 					}
 

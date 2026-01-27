@@ -5,19 +5,36 @@
 
 # TODO
 
-Fix backend service.
-
-1. Install php composer:
+1.  Run compose install:
 
 ```bash
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"\nphp -r "if (hash_file('sha384', 'composer-setup.php') === 'c8b085408188070d5f52bcfe4ecfbee5f727afa458b2573b8eaaf77b3419b0bf2768dc67c86944da1544f06fa544fd47') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"\nphp composer-setup.php\nphp -r "unlink('composer-setup.php');"
-```
-
-2. Run compose install:
-
-```bash
+  # PHP composer
   cd services/backend-service/src
   composer install
+```
+
+2. Make dependencies
+
+```bash
+  make deps
+```
+
+3. npm install
+
+```bash
+  # Wipe all caches
+  rm -rf node_modules package-lock.json
+  rm -rf services/**/node_modules services/**/package-lock.json
+  rm -rf packages/**/node_modules packages/**/package-lock.json
+
+  # In folder
+  rm -rf node_modules; rm -f package-lock.json; npm cache verify
+```
+
+4. Restart game service
+
+```bash
+docker compose build game-service
 ```
 
 - [x] Get a uuid (game id). From this I will make a link.
@@ -29,6 +46,7 @@ php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"\nphp -
 - [ ] Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
 - [ ] How to authenticate? SSL internal?
 - [ ] Websocket IO?
+- [ ] Switch to http from ws in the treafik document?
 
 ### New notes
 
