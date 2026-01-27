@@ -11,6 +11,7 @@
     const success = await apiStore.login();
     if (success) {
       console.log("Login successful!");
+      window.location.reload();
     } else {
       console.log("Login failed or was cancelled");
     }
