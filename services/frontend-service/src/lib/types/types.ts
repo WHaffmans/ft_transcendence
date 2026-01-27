@@ -16,3 +16,56 @@ export interface Game {
     updated_at: string;
     users: User[];
 }
+
+export interface RankingPlayer {
+    id: number;
+    position: number;
+    username: string;
+    rank: number;
+    avatar: string;
+}
+
+export interface MatchResult {
+    id: string;
+    opponent: string;
+    opponentId: number;
+    result: 'WIN' | 'LOSS';
+    timestamp: string;
+    score?: {
+        player: number;
+        opponent: number;
+    };
+}
+
+export interface DashboardData {
+    currentUser: {
+        id: number;
+        username: string;
+        avatar: string;
+        rank: number;
+        position: number;
+    };
+    lastMatch: MatchResult | null;
+    globalRanking: RankingPlayer[];
+    serverStatus: {
+        name: string;
+        playersOnline: number;
+    };
+}
+
+export type LobbyPlayerStatus = 'host' | 'ready' | 'not-ready';
+
+export interface LobbyPlayer {
+    id: number;
+    username: string;
+    avatar: string;
+    rank: number;
+    status: LobbyPlayerStatus;
+    isCurrentUser: boolean;
+}
+
+export interface LobbyData {
+    players: (LobbyPlayer | null)[]; // null represents empty slot
+    maxPlayers: number;
+    currentUserId: number;
+}

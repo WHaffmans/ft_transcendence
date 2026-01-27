@@ -2,18 +2,19 @@
   let { player } = $props();
 </script>
 
-<div class="flex items-center justify-between px-[30px] py-[5px] w-full">
+<!-- Item layout -->
+<div class="grid grid-cols-[auto_1fr_auto] items-center w-full min-w-0 px-4 py-2">
   <!-- Avatar -->
-  <div class="shrink-0 size-[45px]">
+  <div class="shrink-0 size-11">
     {#if player.avatar_url}
       <img
         src={player.avatar_url || "/default_avatar.png"}
         alt={player.name}
-        class="w-full h-full rounded-full object-cover"
+        class="object-cover w-full h-full rounded-full"
       />
     {:else}
       <div
-        class="w-full h-full rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-lg"
+        class="flex items-center justify-center w-full h-full text-lg font-bold text-white bg-gray-600 rounded-full"
       >
         {player.name.charAt(0).toUpperCase()}
       </div>
@@ -21,16 +22,12 @@
   </div>
 
   <!-- Username -->
-  <p class="shrink-0 font-bold text-white">
-    {player.name.trim().length > 15
-      ? player.name.slice(0, 12) + "..."
-      : player.name}
+  <p class="max-w-full px-4 mx-auto font-bold text-center text-white truncate">
+    {player.name}
   </p>
 
   <!-- ELO Rating -->
-  <p
-    class="shrink-0 font-bold text-[14px] text-[#0f8] text-center whitespace-pre"
-  >
+  <span class="ml-4 text-sm font-bold text-green-400 shrink-0">
     {player.rating}
-  </p>
+  </span>
 </div>
