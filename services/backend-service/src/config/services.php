@@ -37,7 +37,7 @@ return [
 
     'oauth' => [
         'client_id' => env('OAUTH_CLIENT_ID'),
-        'redirect' => env('OAUTH_DEV_REDIRECT'),
+        'redirect' => env('OAUTH_REDIRECT'),
     ],
 
     'github' => [
