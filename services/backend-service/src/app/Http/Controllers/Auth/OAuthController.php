@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class OAuthController extends Controller
@@ -26,7 +24,6 @@ class OAuthController extends Controller
         $request->session()->put('pkce_code_verifier', $codeVerifier);
 
         $redirectUri = url('/oauth/callback');
-        // dd($redirectUri);   
 
         $query = http_build_query([
             'client_id' => $clientId,
@@ -44,13 +41,12 @@ class OAuthController extends Controller
     public function callback(Request $request)
     {
         if ($request->filled('error')) {
-            return redirect('/login?error='.urlencode((string) $request->input('error')));
+            return redirect(config('app.frontend_url', '/').'?error='.urlencode((string) $request->input('error')));
         }
 
         $clientId = config('services.oauth.client_id');
 
         if (! $clientId) {
-            dd("NO CKUENT ID");
             abort(500, 'OAuth client ID not configured.');
         }
 
@@ -65,7 +61,7 @@ class OAuthController extends Controller
         $code = (string) $request->input('code');
 
         if (! $code) {
-            dd("NO CODE");
+            dd('NO CODE');
             abort(400, 'Missing authorization code.');
         }
 
@@ -82,7 +78,7 @@ class OAuthController extends Controller
         $internalRequest = Request::create('/oauth/token', 'POST', $requestData);
         $response = app()->handle($internalRequest);
         if ($response->getStatusCode() !== Response::HTTP_OK) {
-            return redirect('/callback?error=token_exchange_failed');
+            return redirect(config('app.frontend_url', '/').'?error=token_exchange_failed');
         }
 
         $tokenData = json_decode($response->getContent(), true);
@@ -90,7 +86,7 @@ class OAuthController extends Controller
         $refreshToken = $tokenData['refresh_token'] ?? null;
 
         if (! $accessToken) {
-            return redirect('/callback?error=token_missing');
+            return redirect(config('app.frontend_url', '/').'?error=token_missing');
         }
 
         $accessMinutes = max(1, (int) floor(((int) ($tokenData['expires_in'] ?? 900)) / 60));
@@ -106,7 +102,7 @@ class OAuthController extends Controller
             $cookies[] = cookie('refresh_token', $refreshToken, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        return redirect('http://localhost:8080/callback')
+        return redirect(config('app.frontend_url', '/').'/callback')
             ->withCookies($cookies);
     }
 
