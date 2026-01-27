@@ -9,7 +9,10 @@
   const handleLogin = async () => {
     const success = await apiStore.login();
     if (success) {
+      console.log("Login successful, navigating to dashboard.");
       goto('/dashboard');
+    } else {
+      console.error("Login failed.");
     }
   };
 </script>

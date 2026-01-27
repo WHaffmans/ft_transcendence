@@ -69,3 +69,9 @@ export interface LobbyData {
     maxPlayers: number;
     currentUserId: number;
 }
+
+
+export interface WSMessage {
+  type: string;
+  [key: string]: any;
+}

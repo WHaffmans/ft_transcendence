@@ -1,10 +1,6 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-
-interface WSMessage {
-  type: string;
-  [key: string]: any;
-}
+import type { WSMessage } from '$lib/types/types';
 
 interface WSStore {
   ws: WebSocket | null;
@@ -12,7 +8,6 @@ interface WSStore {
   messages: WSMessage[];
 }
 
-//TODO: BIG REFACTOR
 function createWebSocketStore() {
   const { subscribe, set, update } = writable<WSStore>({
     ws: null,
@@ -30,7 +25,7 @@ function createWebSocketStore() {
 
   function connect() {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      return; // Already connected
+      return;
     }
 
     ws = new WebSocket(makeWsUrl());

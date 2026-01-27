@@ -11,12 +11,17 @@
   let joined: boolean = false;
 
   $effect(() => {
-    let type = $wsStore.messages[$wsStore.messages.length - 1]?.type;
-    if (type === "joined" || type === "left") {
+    let msg = $wsStore.messages.shift();
+    if (!msg) return;
+    if (msg.type === "joined" || msg.type === "left") {
       console.log(
         "Lobby page detected join/leave message, fetching game data again.",
       );
       fetchGameData();
+    }
+    if (msg.type === "started") {
+      console.log("Game started, navigating to game page.");
+      goto(`/game/${data.lobbyId}`);
     }
   });
 
@@ -79,6 +84,10 @@
     });
   }
 
+  function startGame() {
+    wsStore.safeSend({ type: "start", room_id: data.lobbyId });
+  }
+
   onMount(() => {
     console.log("Lobby page mounted with ID:", data.lobbyId);
     wsStore.connect();
@@ -101,7 +110,7 @@
         <li>{user.name}</li>
       {/each}
     </ul>
-    <button onclick={() => goto(`/game/${game!.id}`)}>Start Game</button>
+    <button onclick={() => startGame()}>Start Game</button>
     <button onclick={() => leaveRoom()}>Leave Game</button>
   </div>
 {:else}

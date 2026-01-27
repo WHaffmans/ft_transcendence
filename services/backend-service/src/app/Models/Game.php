@@ -21,7 +21,7 @@ class Game extends Model
     {
         return $this->belongsToMany(User::class, 'user_game')
             ->withPivot('rating_mu', 'rating_sigma', 'rank')
-            ->as("user_game")
+            ->as('user_game')
             ->withTimestamps();
     }
 }

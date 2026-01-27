@@ -11,7 +11,7 @@ services:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
       - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
-      - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_DEV_REDIRECT}
+      - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_REDIRECT}
     networks:
       - transcendence-internal
     ports:
@@ -50,8 +50,9 @@ services:
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - OAUTH_DEV_CLIENT_ID=${OAUTH_CLIENT_ID}
-      - OAUTH_DEV_REDIRECT=${OAUTH_DEV_REDIRECT}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_REDIRECT=${OAUTH_REDIRECT}
+      - APP_FRONTEND_URL=${DOMAIN}
       - BUILD=DEV
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     networks:
