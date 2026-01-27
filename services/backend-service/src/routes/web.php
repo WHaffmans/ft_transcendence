@@ -16,6 +16,11 @@ Route::group([], function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::get('/oauth/initiate', [App\Http\Controllers\Auth\OAuthController::class, 'initiate'])
+    ->name('oauth.initiate');
+Route::get('/oauth/callback', [App\Http\Controllers\Auth\OAuthController::class, 'callback'])
+    ->name('oauth.callback');
+
 Route::get('/redirect/{provider}', function ($provider) {
     return Socialite::driver($provider)->redirect();
 })->name('social.redirect');

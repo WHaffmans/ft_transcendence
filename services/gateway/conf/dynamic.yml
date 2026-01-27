@@ -20,7 +20,7 @@ http:
 
     backend-service:
       rule: "PathPrefix(`/api`)"
-      service: backend-service
+      service: frontend-service
       priority: 10
       entryPoints:
         - web
