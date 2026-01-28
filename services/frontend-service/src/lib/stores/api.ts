@@ -56,7 +56,7 @@ const createApiStore = () => {
         `/auth/oauth/initiate`,
         'oauth2_login',
         500,
-        600,
+        700,
       );
     },
 
