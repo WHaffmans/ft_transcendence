@@ -30,7 +30,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($validated, $request->boolean('remember'))) {
+        if (!Auth::attempt($validated, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => __('The provided credentials do not match our records.'),
             ]);
@@ -80,9 +80,11 @@ class AuthController extends Controller
     {
         $request->user()->token()->revoke();
 
-        cookie()->forget('access_token');
-        cookie()->forget('refresh_token');
-
-        return response()->json(['message' => 'Logged out']);
+        $domain = config('session.domain');
+        return response()->json(['message' => 'Logged out'])->withCookie(
+            cookie()->forget('access_token', '/', $domain)
+        )->withCookie(
+                cookie()->forget('refresh_token', '/', $domain)
+            );
     }
 }
