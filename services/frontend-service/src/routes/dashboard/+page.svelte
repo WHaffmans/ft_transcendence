@@ -30,8 +30,13 @@
 
 	const handleLogout = () => {
 		console.log('Logging out...');
-		apiStore.logout();
-		goto('/');
+		apiStore.logout().then(() => {
+			toast.success("Successfully logged out.");
+			goto('/', { replaceState: true });
+		}).catch((error) => {
+			console.error("Logout failed:", error);
+			toast.error("Failed to log out. Please try again.");
+		});
 	};
 </script>
 

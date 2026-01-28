@@ -56,7 +56,7 @@ const createApiStore = () => {
         `/auth/oauth/initiate`,
         'oauth2_login',
         500,
-        600,
+        700,
       );
     },
 
@@ -98,11 +98,7 @@ const createApiStore = () => {
       } catch (error) {
         console.error("Logout failed:", error);
       } finally {
-        this.clearTokens();
         set({ user: null, isLoading: false, isAuthenticated: false });
-        if (browser) {
-          window.location.href = "/";
-        }
       }
     },
 

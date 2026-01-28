@@ -6,7 +6,7 @@ import type { User } from "$lib/types/types";
 // Fetch data for leaderboard
 export const load: PageLoad = async ({fetch}) => {
 
-	const res = await fetch('http://backend-service:4000/api/leaderboard');
+	const res = await fetch('/api/leaderboard');
 
 	if (!res.ok)
 	{
