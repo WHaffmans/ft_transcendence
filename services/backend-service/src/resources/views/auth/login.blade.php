@@ -161,6 +161,11 @@
             text-decoration: underline;
         }
 
+        .btn-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
         .btn {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -180,6 +185,21 @@
         .btn-primary:hover {
             opacity: 0.9;
             transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
         }
 
         .divider {
@@ -320,7 +340,12 @@
                     @endif
                 </div>
 
-                <button type="submit" class="btn btn-primary">Sign in</button>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary">Sign in</button>
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="btn btn-secondary">Sign up</a>
+                    @endif
+                </div>
             </form>
 
             {{-- Uncomment if you have social login --}}
