@@ -26,6 +26,17 @@
 		  	console.error("Error finding game:", error);
 		  	toast.error("Failed to find a game. Please try again later.");});
 	};
+
+	const handleLogout = () => {
+		console.log('Logging out...');
+		apiStore.logout().then(() => {
+			toast.success("Successfully logged out.");
+			goto('/', { replaceState: true });
+		}).catch((error) => {
+			console.error("Logout failed:", error);
+			toast.error("Failed to log out. Please try again.");
+		});
+	};
 </script>
 
 <svelte:head>
