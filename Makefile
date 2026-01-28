@@ -3,6 +3,9 @@ all: build up
 deps:
 	@bash scripts/init-dev.sh
 
+prod:
+	docker compose -f docker-compose.prod.yml up -d
+
 up:
 	docker compose up -d
 
@@ -25,4 +28,4 @@ logs:
 clean:
 	docker compose down -v --remove-orphans
 
-.PHONY: all up down build rm re logs clean deps
+.PHONY: all up down build rm re logs clean deps prod
