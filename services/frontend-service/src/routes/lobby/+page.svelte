@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardNav from '$lib/components/dashboard/DashboardNav.svelte';
+	import DashboardNav from '$lib/components/dashboard/Navbar.svelte';
 	import LobbyGrid from '$lib/components/lobby/LobbyGrid.svelte';
 	import PlayerCard from '$lib/components/lobby/PlayerCard.svelte';
 	import WaitingCard from '$lib/components/lobby/WaitingCard.svelte';
@@ -45,13 +45,13 @@
 <!-- Lobby container with background -->
 <div class="relative min-h-screen bg-[#121212] overflow-hidden">
 	<!-- Background decorations -->
-	<div class="absolute inset-0 pointer-events-none overflow-hidden">
+	<div class="absolute inset-0 overflow-hidden pointer-events-none">
 		<!-- Top right ellipse -->
 		<div class="absolute -top-75 -right-75 w-150 h-150">
 			<img
 				src="/assets/ellipse-top-right.svg"
 				alt=""
-				class="w-full h-full object-contain opacity-80"
+				class="object-contain w-full h-full opacity-80"
 				style="filter: blur(40px) brightness(1.2);"
 			/>
 		</div>
@@ -61,7 +61,7 @@
 			<img
 				src="/assets/ellipse-bottom-left.svg"
 				alt=""
-				class="w-full h-full object-contain opacity-80"
+				class="object-contain w-full h-full opacity-80"
 				style="filter: blur(40px) brightness(1.2);"
 			/>
 		</div>
@@ -77,9 +77,9 @@
 	{/if}
 
 	<!-- Main content -->
-	<main class="relative z-10 pt-22 pb-10 px-6">
-		<div class="max-w-308 mx-auto">
-			<div class="flex flex-col lg:flex-row items-start justify-between gap-6">
+	<main class="relative z-10 px-6 pb-10 pt-22">
+		<div class="mx-auto max-w-308">
+			<div class="flex flex-col items-start justify-between gap-6 lg:flex-row">
 				<!-- Left Section - Player Slots -->
 				<LobbyGrid>
 					{#each lobbyData.players as player}

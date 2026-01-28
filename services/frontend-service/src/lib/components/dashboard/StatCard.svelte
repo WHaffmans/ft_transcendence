@@ -11,11 +11,11 @@
 </script>
 
 <div class="glass h-card rounded-2xl flex-1 min-w-0 {className}">
-	<div class="p-6 flex flex-col h-full">
+	<div class="flex flex-col h-full p-6">
 		<p class="text-xs font-bold text-[#888] uppercase mb-4">
 			{title}
 		</p>
-		<div class="flex-1 flex items-start">
+		<div class="flex items-start flex-1">
 			{@render children()}
 		</div>
 	</div>
