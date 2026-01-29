@@ -29,6 +29,7 @@
 	"dependencies": {
 		"clsx": "^2.1.1",
 		"js-sha256": "^0.11.1",
+		"svelte-sonner": "^1.0.7",
 		"tailwind-merge": "^3.4.0",
 		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
 	}

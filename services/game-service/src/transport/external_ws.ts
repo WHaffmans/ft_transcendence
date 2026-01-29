@@ -197,6 +197,20 @@ export function startPublicWsServer(
 						return;
 					}
 
+					case "start": {
+						const room = rooms.get(msg.roomId);
+						if (!room) {
+							throw new Error(`Room not found: ${msg.roomId}: all rooms: ${[...rooms.rooms.keys()].join(", ")}`);
+						}
+
+						rooms.startRoom(msg.roomId);
+
+						console.log(`Room started: ${msg.roomId}`);
+
+						rooms.broadcast(msg.roomId, { type: "started", roomId: msg.roomId });
+						return;
+					}
+
 					case "leave_room": {
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;

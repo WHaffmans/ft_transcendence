@@ -15,7 +15,6 @@ class UserController extends Controller
         return response()->json(User::all());
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
@@ -31,6 +30,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         $user = $user->load('games');
+
         return response()->json($user);
     }
 
@@ -39,8 +39,9 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        //TODO: validate input
+        // TODO: validate input
         $user->update($request->all());
+
         return response()->json($user);
     }
 
@@ -50,8 +51,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+
         return response()->json(null, 204);
     }
-
-
 }

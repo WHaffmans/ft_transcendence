@@ -22,7 +22,7 @@ class LeaveGameRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => 'required|integer|exists:user_game,user_id'
+            'user_id' => 'required|integer|exists:user_game,user_id',
         ];
     }
 }

@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
-	import { page } from "$app/stores";
-	import { get } from "svelte/store";
+  import { onMount, onDestroy } from "svelte";
+  import { page } from "$app/stores";
+  import { get } from "svelte/store";
+  import { wsStore } from "$lib/stores/ws";
+  //   import { apiStore } from "$lib/stores/api.js";
 
 	import { wsStore } from "$lib/stores/ws";
 	import type { ServerMsg } from "@ft/game-ws-protocol";
@@ -46,18 +48,18 @@
 		const w = window.innerWidth;
 		const h = window.innerHeight;
 
-		canvas.style.width = `${w}px`;
-		canvas.style.height = `${h}px`;
-		canvas.width = Math.floor(w * dpr);
-		canvas.height = Math.floor(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
 
-		// draw in CSS pixels
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-	}
+    // draw in CSS pixels
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
-	function rgbaToColor(c: ColorRGBA): string {
-		return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
-	}
+  function rgbaToColor(c: ColorRGBA): string {
+    return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
+  }
 
 	// ---------------------
 	// draw
@@ -70,9 +72,9 @@
 
 		ctx.clearRect(0, 0, W, H);
 
-		// background
-		ctx.fillStyle = "#0b0b0b";
-		ctx.fillRect(0, 0, W, H);
+    // background
+    ctx.fillStyle = "#0b0b0b";
+    ctx.fillRect(0, 0, W, H);
 
 		if (!snapshot) return;
 
@@ -90,12 +92,12 @@
 		for (const s of snapshot.segments ?? []) {
 			if (s.isGap) continue;
 
-			const x0 = s.x1;
-			const y0 = s.y1;
-			const x1 = s.x2;
-			const y1 = s.y2;
+      const x0 = s.x1;
+      const y0 = s.y1;
+      const x1 = s.x2;
+      const y1 = s.y2;
 
-			if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
+      if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
 
 			ctx.strokeStyle = rgbaToColor(s.color);
 			ctx.lineWidth = 4;
@@ -107,8 +109,8 @@
 			ctx.stroke();
 		}
 
-		// players
-		const r = 6;
+    // players
+    const r = 6;
 
 		for (const p of snapshot.players ?? []) {
 			ctx.fillStyle = p.alive
@@ -123,15 +125,15 @@
 				ctx.strokeStyle = rgbaToColor(p.color);
 				ctx.lineWidth = 2;
 
-				ctx.beginPath();
-				ctx.moveTo(p.x - r, p.y - r);
-				ctx.lineTo(p.x + r, p.y + r);
-				ctx.moveTo(p.x - r, p.y + r);
-				ctx.lineTo(p.x + r, p.y - r);
-				ctx.stroke();
-			}
-		}
-	}
+        ctx.beginPath();
+        ctx.moveTo(p.x - r, p.y - r);
+        ctx.lineTo(p.x + r, p.y + r);
+        ctx.moveTo(p.x - r, p.y + r);
+        ctx.lineTo(p.x + r, p.y - r);
+        ctx.stroke();
+      }
+    }
+  }
 
 	let raf = 0;
 	function loop() {

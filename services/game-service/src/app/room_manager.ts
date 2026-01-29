@@ -64,7 +64,7 @@ function safeSend(ws: WebSocket, msg: unknown) {
 }
 
 export class RoomManager {
-	private rooms = new Map<string, Room>();
+	public rooms = new Map<string, Room>();
 
 	/**
 	 * Search for a room
@@ -115,6 +115,10 @@ export class RoomManager {
 
 		this.rooms.set(roomId, room);
 	};
+
+	startRoom(roomId: string) {
+		this.startLoop(roomId, 30);
+	}
 
 	/**
 	 * Add a new web socket to list of subscribers

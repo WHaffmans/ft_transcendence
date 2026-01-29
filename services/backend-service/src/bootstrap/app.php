@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
             CreateFreshApiToken::class,
         ]);
         $middleware->trustProxies('*', Request::HEADER_FORWARDED | Request::HEADER_X_FORWARDED_TRAEFIK);
+        $middleware->encryptCookies([
+            'access_token',
+            'refresh_token',
+        ]);
     })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
