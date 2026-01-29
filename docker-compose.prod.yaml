@@ -12,7 +12,7 @@ services:
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=5173
       - PUBLIC_DOMAIN=${DOMAIN}
       - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
       - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_REDIRECT}
@@ -49,12 +49,12 @@ services:
       - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
       - OAUTH_REDIRECT=${OAUTH_REDIRECT}
       - APP_FRONTEND_URL=${DOMAIN}
-      - BUILD=DEV
+      - BUILD=PROD
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     networks:
       - transcendence-production
-    volumes:
-      - ./services/backend-service/src:/var/www/html
+    ports:
+      - "4000:4000"
     depends_on:
       mariadb:
         condition: service_healthy

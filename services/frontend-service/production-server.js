@@ -1,4 +1,4 @@
-import http from 'https';
+import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,17 +7,19 @@ import { handler } from './build/handler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5173;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Load SSL certificates
-// const options = {
-// 	key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
-// 	cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
-// };
+const options = {
+	// key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
+	// cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
+};
+
 
 // Create HTTPS server
-const server = http.createServer(options, handler);
+// const server = http.createServer(options, handler);
+const server = http.createServer(handler);
 
 // Start server
 server.listen(PORT, HOST, () => {

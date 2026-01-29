@@ -6,6 +6,11 @@ deps:
 prod:
 	docker compose -f docker-compose.prod.yaml up -d
 
+prod-re:
+	docker compose -f docker-compose.prod.yaml down -v --remove-orphans
+	docker compose -f docker-compose.prod.yaml build --no-cache
+	docker compose -f docker-compose.prod.yaml up -d
+
 up:
 	docker compose up -d
 
