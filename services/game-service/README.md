@@ -5,16 +5,54 @@
 
 # TODO
 
-- [ ] Make unique link with id for each room
-- [ ] Use protocol for messaging in web socket
-- [ ] Only send new trail segments to frontend
-- [ ] How to standerdise canvas size?
+1.  Run compose install:
 
-- Get a uuid (game id). From this I will make a link.
-- Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
-- How to authenticate? SSL internal?
-Websocket IO?
-- Use trafeak for the web socket. Now using a socket. Should not expose a port.
+```bash
+  # PHP composer
+  cd services/backend-service/src
+  composer install
+```
+
+2. Make dependencies
+
+```bash
+  make deps
+```
+
+3. npm install
+
+```bash
+  # Wipe all caches
+  rm -rf node_modules package-lock.json
+  rm -rf services/**/node_modules services/**/package-lock.json
+  rm -rf packages/**/node_modules packages/**/package-lock.json
+
+  # In folder
+  rm -rf node_modules; rm -f package-lock.json; npm cache verify
+```
+
+4. Restart game service
+
+```bash
+docker compose up -d --build game-service
+```
+
+- [x] Get a uuid (game id). From this I will make a link.
+- [x] Use trafeak for the web socket. Now using a socket. Should not expose a port.
+- [ ] Send full object to game/uuid page.
+- [ ] Use protocol for messaging in web socket.
+- [ ] Only send new trail segments to frontend.
+- [ ] How to standerdise canvas size?
+- [ ] Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
+- [ ] How to authenticate? SSL internal?
+- [ ] Websocket IO?
+- [ ] Switch to http from ws in the treafik document?
+
+### New notes
+
+- First player in lobby creates room.
+- Join room callback, refrech lobby list for all players.
+- Move to canvas, wait to start. Call to start.
 
 
 ### Setup

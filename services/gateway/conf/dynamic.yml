@@ -27,17 +27,21 @@ http:
         - websecure
 
     game-ws-web:
-      rule: 'PathPrefix(`/ws`)'
+      rule: "PathPrefix(`/ws`)"
       service: game-service
       priority: 50
       entryPoints: [web]
+      middlewares:
+        - ws-headers
 
     game-ws-websecure:
-      rule: 'PathPrefix(`/ws`)'
+      rule: "PathPrefix(`/ws`)"
       service: game-service
       priority: 50
       entryPoints: [websecure]
       tls: {}
+      middlewares:
+        - ws-headers
 
   services:
     frontend-service:
@@ -60,6 +64,12 @@ http:
       stripPrefix:
         prefixes:
           - "/auth"
+
+    ws-headers:
+      headers:
+        customRequestHeaders:
+          Connection: "Upgrade"
+          Upgrade: "websocket"
 
     auth-forward:
       forwardAuth:
