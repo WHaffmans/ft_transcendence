@@ -4,7 +4,7 @@ deps:
 	@bash scripts/init-dev.sh
 
 prod:
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yaml up -d
 
 up:
 	docker compose up -d

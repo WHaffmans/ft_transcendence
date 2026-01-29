@@ -21,13 +21,13 @@ COPY . .
 RUN npm run build
 
 # Generate self-signed certificate with SANs
-RUN mkdir -p /app/certs && \
-	openssl req -x509 -newkey rsa:4096 -nodes \
-	-keyout /app/certs/key.pem \
-	-out /app/certs/cert.pem \
-	-days 365 \
-	-subj "/C=US/ST=State/L=City/O=Organization/CN=frontend-service" \
-	-addext "subjectAltName=DNS:frontend-service,DNS:localhost,IP:127.0.0.1"
+# RUN mkdir -p /app/certs && \
+# 	openssl req -x509 -newkey rsa:4096 -nodes \
+# 	-keyout /app/certs/key.pem \
+# 	-out /app/certs/cert.pem \
+# 	-days 365 \
+# 	-subj "/C=US/ST=State/L=City/O=Organization/CN=frontend-service" \
+# 	-addext "subjectAltName=DNS:frontend-service,DNS:localhost,IP:127.0.0.1"
 
 # ============================================================================
 # RUN STAGE
@@ -49,13 +49,10 @@ RUN npm install --omit=dev --ignore-scripts
 COPY --from=builder /app/build ./build
 
 # Copy SSL certificates from builder stage
-COPY --from=builder /app/certs ./certs
+# COPY --from=builder /app/certs ./certs
 
 # Copy production server script
 COPY production-server.js ./
-
-# Expose HTTPS port
-EXPOSE 3000
 
 # Start production server with HTTPS
 CMD ["node", "production-server.js"]

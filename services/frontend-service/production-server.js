@@ -1,4 +1,4 @@
-import https from 'https';
+import http from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,13 +11,13 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Load SSL certificates
-const options = {
-	key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
-	cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
-};
+// const options = {
+// 	key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
+// 	cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
+// };
 
 // Create HTTPS server
-const server = https.createServer(options, handler);
+const server = http.createServer(options, handler);
 
 // Start server
 server.listen(PORT, HOST, () => {
