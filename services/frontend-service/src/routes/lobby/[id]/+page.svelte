@@ -55,18 +55,17 @@
 			return;
 		}
 
-		const playerId = String($apiStore.user?.id);
-		if (!playerId) {
-			console.log("ERROR: joinGame() - Missing player id");
+		const playerId = $apiStore.user?.id;
+		if (playerId == null)
+		{
+			console.log("ERROR: joinGame() - player ID null");
 			return;
 		}
-
+		
 		if (game.users.length === 1 && game.users[0].id === playerId) {
-			console.log("joinGame() - Sending create_room to wsStore");
-			wsStore.createRoom(data.lobbyId, 1, playerId);
+			wsStore.createRoom(data.lobbyId, 1, String(playerId));
 		}
-
-		wsStore.joinRoom(data.lobbyId, playerId);
+		wsStore.joinRoom(data.lobbyId, String(playerId));
 	}
 
 	onMount(() => {

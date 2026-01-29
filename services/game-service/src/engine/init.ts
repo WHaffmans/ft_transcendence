@@ -91,6 +91,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		angle: 0,
 		alive: true,
 		gapTicksLeft: 0,
+		tailSegIndex: 0,
 		color: playerColor(i, playerIds.length),
 	}));
 
@@ -100,7 +101,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		tick: 0,
 		seed,
 		rngState: rng.state,
-		players,				// TODO: Player[] type incorrect
+		players,
 		segments: [],
 		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
 	};

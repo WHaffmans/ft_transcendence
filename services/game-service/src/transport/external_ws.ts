@@ -91,6 +91,12 @@ export function startPublicWsServer(
 
 			const msg: ClientMsg = parsed.data;
 
+			console.log("IN", {
+				type: msg.type,
+				roomId: "roomId" in msg ? msg.roomId : undefined,
+				playerId: "playerId" in msg ? msg.playerId : undefined,
+			});
+
 			// Handle messages
 			try {
 				switch (msg.type) {
@@ -102,7 +108,6 @@ export function startPublicWsServer(
 						}
 
 						const playerIds = msg.players.map((p) => p.playerId);
-						console.log(`Room ${msg.roomId} will try to create room with: ${playerIds.join(",")}`);
 						if (playerIds.length === 0) {
 							throw new Error("create_room: players must not be empty");
 						}
@@ -137,24 +142,58 @@ export function startPublicWsServer(
 					}
 
 					case "join_room": {
+						if (boundRoomId || boundPlayerId) {
+							throw new Error("Already joined a room on this socket");
+						}
+
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
+						rooms.addPlayerToRoom(boundRoomId, boundPlayerId);
 						rooms.subscribe(boundRoomId, ws);
 						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
 						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
 						return;
 					}
 
-					case "start_game": {
-						if (!boundRoomId)
+					case "update_scene": {
+						if (!boundRoomId || !boundPlayerId) {
 							throw new Error("Must join_room first");
-						if (msg.roomId !== boundRoomId)
+						}
+						if (msg.roomId !== boundRoomId || msg.playerId !== boundPlayerId) {
+							throw new Error("update_scene: room/player mismatch");
+						}
+
+						boundRoomId = msg.roomId;
+						boundPlayerId = msg.playerId;
+
+						rooms.broadcastState(boundRoomId);
+						rooms.updatePlayerScene(boundRoomId, boundPlayerId, msg.scene);
+						rooms.broadcastState(boundRoomId);
+						rooms.willUpdateRoomPhase(boundRoomId);
+						console.log(`Player ${boundPlayerId} entered scene ${msg.scene}`);
+						return;
+					}
+
+					case "start_game": {
+						if (!boundRoomId || !boundPlayerId) {
+							throw new Error("Must join_room first");
+						}
+						if (msg.roomId !== boundRoomId) {
 							throw new Error("start_game: room mismatch");
+						}
+
+						const room = rooms.get(boundRoomId);
+						if (!room) throw new Error(`Unknown roomId: ${boundRoomId}`);
+
+						if (room.phase !== "ready") {
+							throw new Error(`Room is not ready (phase=${room.phase})`);
+						}
 
 						console.log(`Room ${boundRoomId} has started`);
+						rooms.setRoomToRunning(boundRoomId);
 						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
-						rooms.startGame(msg.roomId);
+						rooms.startLoop(msg.roomId);
 						return;
 					}
 
@@ -163,8 +202,11 @@ export function startPublicWsServer(
 						boundPlayerId = msg.playerId;
 
 						console.log(`Player ${boundPlayerId} left room ${boundRoomId}`);
-						rooms.broadcast(boundRoomId, { type: "left", roomId: boundRoomId});
+						rooms.broadcast(boundRoomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId});
 						rooms.unsubscribe(boundRoomId, ws);
+
+						boundRoomId = null;
+						boundPlayerId = null;
 						return;
 					}
 

@@ -30,10 +30,23 @@ export const JoinRoomMsgSchema = z.object({
 	playerId: PlayerId,
 });
 
+/**
+ * Update Scene:
+ * Tells the game engine which page each player is currently on.
+ */
+export const SceneSchema = z.enum(["lobby", "game"]);
+export const UpdateSceneMsgSchema = z.object({
+	type: z.literal("update_scene"),
+	roomId: RoomId,
+	playerId: PlayerId,
+	scene: SceneSchema,
+});
+export type Scene = z.infer<typeof SceneSchema>;
+
 export const StartGameMsgSchema = z.object({
 	type: z.literal("start_game"),
 	roomId: RoomId,
-})
+});
 
 export const LeaveRoomMsgSchema = z.object({
 	type: z.literal("leave_room"),
@@ -46,10 +59,10 @@ export const InputMsgSchema = z.object({
 	turn: TurnInputSchema,
 });
 
-// Export message types
 export const ClientMsgSchema = z.discriminatedUnion("type", [
 	CreateRoomMsgSchema,
 	JoinRoomMsgSchema,
+	UpdateSceneMsgSchema,
 	StartGameMsgSchema,
 	LeaveRoomMsgSchema,
 	InputMsgSchema,

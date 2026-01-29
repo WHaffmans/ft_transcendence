@@ -11,13 +11,14 @@ import {
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
 type WSStoreState = {
-  status: "disconnected" | "connecting" | "open" | "error";
+	status: "disconnected" | "connecting" | "open" | "error";
 	messages: ServerMsg[];
 	latestState: StateMsg["snapshot"] | null;
 	roomId: string | null;
 	playerId: string | null;
 	pendingCreate: { roomId: string; seed: number; playerId: string } | null;
 	pendingJoin: { roomId: string; playerId: string } | null;
+	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
 
 function makeWsUrl() {
@@ -35,6 +36,7 @@ function createWebSocketStore() {
 		playerId: null,
 		pendingCreate: null,
 		pendingJoin: null,
+		pendingScene: null,
 	});
 
 	const { subscribe, set, update } = store;
@@ -63,6 +65,12 @@ function createWebSocketStore() {
 			if (s.pendingJoin) {
 				joinRoom(s.pendingJoin.roomId, s.pendingJoin.playerId);
 				update((x) => ({ ...x, pendingJoin: null }));
+			}
+
+			if (s.pendingScene) {
+				const { roomId, playerId, scene } = s.pendingScene;
+				sendClient({ type: "update_scene", roomId, playerId, scene });
+				update((x) => ({ ...x, pendingScene: null }));
 			}
 		};
 
@@ -128,14 +136,29 @@ function createWebSocketStore() {
 		sendClient({ type: "join_room", roomId, playerId });
 	}
 
-  function startGame() {
-    const s = get(store);
-    if (!s.roomId) return;
-    if (!ws || ws.readyState !== WebSocket.OPEN)
-      return;
-    
-    sendClient({ type: "start_game", roomId: s.roomId });
-  }
+	function updatePlayerScene(roomId: string, playerId: string, scene: "lobby" | "game" ) {
+		update((s) => ({ ...s, pendingScene: { roomId, playerId, scene } }));
+
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			connect();
+			return;
+		}
+
+		sendClient({ type: "update_scene", roomId, playerId, scene });
+		update((s) => ({ ...s, pendingScene: null }));
+	}
+	
+	
+	function startGame() {
+		const s = get(store);
+
+		if (!s.roomId)
+			return;
+		if (!ws || ws.readyState !== WebSocket.OPEN)
+			return;
+		
+		sendClient({ type: "start_game", roomId: s.roomId });
+	}
 
 	function leaveRoom() {
 		const s = get(store);
@@ -150,6 +173,7 @@ function createWebSocketStore() {
 			playerId: null,
 			latestState: null,
 			pendingJoin: null,
+			pendingScene: null,
 		}));
 	}
 
@@ -165,6 +189,7 @@ function createWebSocketStore() {
 			playerId: null,
 			pendingCreate: null,
 			pendingJoin: null,
+			pendingScene: null,
 		});
 	}
 
@@ -188,12 +213,13 @@ function createWebSocketStore() {
 	return {
 		subscribe,
 		connect,
+		createRoom,
+		updatePlayerScene,
 		startGame,
 		disconnect,
 		sendClient,
 		joinRoom,
 		leaveRoom,
-		createRoom,
 	};
 }
 

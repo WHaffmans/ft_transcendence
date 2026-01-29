@@ -8,8 +8,6 @@
 
 	type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
-	let showStartHint = true;
-
 	// ---------------------
 	// types
 	// ---------------------
@@ -19,6 +17,21 @@
 		b: number;
 		a: number;
 	};
+
+	// ---------------------
+	// derived UI state
+	// ---------------------
+	$: snapshot = $wsStore.latestState as StateMsg["snapshot"] | null;
+	$: phase = snapshot?.phase ?? null;
+
+	$: overlayText =
+		phase === "lobby"
+			? "Waiting for all players to join..."
+			: phase === "ready"
+				? "Press Space to start"
+				: null; // running/finished = no overlay
+
+	$: showOverlay = overlayText !== null;
 
 	// ---------------------
 	// canvas
@@ -68,6 +81,10 @@
 		ctx.font = "14px system-ui";
 		ctx.fillText(`tick: ${snapshot.tick}`, 12, 20);
 		ctx.fillText(`room: ${snapshot.roomId}`, 12, 40);
+
+		// TODO: Remove
+		ctx.fillText(`players: ${snapshot.players?.length ?? 0}`, 12, 60);
+		ctx.fillText(`ids: ${(snapshot.players ?? []).map((p) => p.id).join(", ")}`, 12, 80);
 
 		// segments
 		for (const s of snapshot.segments ?? []) {
@@ -119,6 +136,7 @@
 	let raf = 0;
 	function loop() {
 		draw($wsStore.latestState);
+		console.log(`Latest state: ${$wsStore.latestState}`);
 		raf = requestAnimationFrame(loop);
 	}
 
@@ -129,19 +147,22 @@
 		if (ev.code === "Space") {
 			ev.preventDefault();
 
-			// TODO: Validation before game start
-			if (showStartHint) {
-				showStartHint = false;
+			if ($wsStore.status === "open" && $wsStore.roomId && phase === "ready") {
 				wsStore.startGame?.();
 			}
 			return;
 		}
+		
+		if (phase !== "running")
+			return;
 
 		if (ev.key === "ArrowLeft")
-			wsStore.sendClient({ type: "input", turn: -1 });
+			if ($wsStore.status === "open" && $wsStore.roomId)
+				wsStore.sendClient({ type: "input", turn: -1 });
 
 		if (ev.key === "ArrowRight")
-			wsStore.sendClient({ type: "input", turn: 1 });
+			if ($wsStore.status === "open" && $wsStore.roomId)
+				wsStore.sendClient({ type: "input", turn: 1 });
 	}
 
 	function onKeyUp(ev: KeyboardEvent) {
@@ -154,20 +175,15 @@
 	// lifecycle
 	// ---------------------
 	onMount(() => {
-		const p = get(page);
-
-		const roomId = p.params.roomId;
-		const playerId = p.url.searchParams.get("playerId") ?? "p1";
-
 		ctx = canvas.getContext("2d")!;
 
 		resizeCanvas();
+		
 		window.addEventListener("resize", resizeCanvas);
 		window.addEventListener("keydown", onKeyDown);
 		window.addEventListener("keyup", onKeyUp);
 
-		wsStore.joinRoom(roomId, playerId);
-
+		wsStore.updatePlayerScene($wsStore.roomId, $wsStore.playerId, "game");
 		loop();
 	});
 
@@ -202,28 +218,32 @@
 	{$wsStore.status}
 </div>
 
-{#if showStartHint}
-  <div
-    style="
-      position:fixed;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      pointer-events:none;
-    "
-  >
-    <div
-      style="
-        background:rgba(0,0,0,0.55);
-        color:white;
-        padding:14px 18px;
-        border-radius:12px;
-        font:14px system-ui;
-        letter-spacing:0.2px;
-      "
-    >
-      Press <b>Space</b> to start
-    </div>
-  </div>
+{#if showOverlay}
+	<div
+		style="
+			position:fixed;
+			inset:0;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			pointer-events:none;
+		"
+	>
+		<div
+			style="
+				background:rgba(0,0,0,0.55);
+				color:white;
+				padding:14px 18px;
+				border-radius:12px;
+				font:14px system-ui;
+				letter-spacing:0.2px;
+			"
+		>
+			{#if phase === "ready"}
+				{overlayText} <b>Space</b>
+			{:else}
+				{overlayText}
+			{/if}
+		</div>
+	</div>
 {/if}

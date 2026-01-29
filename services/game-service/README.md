@@ -34,7 +34,7 @@
 4. Restart game service
 
 ```bash
-docker compose build game-service
+docker compose up -d --build game-service
 ```
 
 - [x] Get a uuid (game id). From this I will make a link.

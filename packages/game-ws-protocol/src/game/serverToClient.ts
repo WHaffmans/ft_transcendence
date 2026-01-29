@@ -35,13 +35,17 @@ export const StateMsgSchema = z.object({
 	snapshot: GameStateSnapshotSchema,
 });
 
+export const PlayerLeftMessageSchema = z.object({
+	type: z.literal("left"),
+	roomId: RoomId,
+	playerId: PlayerId,
+});
+
 export const ErrorMsgSchema = z.object({
 	type: z.literal("error"),
 	...ErrorPayloadSchema.shape,
 });
 
-
-// Export message types
 export const ServerMsgSchema = z.discriminatedUnion("type", [
 	RoomCreatedMsgSchema,
 	JoinedMsgSchema,
