@@ -3,7 +3,6 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws.js";
-  import { get } from "svelte/store";
   import { userStore } from "$lib/stores/user.js";
 
   let { data } = $props();
@@ -11,7 +10,7 @@
   let game = $state(null as Game | null);
   let joined: boolean = false;
 
-  let userId = get(userStore)?.id;
+  let userId = $userStore?.id;
 
   $effect(() => {
     let msg = $wsStore.messages.shift();
