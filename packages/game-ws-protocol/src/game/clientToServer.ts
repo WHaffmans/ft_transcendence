@@ -1,8 +1,8 @@
 
-// https://zod.dev/
 import { z } from "zod";
-import { PROTOCOL_VERSION, TimestampMs, Seq, RoomId, PlayerId } from "../common/primitives";
-import { asNonEmptyTuple, formatZodError, parseJson } from "../common/envelope";
+import { RoomId, PlayerId } from "../common/primitives.js";
+
+export const TurnInputSchema = z.union([z.literal(-1), z.literal(0), z.literal(1)]);
 
 /**
  * =========================
@@ -10,62 +10,63 @@ import { asNonEmptyTuple, formatZodError, parseJson } from "../common/envelope";
  * =========================
  */
 
-export const ClientPayloadSchemas = {
-	create_room: z.object({
-		roomId: RoomId,
-		seed: z.number().int(),
-		config: z.unknown()
-	}),
-
-	join_room: z.object({
-		roomId: RoomId,
-		playerId: PlayerId,
-	}),
-
-	input: z.object({
-		turn: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
-	}),
-
-	leave_room: z.object({}),
-} as const;
-
-
-export type ClientMsgType = keyof typeof ClientPayloadSchemas;
-export type ClientPayload<T extends ClientMsgType> = z.infer<(typeof ClientPayloadSchemas)[T]>;
-
-/**
- * =========================
- * Client → Server envelope
- * =========================
- */
-const ClientEnvelopeBase = z.object({
-	v: z.literal(PROTOCOL_VERSION),
-	type: z.string(),
+export const CreateRoomMsgSchema = z.object({
+	type: z.literal("create_room"),
 	roomId: RoomId,
-	seq: Seq,					// sequence number
-	t: TimestampMs,
-	payload: z.unknown(),
+	seed: z.number().int(),
+	config: z.unknown().optional(),
+	players: z
+		.array(
+			z.object({
+				playerId: PlayerId,
+			}),
+		)
+		.min(1),
 });
 
-export const ClientMsgSchema = z.discriminatedUnion(
-	"type",
-	asNonEmptyTuple(
-		(Object.keys(ClientPayloadSchemas) as ClientMsgType[]).map((type) =>
-			ClientEnvelopeBase.extend({
-				type: z.literal(type),
-				payload: ClientPayloadSchemas[type],
-			})
-		)
-	)
-);
+export const JoinRoomMsgSchema = z.object({
+	type: z.literal("join_room"),
+	roomId: RoomId,
+	playerId: PlayerId,
+});
+
+/**
+ * Update Scene:
+ * Tells the game engine which page each player is currently on.
+ */
+export const SceneSchema = z.enum(["lobby", "game"]);
+export const UpdateSceneMsgSchema = z.object({
+	type: z.literal("update_scene"),
+	roomId: RoomId,
+	playerId: PlayerId,
+	scene: SceneSchema,
+});
+export type Scene = z.infer<typeof SceneSchema>;
+
+export const StartGameMsgSchema = z.object({
+	type: z.literal("start_game"),
+	roomId: RoomId,
+});
+
+export const LeaveRoomMsgSchema = z.object({
+	type: z.literal("leave_room"),
+	roomId: RoomId,
+	playerId: PlayerId
+});
+
+export const InputMsgSchema = z.object({
+	type: z.literal("input"),
+	turn: TurnInputSchema,
+});
+
+export const ClientMsgSchema = z.discriminatedUnion("type", [
+	CreateRoomMsgSchema,
+	JoinRoomMsgSchema,
+	UpdateSceneMsgSchema,
+	StartGameMsgSchema,
+	LeaveRoomMsgSchema,
+	InputMsgSchema,
+]);
 
 export type ClientMsg = z.infer<typeof ClientMsgSchema>;
-
-export function parseClientMsg(raw: string): ClientMsg {
-	const obj = parseJson(raw);
-	const res = ClientMsgSchema.safeParse(obj);
-	if (!res.success) {
-		throw new Error(formatZodError(res.error));
-	}
-	return res.data;
-}
+export type ClientMsgType = ClientMsg["type"];
