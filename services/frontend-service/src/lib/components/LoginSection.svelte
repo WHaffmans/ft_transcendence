@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
   import { toast } from "svelte-sonner";
   import SignInButton from "./SignInButton.svelte";
@@ -11,6 +11,7 @@
     const success = await apiStore.login();
     if (success) {
       toast.success("Welcome back!");
+      await invalidateAll();
       goto("/dashboard");
     } else {
       toast.error("Login failed");

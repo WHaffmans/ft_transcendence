@@ -1,14 +1,10 @@
 <script lang="ts">
   import { goto, invalidateAll } from "$app/navigation";
   import Navbar from "$lib/components/dashboard/Navbar.svelte";
-  import { mockDashboardData } from "$lib/data/dashboard";
   import { apiStore } from "$lib/stores/api";
   import { toast } from "svelte-sonner";
 
-  let { children } = $props();
-
-  // Get mock data
-  const data = $state(mockDashboardData);
+  let { data, children } = $props();
 
   const handleLogout = async () => {
     console.log("Logging out...");
@@ -31,8 +27,8 @@
 <div class="relative z-10 flex flex-col min-h-screen">
   <!-- Persistent dashboard navigation -->
   <Navbar
-    username={data.currentUser.username}
-    avatar={data.currentUser.avatar}
+    username={data.user?.name ?? "Guest"}
+    avatar={data.user?.avatar_url ?? ""}
     onLogout={handleLogout}
     onOpenSettings={handleOpenSettings}
   />

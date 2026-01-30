@@ -2,11 +2,13 @@
   import { Toaster } from "svelte-sonner";
   import "../app.css";
   import { userStore } from "$lib/stores/user";
-  import type { PageData } from "./$types";
+  import type { LayoutData } from "./$types";
   import type { User } from "$lib/types/types";
 
-  let { data, children }: { data: PageData & { user: User }; children: any } =
-    $props();
+  let {
+    data,
+    children,
+  }: { data: LayoutData & { user: User | null }; children: any } = $props();
   $effect(() => {
     userStore.set(data.user);
   });
