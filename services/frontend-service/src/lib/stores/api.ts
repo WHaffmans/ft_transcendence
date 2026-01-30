@@ -1,17 +1,14 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import type { User } from '$lib/types/types';
 import { openOAuthPopup } from '$lib/utils/oauth';
 
 interface ApiState {
-  user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
 
 const createApiStore = () => {
   const { subscribe, set, update } = writable<ApiState>({
-    user: null,
     isLoading: true,
     isAuthenticated: false
   });
@@ -57,7 +54,7 @@ const createApiStore = () => {
         console.error("Logout failed:", error);
         return false;
       } finally {
-        set({ user: null, isLoading: false, isAuthenticated: false });
+        set({ isLoading: false, isAuthenticated: false });
       }
     },
   };
