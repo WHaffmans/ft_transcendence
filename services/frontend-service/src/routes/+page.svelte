@@ -4,20 +4,11 @@
   import Footer from "$lib/components/Footer.svelte";
 
   import { onMount } from "svelte";
-  import { apiStore } from "$lib/stores/api";
   import { goto } from "$app/navigation";
 
   // Passing +page.ts data
   let { data } = $props();
-  
-  // Subscribe to the auth store
-  const auth = apiStore;
-
   let game = {};
-
-  onMount(() => {
-    auth.init();
-  });
 </script>
 
 <svelte:head>

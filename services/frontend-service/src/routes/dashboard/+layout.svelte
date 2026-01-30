@@ -1,24 +1,30 @@
 <script lang="ts">
-  import Navbar from '$lib/components/dashboard/Navbar.svelte';
-  import { goto } from '$app/navigation';
-  import { mockDashboardData } from '$lib/data/dashboard';
+  import { goto, invalidateAll } from "$app/navigation";
+  import Navbar from "$lib/components/dashboard/Navbar.svelte";
+  import { mockDashboardData } from "$lib/data/dashboard";
   import { apiStore } from "$lib/stores/api";
-  
-  let { children } = $props();
-  
-  // Get mock data
-	const data = $state(mockDashboardData);
+  import { toast } from "svelte-sonner";
 
-	const handleLogout = () => {
-		console.log('Logging out...');
-		apiStore.logout(); //-- implement new api logic none-apistore 
-		goto('/');
-	};
+  let { children } = $props();
+
+  // Get mock data
+  const data = $state(mockDashboardData);
+
+  const handleLogout = async () => {
+    console.log("Logging out...");
+    const success = await apiStore.logout();
+    if (success) {
+      await invalidateAll();
+      goto("/", { replaceState: true });
+      toast.success("Logged out successfully");
+    } else {
+      toast.error("Logout failed");
+    }
+  };
 
   const handleOpenSettings = () => {
     // goto('/dashboard/settings');
   };
-  
 </script>
 
 <!-- Dashboard shell -->

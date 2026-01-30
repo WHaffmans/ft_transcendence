@@ -1,14 +1,17 @@
 <script lang="ts">
-  import { apiStore } from "$lib/stores/api";
   import type { Game } from "$lib/types/types";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws.js";
+  import { get } from "svelte/store";
+  import { userStore } from "$lib/stores/user.js";
 
   let { data } = $props();
+
   let game = $state(null as Game | null);
-  let api = apiStore;
   let joined: boolean = false;
+
+  let userId = get(userStore)?.id;
 
   $effect(() => {
     let msg = $wsStore.messages.shift();
@@ -27,7 +30,15 @@
 
   async function fetchGameData() {
     try {
-      const gameData = await api.fetchApi(`/games/${data.lobbyId}`);
+      const response = await fetch(`/api/games/${data.lobbyId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const gameData = await response.json();
+      console.log("Fetched game data:", gameData);
       game = gameData;
 
       if ($wsStore.connected && !joined) {
@@ -44,10 +55,16 @@
       console.error("Game data not loaded yet.");
       return;
     }
-    api
-      .fetchApi(`/games/${game.id}/leave`, "POST", {
-        user_id: $apiStore.user?.id,
-      })
+    fetch(`/api/games/${game.id}/leave`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        user_id: userId,
+      }),
+    })
       .then(() => {
         console.log("Successfully informed backend of leaving the game.");
         wsStore.safeSend({
@@ -68,19 +85,19 @@
       return;
     }
 
-    if (game.users.length == 1 && game.users[0].id == $apiStore.user?.id) {
+    if (game.users.length == 1 && game.users[0].id == userId) {
       wsStore.safeSend({
         type: "create_room",
         room_id: data.lobbyId,
         seed: 1,
-        players: [{ playerId: $apiStore.user?.id }],
+        players: [{ playerId: userId }],
       });
     }
 
     wsStore.safeSend({
       type: "join_room",
       room_id: data.lobbyId,
-      playerId: $apiStore.user?.id,
+      playerId: userId,
     });
   }
 

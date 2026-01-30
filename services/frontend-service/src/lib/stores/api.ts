@@ -18,37 +18,7 @@ const createApiStore = () => {
 
   return {
     subscribe,
-
-    async fetchApi(endpoint: string, method: string = 'GET', body?: any) {
-      if (!browser) {
-        return;
-      }
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-
-      try {
-        const response = await fetch(`/api${endpoint}`, {
-          method,
-          headers,
-          credentials: "include",
-          body: body ? JSON.stringify(body) : undefined,
-        });
-
-        if (response.ok) {
-          return await response.json();
-        } else {
-          console.error(`API request failed: ${response.status} ${response.statusText}`);
-          return null;
-        }
-      } catch (error) {
-        console.error("API request error:", error);
-        return null;
-      }
-    },
-
+    
     async login() {
       if (!browser) return;
 
@@ -62,26 +32,13 @@ const createApiStore = () => {
 
     async handleOAuthCallback(urlParams: URLSearchParams) {
       if (!browser) return false;
-
       const error = urlParams.get('error');
-
       if (error) {
         console.error('OAuth error:', error);
         return false;
       }
-
       update(state => ({ ...state, isLoading: true }));
-
-      try {
-        const userData = await this.fetchApi(`/user`);
-        set({ user: userData, isLoading: false, isAuthenticated: userData !== null });
-
-        return userData !== null;
-      } catch (error) {
-        console.error('OAuth session check failed:', error);
-        set({ user: null, isLoading: false, isAuthenticated: false });
-        return false;
-      }
+      return true;
     },
 
 
@@ -95,28 +52,14 @@ const createApiStore = () => {
           },
           credentials: "include",
         });
+        return true;
       } catch (error) {
         console.error("Logout failed:", error);
+        return false;
       } finally {
         set({ user: null, isLoading: false, isAuthenticated: false });
       }
     },
-
-    clearTokens() {
-      return;
-    },
-
-    setTokens() {
-      return;
-    },
-
-    init() {
-      if (browser) {
-        this.fetchApi(`/user`).then((data) => {
-          set({ user: data, isLoading: false, isAuthenticated: ! (data == null) });
-        });
-      }
-    }
   };
 };
 
