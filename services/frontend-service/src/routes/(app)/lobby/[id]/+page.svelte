@@ -104,7 +104,7 @@
 		<p>Game Status: {game.status}</p>
 		<br />
 		<span>Connected players:</span>
-		<ul class="space-y-2 my-4">
+		<ul class="my-4 space-y-2">
 			{#each game.users as user}
 				<li>{user.name}</li>
 			{/each}

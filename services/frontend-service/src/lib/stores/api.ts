@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { openOAuthPopup } from '$lib/utils/oauth';
-import { invalidateAll } from '$app/navigation';
 
 interface ApiState {
   isLoading: boolean;

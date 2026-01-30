@@ -39,7 +39,7 @@
 </script>
 
 <svelte:head>
-  <title>Dashboard – ACHTUNG</title>
+  <title>ACHTUNG – Dashboard</title>
 </svelte:head>
 
 <!-- Dashboard page content -->
