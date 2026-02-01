@@ -64,8 +64,6 @@ export function step(
 		const effectiveRadius = config.playerRadius * 2;
 		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
 
-		console.log(`COLLISION: ${hit}`);
-
 		if (hit) {
 			p.alive = false;
 			continue;

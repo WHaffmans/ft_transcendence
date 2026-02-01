@@ -1,13 +1,17 @@
+
 FROM node:20-alpine
-# Install curl for healthcheck
+
 RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* npm-shrinkwrap.json* ./
+COPY --from=game-ws-protocol / /packages/game-ws-protocol
 
-# Install dependencies
+RUN cd /packages/game-ws-protocol \
+	&& if [ -f package-lock.json ]; then npm ci; else npm install; fi \
+	&& npm run build
+
+COPY package*.json ./
 RUN npm install
 
 # Copy source code
@@ -16,5 +20,4 @@ COPY . .
 # Expose dev server port
 EXPOSE 5173
 
-# Start dev server with HMR support
 CMD ["npm", "run", "dev", "--", "--host"]

@@ -91,6 +91,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		angle: 0,
 		alive: true,
 		gapTicksLeft: 0,
+		tailSegIndex: 0,
 		color: playerColor(i, playerIds.length),
 	}));
 

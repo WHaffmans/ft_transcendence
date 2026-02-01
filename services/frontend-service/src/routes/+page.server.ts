@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import type { PageServerLoad } from "./lobby/[id]/$types";
+import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async( {cookies} ) => {
     console.log("Checking authentication status in +page.server.ts");

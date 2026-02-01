@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { page } from "$app/stores";
-  import { get } from "svelte/store";
   import { wsStore } from "$lib/stores/ws";
   //   import { apiStore } from "$lib/stores/api.js";
+  import type { ServerMsg } from "@ft/game-ws-protocol";
 
-  type TurnInput = -1 | 0 | 1;
+  type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
+  // ---------------------
+  // types
+  // ---------------------
   type ColorRGBA = {
     r: number;
     g: number;
@@ -14,30 +16,30 @@
     a: number;
   };
 
-  let ws = wsStore;
-  //   let { data } = $props();
+  // ---------------------
+  // derived UI state
+  // ---------------------
+  $: snapshot = $wsStore.latestState as StateMsg["snapshot"] | null;
+  $: phase = snapshot?.phase ?? null;
 
+  $: overlayText =
+    phase === "lobby"
+      ? "Waiting for all players to join..."
+      : phase === "ready"
+        ? "Press Space to start"
+        : null; // running/finished = no overlay
+
+  $: showOverlay = overlayText !== null;
+
+  // ---------------------
+  // canvas
+  // ---------------------
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
-  // let ws: WebSocket | null = null;
-  let status = "open";
-
-  let roomId: string | null = null;
-  //   let playerId = $apiStore.user?.id;
-
-  let latestState: any = null;
-
-  // function makeWsUrl() {
-  // 	const proto = location.protocol === "https:" ? "wss" : "ws";
-  // 	return `${proto}://${location.host}/ws`;
-  // }
-
-  // function safeSend(obj: unknown) {
-  // 	if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
-  // }
-
   function resizeCanvas() {
+    if (!canvas || !ctx) return;
+
     const dpr = window.devicePixelRatio || 1;
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -55,27 +57,39 @@
     return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
   }
 
-  function draw() {
+  // ---------------------
+  // draw
+  // ---------------------
+  function draw(snapshot: StateMsg["snapshot"] | null) {
     if (!ctx) return;
 
-    // Clear in CSS pixels
     const W = window.innerWidth;
     const H = window.innerHeight;
+
     ctx.clearRect(0, 0, W, H);
 
     // background
     ctx.fillStyle = "#0b0b0b";
     ctx.fillRect(0, 0, W, H);
 
-    if (!latestState) return;
+    if (!snapshot) return;
 
     // HUD
     ctx.fillStyle = "white";
     ctx.font = "14px system-ui";
-    ctx.fillText(`tick: ${latestState.tick}`, 12, 20);
-    ctx.fillText(`room: ${latestState.roomId}`, 12, 40);
+    ctx.fillText(`tick: ${snapshot.tick}`, 12, 20);
+    ctx.fillText(`room: ${snapshot.roomId}`, 12, 40);
 
-    for (const s of latestState.segments ?? []) {
+    // TODO: Remove
+    ctx.fillText(`players: ${snapshot.players?.length ?? 0}`, 12, 60);
+    ctx.fillText(
+      `ids: ${(snapshot.players ?? []).map((p) => p.id).join(", ")}`,
+      12,
+      80,
+    );
+
+    // segments
+    for (const s of snapshot.segments ?? []) {
       if (s.isGap) continue;
 
       const x0 = s.x1;
@@ -86,10 +100,8 @@
       if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
 
       ctx.strokeStyle = rgbaToColor(s.color);
-
       ctx.lineWidth = 4;
       ctx.lineCap = "round";
-      // ctx.lineJoin = "round";
 
       ctx.beginPath();
       ctx.moveTo(x0, y0);
@@ -100,14 +112,16 @@
     // players
     const r = 6;
 
-    for (const p of latestState.players ?? []) {
+    for (const p of snapshot.players ?? []) {
       ctx.fillStyle = p.alive ? rgbaToColor(p.color) : "rgba(10,10,10,0.5)";
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.fill();
 
       if (!p.alive) {
         ctx.strokeStyle = rgbaToColor(p.color);
+        ctx.lineWidth = 2;
 
         ctx.beginPath();
         ctx.moveTo(p.x - r, p.y - r);
@@ -121,78 +135,54 @@
 
   let raf = 0;
   function loop() {
-    draw();
+    draw($wsStore.latestState);
+    console.log(`Latest state: ${$wsStore.latestState}`);
     raf = requestAnimationFrame(loop);
   }
 
-  // function connect() {
-  // 	status = "connecting";
-  // 	ws = new WebSocket(makeWsUrl());
-
-  // 	(window as any).gameWs = ws;
-  // 	(window as any).sendGame = (obj: unknown) => ws?.send(JSON.stringify(obj));
-
-  // 	ws.onopen = () => {
-  // 		status = "open";
-
-  // 		safeSend({
-  // 			type: "create_room",
-  // 			roomId,
-  // 			seed: 1,
-  // 			players: [{ playerId: "p1" }, { playerId: "p2" }]
-  // 		});
-
-  // 		safeSend({ type: "join_room", roomId, playerId });
-  // 	};
-
-  // 	ws.onmessage = (e) => {
-  // 		const msg = JSON.parse(e.data);
-
-  // 		if (msg.type === "State") {
-  // 			latestState = msg;
-
-  // 			(window as any).latestState = latestState;
-
-  // 			return;
-  // 		}
-
-  // 		console.log("WS msg:", msg);
-  // 	};
-
-  // 	ws.onerror = () => {
-  // 		status = "error";
-  // 	};
-
-  // 	ws.onclose = () => {
-  // 		status = "closed";
-  // 		ws = null;
-  // 	};
-  // }
-
+  // ---------------------
+  // input
+  // ---------------------
   function onKeyDown(ev: KeyboardEvent) {
+    if (ev.code === "Space") {
+      ev.preventDefault();
+
+      if ($wsStore.status === "open" && $wsStore.roomId && phase === "ready") {
+        wsStore.startGame?.();
+      }
+      return;
+    }
+
+    if (phase !== "running") return;
+
     if (ev.key === "ArrowLeft")
-      ws.safeSend({ type: "input", turn: -1 satisfies TurnInput });
+      if ($wsStore.status === "open" && $wsStore.roomId)
+        wsStore.sendClient({ type: "input", turn: -1 });
+
     if (ev.key === "ArrowRight")
-      ws.safeSend({ type: "input", turn: 1 satisfies TurnInput });
+      if ($wsStore.status === "open" && $wsStore.roomId)
+        wsStore.sendClient({ type: "input", turn: 1 });
   }
 
   function onKeyUp(ev: KeyboardEvent) {
     if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
-      ws.safeSend({ type: "input", turn: 0 satisfies TurnInput });
+      wsStore.sendClient({ type: "input", turn: 0 });
     }
   }
 
+  // ---------------------
+  // lifecycle
+  // ---------------------
   onMount(() => {
-    roomId = get(page).params.roomId;
-
     ctx = canvas.getContext("2d")!;
+
     resizeCanvas();
+
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    // connect();
-    // ws.safeSend({ type: "start", roomId });
+    wsStore.updatePlayerScene($wsStore.roomId, $wsStore.playerId, "game");
     loop();
   });
 
@@ -201,7 +191,9 @@
     window.removeEventListener("resize", resizeCanvas);
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
-    // ws?.close();
+
+    // Leave room when exiting the game page
+    wsStore.leaveRoom?.();
   });
 </script>
 
@@ -209,7 +201,46 @@
 ></canvas>
 
 <div
-  style="position:fixed; left:12px; bottom:12px; background:rgba(0,0,0,0.5); color:white; padding:8px 10px; border-radius:8px; font:12px system-ui;"
+  style="
+		position:fixed;
+		left:12px;
+		bottom:12px;
+		background:rgba(0,0,0,0.5);
+		color:white;
+		padding:8px 10px;
+		border-radius:8px;
+		font:12px system-ui;
+	"
 >
-  {status}
+  {$wsStore.status}
 </div>
+
+{#if showOverlay}
+  <div
+    style="
+			position:fixed;
+			inset:0;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			pointer-events:none;
+		"
+  >
+    <div
+      style="
+				background:rgba(0,0,0,0.55);
+				color:white;
+				padding:14px 18px;
+				border-radius:12px;
+				font:14px system-ui;
+				letter-spacing:0.2px;
+			"
+    >
+      {#if phase === "ready"}
+        {overlayText} <b>Space</b>
+      {:else}
+        {overlayText}
+      {/if}
+    </div>
+  </div>
+{/if}

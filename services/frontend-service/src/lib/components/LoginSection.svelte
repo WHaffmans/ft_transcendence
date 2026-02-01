@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
+  import { toast } from "svelte-sonner";
   import SignInButton from "./SignInButton.svelte";
 
   const landingLogo = "/logo.png";
@@ -9,10 +10,11 @@
   const handleLogin = async () => {
     const success = await apiStore.login();
     if (success) {
-      console.log("Login successful, navigating to dashboard.");
-      goto('/dashboard');
+      toast.success("Welcome back!");
+      await invalidateAll();
+      goto("/dashboard");
     } else {
-      console.error("Login failed.");
+      toast.error("Login failed");
     }
   };
 </script>
@@ -21,14 +23,17 @@
   <!-- Logo and Subtitle Frame -->
   <header class="relative w-150 h-81.75 mb-8">
     <!-- Subtitle (overlaps under logo) -->
-    <p class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap">
+    <p
+      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap"
+    >
       {subtitle}
     </p>
     <!-- Logo Image -->
-    <img  src={landingLogo}
-          alt="Achtung Logo"
-          class="absolute inset-0 object-cover w-full h-full pointer-events-none" />
-          
+    <img
+      src={landingLogo}
+      alt="Achtung Logo"
+      class="absolute inset-0 object-cover w-full h-full pointer-events-none"
+    />
   </header>
 
   <!-- Primary call to action -->

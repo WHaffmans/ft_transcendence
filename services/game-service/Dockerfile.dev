@@ -1,25 +1,20 @@
 
-# services/game-service/Dockerfile.dev
-FROM node:20-bookworm-slim
-
-# Avoid npm update-notifier noise in containers
-ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install deps first
-COPY package.json ./
-COPY package-lock.json* ./
+COPY --from=game-ws-protocol / /packages/game-ws-protocol
 
-RUN npm install --no-audit --no-fund
+RUN cd /packages/game-ws-protocol \
+  && if [ -f package-lock.json ]; then npm ci; else npm install; fi \
+  && npm run build
 
-# Copy config files for TypeScript
-COPY tsconfig.json ./
+COPY package*.json ./
+RUN npm install
 
-# Copy sources for the initial image build
-COPY src ./src
+# Copy source code
+COPY . .
 
 EXPOSE 3002 3003
 
-# Expect package.json to have a dev script
 CMD ["npm", "run", "dev"]
