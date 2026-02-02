@@ -45,31 +45,6 @@
     }
   }
 
-//   function leaveRoom() {
-//     if (!game) {
-//       console.error("Game data not loaded yet.");
-//       return;
-//     }
-//     fetch(`/api/games/${game.id}/leave`, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       credentials: "include",
-//       body: JSON.stringify({
-//         user_id: userId,
-//       }),
-//     })
-//       .then(() => {
-//         wsStore.leaveRoom();
-//         wsStore.disconnect();
-//         goto("/");
-//       })
-//       .catch((err) => {
-//         console.error("Error informing backend of leaving the game:", err);
-//       });
-//   }
-
   function joinRoom() {
     if (!game) {
       console.log("ERROR: joinGame() - No game object");
