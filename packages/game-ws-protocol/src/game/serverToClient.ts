@@ -25,6 +25,12 @@ export const JoinedMsgSchema = z.object({
 	playerId: PlayerId,
 });
 
+export const LeftMsgSchema = z.object({
+	type: z.literal("left"),
+	roomId: RoomId,
+	playerId: PlayerId,
+});
+
 export const GameStartedMsgSchema = z.object({
 	type: z.literal("game_started"),
 	roomId: RoomId,
@@ -35,12 +41,6 @@ export const StateMsgSchema = z.object({
 	snapshot: GameStateSnapshotSchema,
 });
 
-export const PlayerLeftMessageSchema = z.object({
-	type: z.literal("left"),
-	roomId: RoomId,
-	playerId: PlayerId,
-});
-
 export const ErrorMsgSchema = z.object({
 	type: z.literal("error"),
 	...ErrorPayloadSchema.shape,
@@ -49,6 +49,7 @@ export const ErrorMsgSchema = z.object({
 export const ServerMsgSchema = z.discriminatedUnion("type", [
 	RoomCreatedMsgSchema,
 	JoinedMsgSchema,
+	LeftMsgSchema,
 	GameStartedMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,

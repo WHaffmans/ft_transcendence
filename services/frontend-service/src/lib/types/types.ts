@@ -5,6 +5,7 @@ export interface User {
     avatar_url: string;
     rating_mu: number;
     rating_sigma: number;
+    rating: number;
     created_at: string;
     updated_at: string;
 }
