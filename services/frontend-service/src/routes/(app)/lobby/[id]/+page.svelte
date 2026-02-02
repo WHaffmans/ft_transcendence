@@ -1,6 +1,7 @@
 <script lang="ts">
+  import type { Game } from "$lib/types/types";
+  import { userStore } from "$lib/stores/user.js";
 	import { apiStore } from "$lib/stores/api";
-	import type { Game } from "$lib/types/types";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 	import { wsStore } from "$lib/stores/ws";
@@ -8,8 +9,8 @@
 	let { data } = $props();
 	let game = $state(null as Game | null);
 	let api = apiStore;
-
 	let joined = $state(false);
+  let userId = $userStore?.id;
 
 	$effect(() => {
 		const last = $wsStore.messages?.[$wsStore.messages.length - 1];		// TODO: Use messages.pop()
@@ -21,10 +22,18 @@
 		}
 	});
 
-	async function fetchGameData() {
-		try {
-			const gameData = await api.fetchApi(`/games/${data.lobbyId}`);
-			game = gameData;
+  async function fetchGameData() {
+    try {
+      const response = await fetch(`/api/games/${data.lobbyId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const gameData = await response.json();
+      console.log("Fetched game data:", gameData);
+      game = gameData;
 
 			if (!joined) {
 				joinRoom();
@@ -35,19 +44,30 @@
 		}
 	}
 
-	function leaveRoom() {
-		if (!game) return;
-
-		api.fetchApi(`/games/${game.id}/leave`, "POST", {
-			user_id: $apiStore.user?.id,
-		})
-			.then(() => {
+  function leaveRoom() {
+    if (!game) {
+      console.error("Game data not loaded yet.");
+      return;
+    }
+    fetch(`/api/games/${game.id}/leave`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        user_id: userId,
+      }),
+    })
+      .then(() => {
 				wsStore.leaveRoom();
 				wsStore.disconnect();
 				goto("/");
 			})
-			.catch(console.error);
-	}
+			.catch((err) => {
+        console.error("Error informing backend of leaving the game:", err);
+      });
+  }
 
 	function joinRoom() {
 		if (!game) {
@@ -55,7 +75,7 @@
 			return;
 		}
 
-		const playerId = $apiStore.user?.id;
+		const playerId = userId;
 		if (playerId == null)
 		{
 			console.log("ERROR: joinGame() - player ID null");
@@ -84,13 +104,13 @@
 		<p>Game Status: {game.status}</p>
 		<br />
 		<span>Connected players:</span>
-		<ul class="space-y-2 my-4">
+		<ul class="my-4 space-y-2">
 			{#each game.users as user}
 				<li>{user.name}</li>
 			{/each}
 		</ul>
 
-  <button onclick={() => goto(`/game/${game!.id}?playerId=${$apiStore.user?.id}`)}>
+  <button onclick={() => goto(`/game/${game!.id}?playerId=${userId}`)}>
     Start Game
   </button>
 

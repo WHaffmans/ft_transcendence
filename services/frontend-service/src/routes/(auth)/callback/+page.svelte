@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
 
   let isProcessing = true;
   let error = "";
@@ -17,7 +17,7 @@
             type: "OAUTH_ERROR",
             error: errorParam,
           },
-          window.location.origin
+          window.location.origin,
         );
         isProcessing = false;
         setTimeout(() => window.close(), 100);
@@ -26,10 +26,10 @@
           {
             type: "OAUTH_SUCCESS",
           },
-          window.location.origin
+          window.location.origin,
         );
-        // Added: Small delay to ensure message is received before closing
         setTimeout(() => window.close(), 100);
+        await invalidateAll();
       }
     } else {
       goto("/", { replaceState: true });
