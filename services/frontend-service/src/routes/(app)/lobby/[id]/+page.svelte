@@ -14,7 +14,7 @@
   let userId = $userStore?.id;
 
   $effect(() => {
-    const last = $wsStore.messages?.shift()
+    const last = $wsStore.messages?.shift();
     const type = last?.type;
 
     if (type === "joined" || type === "left") {
@@ -65,6 +65,11 @@
   }
 
   onMount(() => {
+    if (!userId) {
+      console.log("ERROR: onMount() - user ID null");
+      goto("/dashboard", { replaceState: true });
+      return;
+    }
     wsStore.connect();
     fetchGameData();
   });
