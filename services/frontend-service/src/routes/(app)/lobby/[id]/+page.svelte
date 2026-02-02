@@ -119,10 +119,7 @@
 
     <!-- Right Section - Match Settings -->
     <div class="w-full lg:w-ranking shrink-0">
-      <MatchSettings
-        isHost={false}
-		game={game!}
-      />
+      <MatchSettings isHost={false} game={game!} />
     </div>
   </div>
 </section>
