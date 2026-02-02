@@ -3,8 +3,6 @@
   import PlayerCard from "$lib/components/lobby/PlayerCard.svelte";
   import WaitingCard from "$lib/components/lobby/WaitingCard.svelte";
   import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
-//   import { mockLobbyData } from "$lib/data/lobby";
-  import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws.js";
   import { userStore } from "$lib/stores/user.js";
   import type { Game } from "$lib/types/types.js";
@@ -16,7 +14,7 @@
   let userId = $userStore?.id;
 
   $effect(() => {
-    const last = $wsStore.messages?.[$wsStore.messages.length - 1]; // TODO: Use messages.pop()
+    const last = $wsStore.messages?.shift()
     const type = last?.type;
 
     if (type === "joined" || type === "left") {
@@ -84,6 +82,7 @@
       return;
     }
 
+    // TODO: I still don't like this logic here
     if (game.users.length === 1 && game.users[0].id === playerId) {
       wsStore.createRoom(data.lobbyId, 1, String(playerId));
     }
