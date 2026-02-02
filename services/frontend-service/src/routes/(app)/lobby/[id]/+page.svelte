@@ -7,6 +7,7 @@
   import { userStore } from "$lib/stores/user.js";
   import type { Game } from "$lib/types/types.js";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
 
   let { data } = $props();
   let game = $state(null as Game | null);
@@ -81,10 +82,10 @@
   //     game?.users.some((p) => p && p.isCurrentUser && p.status === "host"),
   //   );
 
-//   const handleStartGame = () => {
-//     console.log("Starting game...");
-//     // TODO: Implement game start logic
-//   };
+  //   const handleStartGame = () => {
+  //     console.log("Starting game...");
+  //     // TODO: Implement game start logic
+  //   };
 
   //   const handleLeaveGame = () => {
   //     console.log("Leaving lobby...");
