@@ -14,7 +14,7 @@
 
 # Modules
 
-> TOTAL: 21
+> TOTAL: 16
 
 ---
 <br/>
@@ -22,9 +22,9 @@
 
 ### 1. Web
 
-> **7**
+> **8**
 
-- [1/2] Frontend framework (Svelte). (1. frontend framework | 2. backend framework)
+- [2] Frontend framework (Svelte). (1. frontend framework | 2. backend framework)
 
 - [2] Real-time WebSocket (1. real-time updates | 2. connect+dissconet | 3. efficent messaging)
 
@@ -48,9 +48,9 @@ NA
 
 ### 3. User Management
 
-> **4**
+> **2**
 
-- [2] User management (1. update profile | 2. avatar | 3. add friends | 4. profile pages) 
+- ~~[2] User management (1. update profile | 2. avatar | 3. add friends | 4. profile pages)~~
 
 - [1] Game stats and history (1. track stats | 2. display match history | 3. achievements, progress | 4. leaderboard)
 
@@ -78,11 +78,11 @@ NA
 
 ### 6. Gaming and user experience
 
-> **6**
+> **4**
 
 - [2] Complete multiplayer game (1. real-time | 2. live matches | 3. clear rules | 4. 2D)
 
-- [2] Remote players on separate computers (1. latency, disconnections | 2. smooth experience | 3. reconnect logic)
+~~- [2] Remote players on separate computers (1. latency, disconnections | 2. smooth experience | 3. reconnect logic)~~ no reconnect
 
 - [2] Multiplayer support (2+ players) (1. Three or more players | 2. Fair mechanics | 3. Proper syncing)
 
@@ -92,9 +92,9 @@ NA
 
 ### 7. DevOps
 
-> **4**
+> **2**
 
-- [2] Prometheus and Grafana (1. Prometheus | 2. exports, integrations | 3. Grafana dashboards | 4. alerting | 5. secure access Grafana)
+~~- [2] Prometheus and Grafana (1. Prometheus | 2. exports, integrations | 3. Grafana dashboards | 4. alerting | 5. secure access Grafana)~~
 
 - [2] Backend microservices (1. Loosly-coupled, clear interfaces | 2. REST APIs or queues | 3. single-responsibility)
 
