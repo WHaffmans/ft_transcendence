@@ -22,7 +22,8 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        return $user->load('games');
     });
 });
 
