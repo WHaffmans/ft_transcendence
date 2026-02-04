@@ -65,6 +65,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'avatar_url' => $this->generateDefaultAvatar($validated['name']),
         ]);
 
         Auth::login($user);
@@ -74,10 +75,44 @@ class AuthController extends Controller
     }
 
     /**
+     * Generate a default avatar as a base64-encoded SVG.
+     */
+    private function generateDefaultAvatar(string $name): string
+    {
+        $initial = strtoupper(mb_substr($name, 0, 1));
+        $colors = [
+            '#F44336',
+            '#E91E63',
+            '#9C27B0',
+            '#673AB7',
+            '#3F51B5',
+            '#2196F3',
+            '#03A9F4',
+            '#00BCD4',
+            '#009688',
+            '#4CAF50',
+            '#8BC34A',
+            '#FF9800',
+        ];
+        $colorIndex = ord($initial) % count($colors);
+        $bgColor = $colors[$colorIndex];
+
+        $svg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <circle cx="64" cy="64" r="64" fill="{$bgColor}"/>
+    <text x="64" y="64" dy="0.35em" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="64" font-weight="bold">{$initial}</text>
+</svg>
+SVG;
+
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
+
+    /**
      * Log the user out.
      */
     public function logout(Request $request)
     {
+        $request->session()->flush();
         $request->user()->token()->revoke();
 
         $domain = config('session.domain');
