@@ -68,8 +68,12 @@ class GameController extends Controller
             return response()->json($applicable->first());
         }
 
-        if (! $open_games->isEmpty()) {
-            $game = $open_games->first();
+        $joinable_games = $open_games->filter(function ($game) {
+            return $game->users->count() < 4;
+        });
+
+        if (!$joinable_games->isEmpty()) {
+            $game = $joinable_games->first();
             $game->users()->attach($request->user()->id);
 
             return response()->json($game->load('users'));
