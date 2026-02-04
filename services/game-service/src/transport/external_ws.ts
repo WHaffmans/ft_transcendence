@@ -216,7 +216,7 @@ export function startPublicWsServer(
 						boundPlayerId = msg.playerId;
 
 						console.log(`Player ${boundPlayerId} left room ${boundRoomId}`);
-						rooms.broadcast(boundRoomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId});
+						rooms.broadcast(msg.roomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId} satisfies ServerMsg);
 						rooms.unsubscribe(boundRoomId, ws);
 
 						boundRoomId = null;
