@@ -2,40 +2,28 @@
   import { toast } from "svelte-sonner";
   import GlobalRanking from "$lib/components/dashboard/GlobalRanking.svelte";
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
-  // import { mockDashboardData } from "$lib/data/dashboard";
   import { goto } from "$app/navigation";
-  import { mockDashboardData } from "$lib/data/dashboard.js";
 
-  // Use real data from layout
   let { data } = $props();
-  let mockData = mockDashboardData;
 
-  console.log("Dashboard page data:", data);
-
-  const handleFindMatch = () => {
-    console.log("Finding match...");
-
+  function handleFindMatch() {
     if (!data.user) {
       toast.error("You must be logged in to find a game.");
       return;
     }
+    
     fetch("/api/games/find", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     })
       .then((response) => response.json())
-      .then((game) => {
-        console.log("Game found", game);
-        goto(`/lobby/${game.id}`);
-      })
+      .then((game) => goto(`/lobby/${game.id}`))
       .catch((error) => {
         console.error("Error finding game:", error);
         toast.error("Failed to find a game. Please try again later.");
       });
-  };
+  }
 </script>
 
 <svelte:head>
@@ -53,7 +41,7 @@
           Ready to Curve?
         </h2>
         <p class="mb-10 text-sm font-bold text-neutral-400">
-          <!-- {data.serverStatus.name} • {data.serverStatus.playersOnline} Players Online -->
+          Global Server • {data.totalPlayers ?? 0} Players Ranked
         </p>
 
         <button
@@ -72,7 +60,7 @@
         {#snippet children()}
           <div class="flex items-center justify-center flex-1">
             <p class="text-[64px] font-bold text-white leading-none">
-              <!-- {data.currentUser.rank} -->
+              {data.user?.rating ?? 0}
             </p>
           </div>
         {/snippet}
@@ -80,14 +68,13 @@
 
       <StatCard title="Last Match">
         {#snippet children()}
-          <!-- 
-        {#if data.lastMatch}
+          {#if data.lastMatch}
             <div class="flex items-center justify-between w-full pt-6">
               <p class="text-lg font-medium text-white">
-                vs. {data.lastMatch?.opponent}
+                vs. {data.lastMatch.users?.find((u: any) => u.id !== data.user?.id)?.name ?? 'Unknown'}
               </p>
               <span class="text-sm font-bold text-[#0f8]">
-                {data.lastMatch?.result}
+                {data.lastMatch.status}
               </span>
             </div>
           {:else}
@@ -95,7 +82,6 @@
               <p class="text-[#888] text-base">No matches yet</p>
             </div>
           {/if}
-           -->
         {/snippet}
       </StatCard>
     </section>
@@ -104,8 +90,9 @@
   <!-- Right column -->
   <aside class="w-full shrink-0 lg:w-auto">
     <GlobalRanking
-      topPlayers={mockData.globalRanking}
-      currentUser={mockData.currentUser}
+      leaderboard={data.leaderboard ?? []}
+      currentUser={data.user}
+      userPosition={data.userPosition ?? 0}
     />
   </aside>
 </section>
