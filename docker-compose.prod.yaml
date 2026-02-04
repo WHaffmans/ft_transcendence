@@ -7,8 +7,8 @@ services:
   frontend-service:
     container_name: frontend-service
     build:
-      context: ./services/frontend-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/frontend-service/Dockerfile
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -70,9 +70,9 @@ services:
     container_name: game-service
     build:
       context: ./services/game-service
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       additional_contexts:
-        protocol: ./packages/game-ws-protocol
+        game-ws-protocol: ./packages/game-ws-protocol
     environment:
       - NODE_ENV=development
       - HOST=0.0.0.0
@@ -81,10 +81,12 @@ services:
       - AUTH_SERVICE_URL=http://backend-service:4000
     networks:
       - transcendence-production
+    ports:
+      - "3002:3002" # internal
+      - "3003:3003" # external
     volumes:
-      - ./services/game-service/src:/app/src
-      - ./services/game-service/package.json:/app/package.json:ro
-      - ./services/game-service/tsconfig.json:/app/tsconfig.json:ro
+      - ./services/game-service:/app
+      - game_service_node_modules:/app/node_modules
       - ./packages/game-ws-protocol:/app/protocol
     depends_on:
       - backend-service
@@ -145,6 +147,8 @@ services:
 # ==============================================================================
 volumes:
   mariadb_data:
+    driver: local
+  game_service_node_modules:
     driver: local
 
 # ==============================================================================

@@ -12,30 +12,30 @@ RUN apk update && apk add --no-cache \
     libxml2 \
     oniguruma \
     php84 \
-    php84-fpm \
+    php84-bcmath \
     php84-cli \
+    php84-ctype \
+    php84-curl \
+    php84-dom \
+    php84-exif \
+    php84-fileinfo \
+    php84-fpm \
+    php84-gd \
+    php84-mbstring \
+    php84-mysqlnd \
     php84-opcache \
+    php84-openssl \
+    php84-pcntl \
     php84-pdo \
     php84-pdo_mysql \
-    php84-mysqlnd \
-    php84-mbstring \
-    php84-exif \
-    php84-pcntl \
-    php84-bcmath \
-    php84-gd \
-    php84-curl \
-    php84-ctype \
+    php84-phar \
+    php84-session \
+    php84-simplexml \
+    php84-sodium \
     php84-tokenizer \
     php84-xml \
-    php84-session \
-    php84-fileinfo \
-    php84-phar \
-    php84-dom \
-    php84-simplexml \
     php84-xmlreader \
     php84-xmlwriter \
-    php84-openssl \
-    php84-sodium \
     composer
 
 # PHP config paths (important!)

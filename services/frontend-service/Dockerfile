@@ -1,3 +1,4 @@
+
 # ============================================================================
 # BUILD STAGE
 # ============================================================================
@@ -8,14 +9,22 @@ WORKDIR /app
 # Install openssl for certificate generation
 RUN apk add --no-cache openssl
 
-# Copy package files
-COPY package.json package-lock.json* npm-shrinkwrap.json* ./
+# Copy game-ws-protocol package
+COPY packages/game-ws-protocol /app/packages/game-ws-protocol
+
+# Build the shared package
+WORKDIR /app/packages/game-ws-protocol
+RUN npm install && npm run build
+
+# Copy frontend service package files
+WORKDIR /app
+COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./
 
 # Install all dependencies (including devDependencies needed for build)
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy frontend source code
+COPY services/frontend-service .
 
 # Build the production bundle
 RUN npm run build
@@ -39,8 +48,11 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
+# Copy game-ws-protocol package from builder
+COPY --from=builder /app/packages/game-ws-protocol ./packages/game-ws-protocol
+
 # Copy package files for installing production dependencies
-COPY package.json package-lock.json* ./
+COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./
 
 # Install only production dependencies (omit devDependencies)
 RUN npm install --omit=dev --ignore-scripts
@@ -52,7 +64,8 @@ COPY --from=builder /app/build ./build
 # COPY --from=builder /app/certs ./certs
 
 # Copy production server script
-COPY production-server.js ./
+COPY services/frontend-service/production-server.js ./
 
 # Start production server with HTTPS
 CMD ["node", "production-server.js"]
+
