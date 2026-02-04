@@ -112,7 +112,6 @@ SVG;
      */
     public function logout(Request $request)
     {
-        $request->session()->flush();
         $request->user()->token()->revoke();
 
         $domain = config('session.domain');
