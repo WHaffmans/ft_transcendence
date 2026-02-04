@@ -22,10 +22,8 @@
 3. npm install
 
 ```bash
-  # Wipe all caches
-  rm -rf node_modules package-lock.json
-  rm -rf services/**/node_modules services/**/package-lock.json
-  rm -rf packages/**/node_modules packages/**/package-lock.json
+  # update workspace
+  npm --workspace @ft/game-ws-protocol run build
 
   # In folder
   rm -rf node_modules; rm -f package-lock.json; npm cache verify

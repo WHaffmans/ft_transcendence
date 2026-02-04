@@ -38,7 +38,7 @@
       game = gameData;
 
       if (!joined) {
-        joinRoom();
+        createOrJoinRoom();
         joined = true;
       }
     } catch (err) {
@@ -46,7 +46,7 @@
     }
   }
 
-  function joinRoom() {
+  function createOrJoinRoom() {
     if (!game) {
       console.log("ERROR: joinGame() - No game object");
       return;
@@ -58,11 +58,7 @@
       return;
     }
 
-    // TODO: I still don't like this logic here
-    if (game.users.length === 1 && game.users[0].id === playerId) {
-      wsStore.createRoom(data.lobbyId, 1, String(playerId));
-    }
-    wsStore.joinRoom(data.lobbyId, String(playerId));
+    wsStore.createOrJoinRoom(data.lobbyId, 1, String(playerId));
   }
 
   onMount(() => {
@@ -74,6 +70,7 @@
     wsStore.connect();
     fetchGameData();
   });
+
   // Find current user to get their info for navbar
   //   const currentUser = $derived(game?.users.find((p) => p && p.isCurrentUser));
 
@@ -98,6 +95,7 @@
   //     // TODO: Implement logout logic
   //     goto("/");
   //   };
+
 </script>
 
 <svelte:head>

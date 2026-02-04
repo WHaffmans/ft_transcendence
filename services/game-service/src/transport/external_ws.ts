@@ -47,6 +47,26 @@ function safeSendServer(ws: WebSocket, msg: ServerMsg) {
 	ws.send(JSON.stringify(parsed.data));
 }
 
+function normalizeConfig(partial: unknown): GameConfig {
+	const p =
+		partial && typeof partial === "object" && partial !== null
+			? (partial as Partial<GameConfig>)
+			: undefined;
+
+	const config: GameConfig = {
+		...DEFAULT_CONFIG,
+		...(p ?? {}),
+	};
+
+	for (const [k, v] of Object.entries(config)) {
+		if (typeof v === "number" && !Number.isFinite(v)) {
+			throw new Error(`Invalid config: ${k} is ${v}`);
+		}
+	}
+
+	return config;
+}
+
 function assertNever(x: never): never {
 	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
 }
@@ -91,57 +111,18 @@ export function startPublicWsServer(
 
 			const msg: ClientMsg = parsed.data;
 
-			console.log("IN", {
-				type: msg.type,
-				roomId: "roomId" in msg ? msg.roomId : undefined,
-				playerId: "playerId" in msg ? msg.playerId : undefined,
-			});
+			// ! Log all incomming traffic
+			// console.log("IN", {
+			// 	type: msg.type,
+			// 	roomId: "roomId" in msg ? msg.roomId : undefined,
+			// 	playerId: "playerId" in msg ? msg.playerId : undefined,
+			// });
 
 			// Handle messages
 			try {
 				switch (msg.type) {
-					case "create_room": {
-						
-						// Check already joined
-						if (boundRoomId || boundPlayerId) {
-							throw new Error("Already joined a room; open a new socket to create a new room");
-						}
+					case "create_or_join_room": {
 
-						const playerIds = msg.players.map((p) => p.playerId);
-						if (playerIds.length === 0) {
-							throw new Error("create_room: players must not be empty");
-						}
-
-						// Partial GameConfig
-						const partial = msg.config && typeof msg.config === "object" && msg.config !== null
-							? (msg.config as Partial<GameConfig>)
-							: undefined;
-
-						const config: GameConfig = {
-							...DEFAULT_CONFIG,
-							...(partial ?? {}),
-						};
-
-						for (const [k, v] of Object.entries(config)) {
-							if (typeof v === "number" && !Number.isFinite(v)) {
-								throw new Error(`Invalid config: ${k} is ${v}`);
-							}
-						}
-
-						rooms.createRoom({
-							roomId: msg.roomId,
-							seed: msg.seed,
-							config,
-							playerIds,
-						});
-
-						rooms.subscribe(msg.roomId, ws);
-						console.log(`Room ${msg.roomId} created with players: ${playerIds.join(",")}`);
-						safeSendServer(ws, { type: "room_created", roomId: msg.roomId });
-						return;
-					}
-
-					case "join_room": {
 						if (boundRoomId || boundPlayerId) {
 							throw new Error("Already joined a room on this socket");
 						}
@@ -149,10 +130,20 @@ export function startPublicWsServer(
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
-						rooms.addPlayerToRoom(boundRoomId, boundPlayerId);
+						const config = normalizeConfig(msg.config);
+						const seed = msg.seed;
+
+						rooms.createOrJoinRoom({
+							roomId: boundRoomId,
+							playerId: boundPlayerId,
+							seed,
+							config,
+						});
+
 						rooms.subscribe(boundRoomId, ws);
-						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
-						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						
+						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						rooms.broadcastState(boundRoomId);
 						return;
 					}
 
@@ -194,20 +185,6 @@ export function startPublicWsServer(
 						rooms.setRoomToRunning(boundRoomId);
 						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
 						rooms.startLoop(msg.roomId);
-						return;
-					}
-
-					case "start": {
-						const room = rooms.get(msg.roomId);
-						if (!room) {
-							throw new Error(`Room not found: ${msg.roomId}: all rooms: ${[...rooms.rooms.keys()].join(", ")}`);
-						}
-
-						rooms.startRoom(msg.roomId);
-
-						console.log(`Room started: ${msg.roomId}`);
-
-						rooms.broadcast(msg.roomId, { type: "started", roomId: msg.roomId });
 						return;
 					}
 

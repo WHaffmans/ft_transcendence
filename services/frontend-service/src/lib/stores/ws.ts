@@ -8,6 +8,11 @@ import {
 	type ServerMsg
 } from "@ft/game-ws-protocol";
 
+
+/* ========================================================================== */
+/*                                  TYPES                                     */
+/* ========================================================================== */
+
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
 type WSStoreState = {
@@ -16,8 +21,7 @@ type WSStoreState = {
 	latestState: StateMsg["snapshot"] | null;
 	roomId: string | null;
 	playerId: string | null;
-	pendingCreate: { roomId: string; seed: number; playerId: string } | null;
-	pendingJoin: { roomId: string; playerId: string } | null;
+	pendingCreateOrJoin: { roomId: string; seed: number; playerId: string } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
 
@@ -27,20 +31,30 @@ function makeWsUrl() {
 	return `${proto}://${window.location.host}/ws`;
 }
 
+
+/* ========================================================================== */
+/*                                  STORE                                     */
+/* ========================================================================== */
+// TODO: Use stack for messages
+
 function createWebSocketStore() {
 	const store = writable<WSStoreState>({
 		status: "disconnected",
-		messages: [],                         // TODO: Use stack
+		messages: [],
 		latestState: null,
 		roomId: null,
 		playerId: null,
-		pendingCreate: null,
-		pendingJoin: null,
+		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
 
 	const { subscribe, set, update } = store;
 	let ws: WebSocket | null = null;
+
+
+	/* ========================================================================== */
+	/*                                TRANSPORT                                   */
+	/* ========================================================================== */
 
 	function connect() {
 		if (!browser) return;
@@ -56,21 +70,16 @@ function createWebSocketStore() {
 
 			const s = get(store);
 
-			if (s.pendingCreate) {
-				const { roomId, seed, playerId } = s.pendingCreate;
-				sendClient({ type: "create_room", roomId, seed, players: [{ playerId }] });
-				update((x) => ({ ...x, pendingCreate: null }));
-			}
-
-			if (s.pendingJoin) {
-				joinRoom(s.pendingJoin.roomId, s.pendingJoin.playerId);
-				update((x) => ({ ...x, pendingJoin: null }));
+			if (s.pendingCreateOrJoin) {
+				const { roomId, seed, playerId } = s.pendingCreateOrJoin;
+				update((x) => ({ ...x, pendingCreateOrJoin: null }));
+				sendClient({ type: "create_or_join_room", roomId, seed, playerId });
 			}
 
 			if (s.pendingScene) {
 				const { roomId, playerId, scene } = s.pendingScene;
-				sendClient({ type: "update_scene", roomId, playerId, scene });
 				update((x) => ({ ...x, pendingScene: null }));
+				sendClient({ type: "update_scene", roomId, playerId, scene });
 			}
 		};
 
@@ -124,16 +133,36 @@ function createWebSocketStore() {
 		ws.send(JSON.stringify(parsed.data));
 	}
 
-	function joinRoom(roomId: string, playerId: string) {
+	function disconnect() {
+		ws?.close();
+		ws = null;
+
+		set({
+			status: "disconnected",
+			messages: [],
+			latestState: null,
+			roomId: null,
+			playerId: null,
+			pendingCreateOrJoin: null,
+			pendingScene: null,
+		});
+	}
+
+
+	/* ========================================================================== */
+	/*                                COMMANDS                                    */
+	/* ========================================================================== */
+
+	function createOrJoinRoom(roomId: string, seed: number, playerId: string) {
 		update((s) => ({ ...s, roomId, playerId }));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			update((s) => ({ ...s, pendingJoin: { roomId, playerId } }));
+			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, playerId } }));
 			connect();
 			return;
 		}
 
-		sendClient({ type: "join_room", roomId, playerId });
+		sendClient({ type: "create_or_join_room", roomId, seed, playerId });
 	}
 
 	function updatePlayerScene(roomId: string, playerId: string, scene: "lobby" | "game" ) {
@@ -177,48 +206,15 @@ function createWebSocketStore() {
 		}));
 	}
 
-	function disconnect() {
-		ws?.close();
-		ws = null;
-
-		set({
-			status: "disconnected",
-			messages: [],
-			latestState: null,
-			roomId: null,
-			playerId: null,
-			pendingCreate: null,
-			pendingJoin: null,
-			pendingScene: null,
-		});
-	}
-
-	function createRoom(roomId: string, seed: number, playerId: string) {
-		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			update((s) => ({ ...s, pendingCreate: { roomId, seed, playerId } }));
-			connect();
-			return;
-		}
-
-		console.log("Creating room");
-
-		sendClient({
-			type: "create_room",
-			roomId,
-			seed,
-			players: [{ playerId }],
-		});
-	}
 
 	return {
 		subscribe,
 		connect,
-		createRoom,
+		createOrJoinRoom,
 		updatePlayerScene,
 		startGame,
 		disconnect,
 		sendClient,
-		joinRoom,
 		leaveRoom,
 	};
 }

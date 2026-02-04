@@ -11,23 +11,11 @@ export const TurnInputSchema = z.union([z.literal(-1), z.literal(0), z.literal(1
  */
 
 export const CreateRoomMsgSchema = z.object({
-	type: z.literal("create_room"),
+	type: z.literal("create_or_join_room"),
 	roomId: RoomId,
 	seed: z.number().int(),
 	config: z.unknown().optional(),
-	players: z
-		.array(
-			z.object({
-				playerId: PlayerId,
-			}),
-		)
-		.min(1),
-});
-
-export const JoinRoomMsgSchema = z.object({
-	type: z.literal("join_room"),
-	roomId: RoomId,
-	playerId: PlayerId,
+	playerId: PlayerId
 });
 
 /**
@@ -61,7 +49,6 @@ export const InputMsgSchema = z.object({
 
 export const ClientMsgSchema = z.discriminatedUnion("type", [
 	CreateRoomMsgSchema,
-	JoinRoomMsgSchema,
 	UpdateSceneMsgSchema,
 	StartGameMsgSchema,
 	LeaveRoomMsgSchema,

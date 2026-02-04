@@ -22,6 +22,7 @@ import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
 export type GamePhase = "lobby" | "ready" | "running" | "finished";
 type Scene = "lobby" | "game";
 
+
 type Room = {
 	phase: GamePhase;
 	roomId: string;
@@ -29,11 +30,10 @@ type Room = {
 	config: GameConfig;
 	state: GameState;
 
+	// Players
+	hostId: string;
 	playerIds: string[];
 	sceneById: Record<string, Scene>;
-
-
-	// Latest inputs per player
 	inputsById: Record<string, TurnInput>;
 
 	// Handle ticks
@@ -52,37 +52,53 @@ function safeSend(ws: WebSocket, msg: unknown) {
 		return;
 	
 	const parsed = ServerMsgSchema.safeParse(msg);
-	
 	if (!parsed.success) {
-		console.error("GameEngine: invalid ServerMsg issues:", parsed.error.issues);
-		console.error("GameEngine: invalid ServerMsg formatted:", parsed.error.format());
-		console.error("GameEngine: invalid ServerMsg msg:", msg);
+		logError("safeSend.invalid_server_msg", {
+			issues: parsed.error.issues,
+			formatted: parsed.error.format(),
+			msg,
+		});
 		return;
 	}
 
 	ws.send(JSON.stringify(parsed.data));
 }
 
+function logInfo(event: string, meta?: Record<string, unknown>) {
+	console.log(`[room_manager] ${event}`, meta ?? "");
+}
+
+function logError(event: string, meta?: Record<string, unknown>) {
+	console.error(`[room_manager] ${event}`, meta ?? "");
+}
+
+
 export class RoomManager {
 	public rooms = new Map<string, Room>();
+
+
+	/* ====================================================================== */
+	/*                              ROOM LIFECYCLE                            */
+	/* ====================================================================== */
 
 	/**
 	 * Search for a room
 	 */
-	get(roomId: string) {
+	private get(roomId: string) {
 		return (this.rooms.get(roomId));
 	}
 
 	/**
 	 * Create a new room
 	 */
-	createRoom(args: {
+	private createRoom(args: {
 		roomId: string;
 		seed: number;
 		config: GameConfig;
+		hostId: string;
 		playerIds: string[];
 	}) {
-		const { roomId, seed, config, playerIds } = args;
+		const { roomId, seed, config, hostId, playerIds } = args;
 
 		// Check if room exists
 		if (this.rooms.has(roomId)) {
@@ -107,27 +123,169 @@ export class RoomManager {
 			seed,
 			config,
 			state,
-			playerIds,
+			hostId,
+			playerIds: [...playerIds],
 			sceneById,
 			inputsById,
 			subscribers: new Set(),
 		};
 
 		this.rooms.set(roomId, room);
-	};
 
-	startRoom(roomId: string) {
-		this.startLoop(roomId, 30);
+		logInfo("room.created", {
+			roomId,
+			hostId,
+			seed,
+			playerCount: room.playerIds.length,
+			tickRate: config.tickRate,
+		});
+
+		return (room);
 	}
 
 	/**
+	 * Get current room, or create new room
+	 */
+	private ensureRoom(args: {
+		roomId: string;
+		seed: number;
+		config: GameConfig;
+		hostId: string;
+	}) {
+		const existingRoom = this.rooms.get(args.roomId);
+		if (existingRoom)
+				return (existingRoom);
+
+		return this.createRoom({
+			roomId: args.roomId,
+			seed: args.seed,
+			config: args.config,
+			hostId: args.hostId,
+			playerIds: [args.hostId],
+		});
+	}
+
+	/**
+	 * Add a player to the room
+	 */
+	private addPlayerToRoom(roomId: string, playerId: string) {
+		const room = this.get(roomId);
+		
+		if (!room)
+			throw new Error(`Unknown roomId: ${roomId}`);
+
+		if (room.phase === "finished") {
+			throw new Error(`Room ${roomId} is finished`);
+		}
+
+		const wasAlreadyInRoom = room.playerIds.includes(playerId);
+
+		if (!wasAlreadyInRoom) {
+			room.playerIds.push(playerId);
+			logInfo("room.player_added", {
+				roomId,
+				playerId,
+				playerCount: room.playerIds.length,
+			});
+		} else {
+			logInfo("room.player_rejoin", { roomId, playerId });
+		}
+
+		if (!(playerId in room.inputsById)) room.inputsById[playerId] = 0;
+		if (!(playerId in room.sceneById)) room.sceneById[playerId] = "lobby";
+
+		// Only reset/broadcast if new player joined
+		if (!wasAlreadyInRoom) {
+			this.resetGame(room);
+			this.broadcastState(roomId);
+		}
+	}
+
+	/**
+	 * Will create a room if nonexistent, otherwise join
+	 */
+	public createOrJoinRoom(args: {
+		roomId: string;
+		playerId: string;
+		seed: number;
+		config: GameConfig;
+	}): Room {
+
+		const existedBefore = this.rooms.has(args.roomId);
+
+		const room = this.ensureRoom({
+			roomId: args.roomId,
+			seed: args.seed,
+			config: args.config,
+			hostId: args.playerId,
+		});
+
+		const beforeCount = room.playerIds.length;
+		const alreadyMember = room.playerIds.includes(args.playerId);
+
+		this.addPlayerToRoom(args.roomId, args.playerId);
+
+		const afterCount = room.playerIds.length;
+
+		logInfo("room.create_or_join", {
+			roomId: args.roomId,
+			playerId: args.playerId,
+			created: !existedBefore,
+			alreadyMember,
+			phase: room.phase,
+			playerCountBefore: beforeCount,
+			playerCountAfter: afterCount,
+			hostId: room.hostId,
+		});
+
+		return (room);
+	}
+
+	/**
+	 * Close current room
+	 */
+	public closeRoom(roomId: string, reason = "closed") {
+		const room = this.get(roomId);
+		if (!room) return;
+
+		if (room.timer) clearInterval(room.timer);
+
+		for (const ws of room.subscribers) {
+			safeSend(ws, { type: "room_closed", roomId, reason });
+		}
+
+		this.rooms.delete(roomId);
+
+		logInfo("room.closed", {
+			roomId,
+			reason,
+			subscribers: room.subscribers.size,
+			playerCount: room.playerIds.length,
+		});
+	}
+
+
+	/* ====================================================================== */
+	/*                                SOCKET                                  */
+	/* ====================================================================== */
+
+	/**
 	 * Add a new web socket to list of subscribers
+	 * `set`, no duplicates
 	 */
 	subscribe(roomId: string, ws: WebSocket) {
 		const room = this.rooms.get(roomId);
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
+
+		const before = room.subscribers.size;
 		room.subscribers.add(ws);
+
+		logInfo("room.subscribed", {
+			roomId,
+			subsBefore: before,
+			subsAfter: room.subscribers.size,
+		});
 	}
 
 	/**
@@ -137,35 +295,33 @@ export class RoomManager {
 		const room = this.rooms.get(roomId);
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
+		
+		const before = room.subscribers.size;
 		room.subscribers.delete(ws);
+
+		logInfo("room.unsubscribed", {
+			roomId,
+			subsBefore: before,
+			subsAfter: room.subscribers.size,
+		});
 	}
 
 	unsubscribeAll(ws: WebSocket) {
-		for (const room of this.rooms.values())
-			room.subscribers.delete(ws);
-	}
+		let removedFrom = 0;
 
-	/**
-	 * Add a player to the room
-	 */
-	addPlayerToRoom(roomId: string, playerId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
-
-		if (room.phase === "finished") {
-			throw new Error(`Room ${roomId} is finished`);
+		for (const room of this.rooms.values()) {
+			if (room.subscribers.delete(ws)) removedFrom++;
 		}
 
-		if (!room.playerIds.includes(playerId)) {
-			room.playerIds.push(playerId);
+		if (removedFrom > 0) {
+			logInfo("ws.unsubscribed_all", { removedFrom });
 		}
-
-		if (!(playerId in room.inputsById)) room.inputsById[playerId] = 0;
-		if (!(playerId in room.sceneById)) room.sceneById[playerId] = "lobby";
-
-		this.resetGame(room);
-		this.broadcastState(roomId);
 	}
+
+
+	/* ====================================================================== */
+	/*                           SCENE / PHASE CONTROL                        */
+	/* ====================================================================== */
 
 	/**
 	 * Update the scene for a player
@@ -181,7 +337,17 @@ export class RoomManager {
 		if (room.sceneById[playerId] === scene)
 			return;
 
+		const prev = room.sceneById[playerId];
 		room.sceneById[playerId] = scene;
+
+		logInfo("room.scene_updated", {
+			roomId,
+			playerId,
+			from: prev,
+			to: scene,
+		});
+
+		// TODO: Broadcast
 	}
 
 	/**
@@ -189,50 +355,64 @@ export class RoomManager {
 	 * lobby -> ready
 	 */
 	willUpdateRoomPhase(roomId: string) {
-		const room = this.rooms.get(roomId);
+		const room = this.get(roomId);
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
-
-
-		console.log("phase check", {
-			phase: room.phase,
-			playerIds: room.playerIds,
-			sceneById: room.sceneById,
-			allOnGameCanvas: room.playerIds.every((id) => room.sceneById[id] === "game"),
-		});
 
 		if (room.phase !== "lobby")
 			return;
 
 		const allOnGameCanvas = room.playerIds.every((id) => room.sceneById[id] === "game");
-		if (!allOnGameCanvas)
+		if (!allOnGameCanvas) {
+			logInfo("room.phase_check_not_ready", {
+				roomId,
+				phase: room.phase,
+				playerIds: room.playerIds,
+				sceneById: room.sceneById,
+			});
 			return;
+		}
 
 		room.phase = "ready";
 
-		console.log("Room state set to: ready");
+		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
+
 		this.broadcast(roomId, {
 			type: "state",
 			snapshot: this.makeSnapshot(room),
 		} satisfies ServerMsg);
 	}
 
+	/**
+	 * Set room to `running`
+	 */
 	setRoomToRunning(roomId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.get(roomId);
+		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
 
-		if (room.phase !== "ready")
+		if (room.phase !== "ready") {
+			logInfo("room.phase_change_rejected", {
+				roomId,
+				want: "running",
+				have: room.phase,
+			});
 			return;
+		}
 
 		room.phase = "running";
 
-		console.log("Room state set to: running");
+		logInfo("room.phase_changed", { roomId, from: "ready", to: "running" });
+
 		this.broadcast(roomId, {
 			type: "state",
 			snapshot: this.makeSnapshot(room),
 		} satisfies ServerMsg);
 	}
+
+
+	/* ====================================================================== */
+	/*                                  INPUT                                 */
+	/* ====================================================================== */
 
 	/**
 	 * Sets inputs for each player
@@ -250,23 +430,14 @@ export class RoomManager {
 		room.inputsById[playerId] = turn;
 	}
 
+
+	/* ====================================================================== */
+	/*                                BROADCAST                               */
+	/* ====================================================================== */
+
 	/**
-	 * Close current room
+	 * Send a message to all players
 	 */
-	closeRoom(roomId: string, reason = "closed") {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
-
-		if (room.timer)
-			clearInterval(room.timer);
-
-		for (const ws of room.subscribers) {
-			safeSend(ws, { type: "room_closed", roomId, reason });
-		}
-
-		this.rooms.delete(roomId);
-	}
-
 	broadcast(roomId: string, msg: ServerMsg) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
@@ -276,6 +447,9 @@ export class RoomManager {
 		}
 	}
 
+	/**
+	 * Send current room state to all players
+	 */
 	broadcastState(roomId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
@@ -286,6 +460,9 @@ export class RoomManager {
 		} satisfies ServerMsg);
 	}
 
+	/**
+	 * Make snapshot with correct types
+	 */
 	private makeSnapshot(room: Room) {
 		return {
 			phase: room.phase,
@@ -318,18 +495,23 @@ export class RoomManager {
 		};
 	}
 
-	private resetGame(room: Room) {
-		room.state = initGame(room.config, room.seed, room.playerIds);
 
-		const inputsById: Record<string, TurnInput> = {};
-		for (const id of room.playerIds) inputsById[id] = 0;
-		room.inputsById = inputsById;
+	/* ====================================================================== */
+	/*                               GAME CONTROL                             */
+	/* ====================================================================== */
+
+	/**
+	 * Start the game loop, will broadcast state
+	 */
+	startRoom(roomId: string) {
+		// TODO: use TickRate from Config
+		this.startLoop(roomId, 30);
 	}
 
 	/**
 	 * Start game loop
 	 */
-	startLoop(roomId: string) {
+	private startLoop(roomId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
@@ -353,6 +535,17 @@ export class RoomManager {
 			for (const ws of room.subscribers)
 				safeSend(ws, msg);
 		}, dtMs);
+	}
+
+	/**
+	 * Used to create a new GameConfig, seeds and colors when player joins
+	 */
+	private resetGame(room: Room) {
+		room.state = initGame(room.config, room.seed, room.playerIds);
+
+		const inputsById: Record<string, TurnInput> = {};
+		for (const id of room.playerIds) inputsById[id] = 0;
+		room.inputsById = inputsById;
 	}
 	
 };
