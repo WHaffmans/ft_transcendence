@@ -18,9 +18,7 @@ import type { GameConfig } from "../engine/config";
 import { step } from "../engine/step";
 import type { TurnInput } from "../engine/step";
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
-
-export type GamePhase = "lobby" | "ready" | "running" | "finished";
-type Scene = "lobby" | "game";
+import type { GamePhase, PlayerPhase } from "@ft/game-ws-protocol";
 
 
 type Room = {
@@ -33,7 +31,7 @@ type Room = {
 	// Players
 	hostId: string;
 	playerIds: string[];
-	sceneById: Record<string, Scene>;
+	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
 
 	// Handle ticks
@@ -84,7 +82,7 @@ export class RoomManager {
 	/**
 	 * Search for a room
 	 */
-	private get(roomId: string) {
+	get(roomId: string) {
 		return (this.rooms.get(roomId));
 	}
 
@@ -113,7 +111,7 @@ export class RoomManager {
 		for (const id of playerIds) inputsById[id] = 0;
 
 		// Init players
-		const sceneById: Record<string, Scene> = {};
+		const sceneById: Record<string, PlayerPhase> = {};
 		for (const id of playerIds) sceneById[id] = "lobby";
 	
 		// Add room
@@ -161,7 +159,7 @@ export class RoomManager {
 			seed: args.seed,
 			config: args.config,
 			hostId: args.hostId,
-			playerIds: [args.hostId],
+			playerIds: [],
 		});
 	}
 
@@ -194,11 +192,11 @@ export class RoomManager {
 		if (!(playerId in room.inputsById)) room.inputsById[playerId] = 0;
 		if (!(playerId in room.sceneById)) room.sceneById[playerId] = "lobby";
 
-		// Only reset/broadcast if new player joined
+		// Only reset if new player joined
 		if (!wasAlreadyInRoom) {
 			this.resetGame(room);
-			this.broadcastState(roomId);
 		}
+		this.broadcastState(roomId);
 	}
 
 	/**
@@ -326,7 +324,7 @@ export class RoomManager {
 	/**
 	 * Update the scene for a player
 	 */
-	updatePlayerScene(roomId: string, playerId: string, scene: Scene ) {
+	updatePlayerScene(roomId: string, playerId: string, scene: PlayerPhase ) {
 		const room = this.rooms.get(roomId);
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
@@ -346,8 +344,6 @@ export class RoomManager {
 			from: prev,
 			to: scene,
 		});
-
-		// TODO: Broadcast
 	}
 
 	/**
@@ -469,6 +465,9 @@ export class RoomManager {
 			tick: room.state.tick,
 			seed: room.state.seed,
 			rngState: room.state.rngState,
+			hostId: room.hostId,
+			playerIds: [...room.playerIds],
+			sceneById: {...room.sceneById},
 
 			players: room.state.players.map((p) => ({
 				id: p.id,
@@ -504,8 +503,7 @@ export class RoomManager {
 	 * Start the game loop, will broadcast state
 	 */
 	startRoom(roomId: string) {
-		// TODO: use TickRate from Config
-		this.startLoop(roomId, 30);
+		this.startLoop(roomId);
 	}
 
 	/**
@@ -546,6 +544,10 @@ export class RoomManager {
 		const inputsById: Record<string, TurnInput> = {};
 		for (const id of room.playerIds) inputsById[id] = 0;
 		room.inputsById = inputsById;
+
+		for (const id of room.playerIds) {
+			if (!(id in room.sceneById)) room.sceneById[id] = "lobby";
+		}
 	}
 	
 };

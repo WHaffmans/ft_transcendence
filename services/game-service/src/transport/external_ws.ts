@@ -141,7 +141,6 @@ export function startPublicWsServer(
 						});
 
 						rooms.subscribe(boundRoomId, ws);
-						
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
 						rooms.broadcastState(boundRoomId);
 						return;
@@ -162,7 +161,6 @@ export function startPublicWsServer(
 						rooms.updatePlayerScene(boundRoomId, boundPlayerId, msg.scene);
 						rooms.broadcastState(boundRoomId);
 						rooms.willUpdateRoomPhase(boundRoomId);
-						console.log(`Player ${boundPlayerId} entered scene ${msg.scene}`);
 						return;
 					}
 
@@ -181,10 +179,9 @@ export function startPublicWsServer(
 							throw new Error(`Room is not ready (phase=${room.phase})`);
 						}
 
-						console.log(`Room ${boundRoomId} has started`);
 						rooms.setRoomToRunning(boundRoomId);
 						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
-						rooms.startLoop(msg.roomId);
+						rooms.startRoom(msg.roomId);
 						return;
 					}
 
@@ -192,7 +189,6 @@ export function startPublicWsServer(
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
-						console.log(`Player ${boundPlayerId} left room ${boundRoomId}`);
 						rooms.broadcast(msg.roomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId} satisfies ServerMsg);
 						rooms.unsubscribe(boundRoomId, ws);
 

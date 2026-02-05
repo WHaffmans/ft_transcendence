@@ -1,3 +1,4 @@
+
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params }) => {
@@ -6,4 +7,4 @@ export const load: PageServerLoad = ({ params }) => {
     return {
         lobbyId: id,
     };
-};
+}

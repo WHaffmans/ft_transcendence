@@ -84,6 +84,7 @@ function createWebSocketStore() {
 		};
 
 		ws.onmessage = (e) => {
+			console.log("WS raw:", e.data);
 			let raw: unknown;
 			try {
 				raw = JSON.parse(e.data);
@@ -201,9 +202,26 @@ function createWebSocketStore() {
 			roomId: null,
 			playerId: null,
 			latestState: null,
-			pendingJoin: null,
+			pendingCreateOrJoin: null,
 			pendingScene: null,
 		}));
+	}
+
+
+	/* ========================================================================== */
+	/*                                GETTERS                                     */
+	/* ========================================================================== */
+
+	function getRoomPlayerIds() {
+		return get(store).latestState?.playerIds ?? [];
+	}
+
+	function getSceneById() {
+		return get(store).latestState?.sceneById ?? {};
+	}
+
+	function getHostId() {
+		return get(store).latestState?.hostId ?? null;
 	}
 
 
@@ -216,6 +234,9 @@ function createWebSocketStore() {
 		disconnect,
 		sendClient,
 		leaveRoom,
+		getRoomPlayerIds,
+		getSceneById,
+		getHostId,
 	};
 }
 

@@ -14,11 +14,6 @@ export const ErrorPayloadSchema = z.object({
  * =========================
  */
 
-export const RoomCreatedMsgSchema = z.object({
-	type: z.literal("room_created"),
-	roomId: RoomId,
-});
-
 export const JoinedMsgSchema = z.object({
 	type: z.literal("joined"),
 	roomId: RoomId,
@@ -47,7 +42,6 @@ export const ErrorMsgSchema = z.object({
 });
 
 export const ServerMsgSchema = z.discriminatedUnion("type", [
-	RoomCreatedMsgSchema,
 	JoinedMsgSchema,
 	LeftMsgSchema,
 	GameStartedMsgSchema,
