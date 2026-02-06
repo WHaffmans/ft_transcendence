@@ -1,6 +1,7 @@
 <script lang="ts">
 	import GlobalRankEntry from './GlobalRankEntry.svelte';
 	import type { RankingPlayer } from '$lib/types/types';
+	import Footer from '$lib/components/Footer.svelte'
 
 	interface Props {
 		topPlayers: RankingPlayer[];
@@ -25,11 +26,11 @@
 	});
 </script>
 
-<div class="glass h-ranking w-full lg:w-ranking rounded-2xl flex flex-col relative">
+<div class="relative flex flex-col w-full glass h-ranking lg:w-ranking rounded-2xl">
 	<!-- Header -->
 	<div class="flex flex-col gap-2.5 px-6 pt-6">
 		<p class="text-xs font-bold text-[#888] uppercase">Global Ranking</p>
-		<div class="h-px w-full bg-white/10"></div>
+		<div class="w-full h-px bg-white/10"></div>
 	</div>
 
 	<!-- Column Headers -->
@@ -59,9 +60,7 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="px-6 pb-6 pt-2">
-		<p class="text-[10px] font-normal text-[#444] text-center">
-			Privacy Policy • Terms of Service
-		</p>
+	<div class="px-6 pt-6 pb-6">
+		<Footer textSize="card"/>
 	</div>
 </div>
