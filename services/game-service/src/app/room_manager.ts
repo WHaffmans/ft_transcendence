@@ -35,7 +35,7 @@ type Room = {
 	inputsById: Record<string, TurnInput>;
 
 	// Handle ticks
-	timer?: NodeJS.Timeout;
+	timer?: NodeJS.Timeout | null;
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
@@ -520,19 +520,50 @@ export class RoomManager {
 		const dtMs = Math.round(1000 / tickRate);
 
 		room.timer = setInterval(() => {
-			if (room.phase === "running") {
-				const inputsSnapshot = { ...room.inputsById };
-				room.state = step(room.state, inputsSnapshot, room.config);
+			if (room.phase !== "running") return;
+
+			const inputsSnapshot = { ...room.inputsById };
+
+			const res = step(room.state, inputsSnapshot, room.config);
+			room.state = res.state;
+			this.broadcastState(roomId);
+
+			if (res.justFinished) {
+				this.finishRoom(roomId, res.winnerId);
 			}
 
-			const msg = {
-				type: "state",
-				snapshot: this.makeSnapshot(room),
-			} satisfies ServerMsg;
-
-			for (const ws of room.subscribers)
-				safeSend(ws, msg);
 		}, dtMs);
+	}
+
+	/**
+	 * When a game winner has been set, game ends
+	 */
+	private finishRoom(roomId: string, winnerId: string | null) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		// Guard: prevent double-finish
+		if (room.phase === "finished") return;
+
+		room.phase = "finished";
+
+		if (room.timer) {
+			clearInterval(room.timer);
+			room.timer = null;
+		}
+
+		logInfo("room.finished", {
+			roomId,
+			winnerId,
+		});
+
+		const msg = {
+			type: "game_finished",
+			roomId,
+			winnerId,
+		} satisfies ServerMsg;
+
+		this.broadcast(roomId, msg);
 	}
 
 	/**

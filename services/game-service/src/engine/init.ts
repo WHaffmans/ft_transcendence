@@ -47,6 +47,8 @@ export type GameState = {
 	players: PlayerState[];
 	segments: Segment[];
 	spatial: SpatialHash;
+	winnerId: string | null;
+	deathIdByIndex: Map<number, string>;	// (index, playerId)
 };
 
 function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
@@ -85,7 +87,6 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 	const actualSeed = seed ? 0 : randomInt(0, 100);
 	const rng = makeRng(actualSeed);
 
-	console.log(`INIT GAME SEED: ${actualSeed}`);
 	// Determine spawn
 	const players = playerIds.map((id, i) => ({
 		id,
@@ -107,5 +108,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		players,
 		segments: [],
 		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
+		winnerId: null,
+		deathIdByIndex: new Map(),
 	};
 }

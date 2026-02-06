@@ -29,7 +29,13 @@ export const LeftMsgSchema = z.object({
 export const GameStartedMsgSchema = z.object({
 	type: z.literal("game_started"),
 	roomId: RoomId,
-})
+});
+
+export const GameFinishedMsgSchema = z.object({
+	type: z.literal("game_finished"),
+	roomId: RoomId,
+	winnerId: PlayerId,
+});
 
 export const StateMsgSchema = z.object({
 	type: z.literal("state"),
@@ -45,6 +51,7 @@ export const ServerMsgSchema = z.discriminatedUnion("type", [
 	JoinedMsgSchema,
 	LeftMsgSchema,
 	GameStartedMsgSchema,
+	GameFinishedMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,
 ]);
