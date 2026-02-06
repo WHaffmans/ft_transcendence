@@ -56,7 +56,7 @@
 	let lastJoinedKey: string | null = null;
 
 	function joinLobbySession(lobbyId: string, playerId: string) {
-		const seed = gameRecord?.seed ?? 1;
+		const seed = gameRecord?.seed ?? 0;
 		wsStore.createOrJoinRoom(lobbyId, seed, playerId);
 		wsStore.updatePlayerScene(lobbyId, playerId, "lobby");
 	}

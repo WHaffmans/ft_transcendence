@@ -12,6 +12,7 @@
 
 import { GameConfig } from "./config.ts";
 import { makeRng } from "./rng.ts";
+import { randomInt } from "node:crypto";
 import { SpatialHash, createSpatialHash } from "./spatial_hash.ts";
 
 export type ColorRGBA = {
@@ -81,8 +82,10 @@ function playerColor(index: number, total: number): ColorRGBA {
 
 
 export function initGame(config: GameConfig, seed: number, playerIds: string[]): GameState {
-	const rng = makeRng(seed);
+	const actualSeed = seed ? 0 : randomInt(0, 100);
+	const rng = makeRng(actualSeed);
 
+	console.log(`INIT GAME SEED: ${actualSeed}`);
 	// Determine spawn
 	const players = playerIds.map((id, i) => ({
 		id,
