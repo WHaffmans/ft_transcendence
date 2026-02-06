@@ -57,6 +57,15 @@ class DatabaseSeeder extends Seeder
         //now create 20 random games
         Game::factory()->count(20)->create();
 
+        $pendingGame = Game::create([
+            'status' => 'pending',
+        ]);
+
+        $pendingUsers = User::whereIn('name', ['Quinten', 'Ferry', 'Hein'])->get();
+        $pendingGame->users()->attach($pendingUsers->pluck('id'));
+
+        
+
 
         $clientId = env('OAUTH_CLIENT_ID', '019b2d20-ce15-7335-828a-b184b656c035');
         $redirects = env('OAUTH_REDIRECT', 'http://localhost:8080/callback');
