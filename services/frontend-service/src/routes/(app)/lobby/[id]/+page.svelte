@@ -4,7 +4,6 @@
   import WaitingCard from "$lib/components/lobby/WaitingCard.svelte";
   import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
   import { wsStore } from "$lib/stores/ws.js";
-  import { userStore } from "$lib/stores/user.js";
   import type { Game } from "$lib/types/types.js";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
@@ -12,7 +11,7 @@
   let { data } = $props();
   let game = $state(null as Game | null);
   let joined = $state(false);
-  let userId = $userStore?.id;
+  let userId = $derived(data.user?.id);
 
   $effect(() => {
     const last = $wsStore.messages?.shift();
@@ -74,30 +73,6 @@
     wsStore.connect();
     fetchGameData();
   });
-  // Find current user to get their info for navbar
-  //   const currentUser = $derived(game?.users.find((p) => p && p.isCurrentUser));
-
-  // Check if current user is host
-  //   const isHost = $derived(
-  //     game?.users.some((p) => p && p.isCurrentUser && p.status === "host"),
-  //   );
-
-  //   const handleStartGame = () => {
-  //     console.log("Starting game...");
-  //     // TODO: Implement game start logic
-  //   };
-
-  //   const handleLeaveGame = () => {
-  //     console.log("Leaving lobby...");
-  //     // TODO: Implement leave lobby logic
-  //     goto("/dashboard");
-  //   };
-
-  //   const handleLogout = () => {
-  //     console.log("Logging out...");
-  //     // TODO: Implement logout logic
-  //     goto("/");
-  //   };
 </script>
 
 <svelte:head>
