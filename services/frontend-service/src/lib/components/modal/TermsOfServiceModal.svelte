@@ -1,6 +1,6 @@
 <script lang="ts">
   import { marked } from 'marked';
-  import termsMd from './PrivacyPolicy.md?raw';
+  import termsMd from './TermsOfService.md?raw';
   
   const content = marked.parse(termsMd);
 </script>

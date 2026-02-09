@@ -3,6 +3,7 @@
 	import '../app.css';
 	import { userStore } from '$lib/stores/user';
 	import { modalStore } from '$lib/components/modal/modal';
+	import { modalConfig } from '$lib/components/modal/modalConfig';
 	import { modalContent } from '$lib/components/modal/modalContent';
 	import Modal from '$lib/components/modal/Modal.svelte';
 	import PrivacyPolicyModal from '$lib/components/modal/PrivacyPolicyModal.svelte';
@@ -48,7 +49,7 @@
 {#if $modalStore.type === 'privacy'}
 	<Modal
 		open={true}
-		title="Privacy Policy"
+		title={modalConfig.privacy.title}
 		onClose={() => modalStore.close()}
 	>
 		<PrivacyPolicyModal />
@@ -56,15 +57,16 @@
 {:else if $modalStore.type === 'terms'}
 	<Modal
 		open={true}
-		title="Terms of Service"
+		title={modalConfig.terms.title}
 		onClose={() => modalStore.close()}
 	>
 		<TermsOfServiceModal />
 	</Modal>
 {:else if $modalStore.type && $modalStore.type in modalContent}
+	<!-- Fallback for simple text-based modals (settings, profile, friends) -->
 	<Modal
 		open={true}
-		title={modalContent[$modalStore.type].title}
+		title={modalConfig[$modalStore.type].title}
 		onClose={() => modalStore.close()}
 	>
 		<p class="space-y-3">
