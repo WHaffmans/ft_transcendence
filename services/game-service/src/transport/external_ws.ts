@@ -128,14 +128,14 @@ export function startPublicWsServer(
 						}
 
 						boundRoomId = msg.roomId;
-						boundPlayerId = msg.playerId;
+						boundPlayerId = msg.player.playerId;
 
 						const config = normalizeConfig(msg.config);
 						const seed = msg.seed;
 
 						rooms.createOrJoinRoom({
 							roomId: boundRoomId,
-							playerId: boundPlayerId,
+							player: msg.player,
 							seed,
 							config,
 						});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { userStore } from "$lib/stores/user";
 	import type { User } from "$lib/types/types";
 
@@ -11,6 +12,11 @@
 	let { player, scene, isHost }: Props = $props();
 
 	const isYou = $derived(() => String(player.id) === String($userStore?.id));
+
+	onMount(() => {
+    	console.log("PlayerCard props.player:", player);
+    	console.log("userStore ($userStore):", $userStore);
+  	});
 
 	// Styling based on *status only*
 	const styling = $derived(() => {

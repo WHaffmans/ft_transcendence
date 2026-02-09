@@ -1,6 +1,7 @@
 
 import { z } from "zod";
 import { RoomId, PlayerId } from "../common/primitives.js";
+import { PlayerSchema } from "../common/shared.js";
 
 export const TurnInputSchema = z.union([z.literal(-1), z.literal(0), z.literal(1)]);
 
@@ -15,7 +16,7 @@ export const CreateRoomMsgSchema = z.object({
 	roomId: RoomId,
 	seed: z.number().int(),
 	config: z.unknown().optional(),
-	playerId: PlayerId
+	player: PlayerSchema,
 });
 
 /**

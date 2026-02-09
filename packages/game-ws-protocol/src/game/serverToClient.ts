@@ -34,7 +34,7 @@ export const GameStartedMsgSchema = z.object({
 export const GameFinishedMsgSchema = z.object({
 	type: z.literal("game_finished"),
 	roomId: RoomId,
-	winnerId: PlayerId,
+	winnerId: PlayerId.nullable(),
 });
 
 export const StateMsgSchema = z.object({

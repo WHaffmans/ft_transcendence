@@ -55,10 +55,17 @@
 
 	let lastJoinedKey: string | null = null;
 
-	function joinLobbySession(lobbyId: string, playerId: string) {
+	function joinLobbySession(lobbyId: string, user: User) {
 		const seed = gameRecord?.seed ?? 0;
-		wsStore.createOrJoinRoom(lobbyId, seed, playerId);
-		wsStore.updatePlayerScene(lobbyId, playerId, "lobby");
+
+		const player = {
+			playerId: String(user.id),
+			rating_mu: Number(user.rating_mu ?? 25),
+			rating_sigma: Number(user.rating_sigma ?? 8.333),
+		};
+
+		wsStore.createOrJoinRoom(lobbyId, seed, player);
+		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
 	}
 
 
@@ -68,13 +75,15 @@
 
 	$effect(() => {
 		const lobbyId = data.lobbyId;
-		const playerId = $userStore?.id ? String($userStore.id) : null;
-
+		
 		// 1. Auth guard
-		if (!playerId) {
+		const user = $userStore ?? null;
+		if (!user?.id) {
 			goto("/dashboard", { replaceState: true });
 			return;
 		}
+		const playerId = String(user.id);
+
 
 		// 2. Load REST record once per lobbyId
 		if (lobbyId && lastLoadedLobbyId !== lobbyId) {
@@ -87,7 +96,7 @@
 		const joinKey = `${lobbyId}:${playerId}`;
 		if (lastJoinedKey !== joinKey) {
 			lastJoinedKey = joinKey;
-			joinLobbySession(lobbyId, playerId);
+			joinLobbySession(lobbyId, user);
 		}
 	});
 

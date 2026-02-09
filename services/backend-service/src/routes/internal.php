@@ -9,7 +9,6 @@ Route::middleware('auth.internal')->group(function () {
 		return response()->json(['message' => 'Internal route accessed'], 200);
 	});
 
-	// TODO: True skill ranking
 	// TODO: Body is array of player objects
 
 	/*

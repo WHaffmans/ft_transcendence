@@ -1,11 +1,13 @@
 
+import { z } from "zod";
 import { browser } from "$app/environment";
 import { writable, get } from "svelte/store";
 import {
 	ClientMsgSchema,
 	ServerMsgSchema,
 	type ClientMsg,
-	type ServerMsg
+	type ServerMsg,
+	PlayerSchema,
 } from "@ft/game-ws-protocol";
 
 
@@ -13,6 +15,7 @@ import {
 /*                                  TYPES                                     */
 /* ========================================================================== */
 
+type Player = z.infer<typeof PlayerSchema>;
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
 type WSStoreState = {
@@ -21,7 +24,7 @@ type WSStoreState = {
 	latestState: StateMsg["snapshot"] | null;
 	roomId: string | null;
 	playerId: string | null;
-	pendingCreateOrJoin: { roomId: string; seed: number; playerId: string } | null;
+	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
 
@@ -71,9 +74,9 @@ function createWebSocketStore() {
 			const s = get(store);
 
 			if (s.pendingCreateOrJoin) {
-				const { roomId, seed, playerId } = s.pendingCreateOrJoin;
+				const { roomId, seed, player } = s.pendingCreateOrJoin;
 				update((x) => ({ ...x, pendingCreateOrJoin: null }));
-				sendClient({ type: "create_or_join_room", roomId, seed, playerId });
+				sendClient({ type: "create_or_join_room", roomId, seed, player });
 			}
 
 			if (s.pendingScene) {
@@ -84,7 +87,6 @@ function createWebSocketStore() {
 		};
 
 		ws.onmessage = (e) => {
-			console.log("WS raw:", e.data);
 			let raw: unknown;
 			try {
 				raw = JSON.parse(e.data);
@@ -154,16 +156,16 @@ function createWebSocketStore() {
 	/*                                COMMANDS                                    */
 	/* ========================================================================== */
 
-	function createOrJoinRoom(roomId: string, seed: number, playerId: string) {
-		update((s) => ({ ...s, roomId, playerId }));
+	function createOrJoinRoom(roomId: string, seed: number, player: Player) {
+		update((s) => ({ ...s, roomId, playerId: player.playerId }));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, playerId } }));
+			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, player } }));
 			connect();
 			return;
 		}
 
-		sendClient({ type: "create_or_join_room", roomId, seed, playerId });
+		sendClient({ type: "create_or_join_room", roomId, seed, player });
 	}
 
 	function updatePlayerScene(roomId: string, playerId: string, scene: "lobby" | "game" ) {

@@ -18,7 +18,7 @@ import type { GameConfig } from "../engine/config";
 import { step } from "../engine/step";
 import type { TurnInput } from "../engine/step";
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
-import type { GamePhase, PlayerPhase } from "@ft/game-ws-protocol";
+import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
 
 type Room = {
@@ -30,7 +30,7 @@ type Room = {
 
 	// Players
 	hostId: string;
-	playerIds: string[];
+	players: Player[];
 	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
 
@@ -76,7 +76,7 @@ export class RoomManager {
 
 
 	/* ====================================================================== */
-	/*                              ROOM LIFECYCLE                            */
+	/*                              GETTERS / SETTERS                         */
 	/* ====================================================================== */
 
 	/**
@@ -86,6 +86,19 @@ export class RoomManager {
 		return (this.rooms.get(roomId));
 	}
 
+	getPlayerIds(room: Room): string[] {
+		return (room.players.map((p) => p.playerId));
+	}
+
+	getPlayer(room: Room, playerId: string): Player | undefined {
+		return (room.players.find((p) => p.playerId === playerId));
+	}
+
+
+	/* ====================================================================== */
+	/*                              ROOM LIFECYCLE                            */
+	/* ====================================================================== */
+
 	/**
 	 * Create a new room
 	 */
@@ -94,9 +107,10 @@ export class RoomManager {
 		seed: number;
 		config: GameConfig;
 		hostId: string;
-		playerIds: string[];
+		players: Player[];
 	}) {
-		const { roomId, seed, config, hostId, playerIds } = args;
+		const { roomId, seed, config, hostId, players } = args;
+		const playerIds = players.map((p) => p.playerId);
 
 		// Check if room exists
 		if (this.rooms.has(roomId)) {
@@ -122,7 +136,7 @@ export class RoomManager {
 			config,
 			state,
 			hostId,
-			playerIds: [...playerIds],
+			players: [...players],
 			sceneById,
 			inputsById,
 			subscribers: new Set(),
@@ -134,7 +148,7 @@ export class RoomManager {
 			roomId,
 			hostId,
 			seed,
-			playerCount: room.playerIds.length,
+			playerCount: room.players.length,
 			tickRate: config.tickRate,
 		});
 
@@ -159,43 +173,43 @@ export class RoomManager {
 			seed: args.seed,
 			config: args.config,
 			hostId: args.hostId,
-			playerIds: [],
+			players: [],
 		});
 	}
 
 	/**
 	 * Add a player to the room
 	 */
-	private addPlayerToRoom(roomId: string, playerId: string) {
+	private addPlayerToRoom(roomId: string, player: Player) {
 		const room = this.get(roomId);
-		
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
+		if (room.phase === "finished") throw new Error(`Room ${roomId} is finished`);
 
-		if (room.phase === "finished") {
-			throw new Error(`Room ${roomId} is finished`);
-		}
-
-		const wasAlreadyInRoom = room.playerIds.includes(playerId);
+		const existing = this.getPlayer(room, player.playerId);
+		const wasAlreadyInRoom = !!existing;
 
 		if (!wasAlreadyInRoom) {
-			room.playerIds.push(playerId);
+			room.players.push(player);
 			logInfo("room.player_added", {
 				roomId,
-				playerId,
-				playerCount: room.playerIds.length,
+				playerId: player.playerId,
+				rating_mu: player.rating_mu,
+				rating_sigma: player.rating_sigma,
+				playerCount: room.players.length,
 			});
 		} else {
-			logInfo("room.player_rejoin", { roomId, playerId });
+			const idx = room.players.findIndex((p) => p.playerId === player.playerId);
+			room.players[idx] = player;
+			logInfo("room.player_rejoin", { roomId, playerId: player.playerId });
 		}
 
-		if (!(playerId in room.inputsById)) room.inputsById[playerId] = 0;
-		if (!(playerId in room.sceneById)) room.sceneById[playerId] = "lobby";
+		if (!(player.playerId in room.inputsById)) room.inputsById[player.playerId] = 0;
+		if (!(player.playerId in room.sceneById)) room.sceneById[player.playerId] = "lobby";
 
-		// Only reset if new player joined
 		if (!wasAlreadyInRoom) {
 			this.resetGame(room);
 		}
+
 		this.broadcastState(roomId);
 	}
 
@@ -204,7 +218,7 @@ export class RoomManager {
 	 */
 	public createOrJoinRoom(args: {
 		roomId: string;
-		playerId: string;
+		player: Player;
 		seed: number;
 		config: GameConfig;
 	}): Room {
@@ -215,19 +229,19 @@ export class RoomManager {
 			roomId: args.roomId,
 			seed: args.seed,
 			config: args.config,
-			hostId: args.playerId,
+			hostId: args.player.playerId,
 		});
 
-		const beforeCount = room.playerIds.length;
-		const alreadyMember = room.playerIds.includes(args.playerId);
+		const beforeCount = room.players.length;
+		const alreadyMember = !!this.getPlayer(room, args.player.playerId);
 
-		this.addPlayerToRoom(args.roomId, args.playerId);
+		this.addPlayerToRoom(args.roomId, args.player);
 
-		const afterCount = room.playerIds.length;
+		 const afterCount = room.players.length;
 
 		logInfo("room.create_or_join", {
 			roomId: args.roomId,
-			playerId: args.playerId,
+			playerId: args.player.playerId,
 			created: !existedBefore,
 			alreadyMember,
 			phase: room.phase,
@@ -258,7 +272,7 @@ export class RoomManager {
 			roomId,
 			reason,
 			subscribers: room.subscribers.size,
-			playerCount: room.playerIds.length,
+			playerCount: room.players.length,
 		});
 	}
 
@@ -329,7 +343,7 @@ export class RoomManager {
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
 
-		if (!room.playerIds.includes(playerId))
+		if (!this.getPlayer(room, playerId))
 			throw new Error(`Unknown playerId ${playerId} for room ${roomId}`);
 
 		if (room.sceneById[playerId] === scene)
@@ -358,12 +372,12 @@ export class RoomManager {
 		if (room.phase !== "lobby")
 			return;
 
-		const allOnGameCanvas = room.playerIds.every((id) => room.sceneById[id] === "game");
+		const allOnGameCanvas = this.getPlayerIds(room).every((id) => room.sceneById[id] === "game");
 		if (!allOnGameCanvas) {
 			logInfo("room.phase_check_not_ready", {
 				roomId,
 				phase: room.phase,
-				playerIds: room.playerIds,
+				playerIds: this.getPlayerIds(room),
 				sceneById: room.sceneById,
 			});
 			return;
@@ -466,7 +480,7 @@ export class RoomManager {
 			seed: room.state.seed,
 			rngState: room.state.rngState,
 			hostId: room.hostId,
-			playerIds: [...room.playerIds],
+			playerIds: this.getPlayerIds(room),
 			sceneById: {...room.sceneById},
 
 			players: room.state.players.map((p) => ({
@@ -570,15 +584,17 @@ export class RoomManager {
 	 * Used to create a new GameConfig, seeds and colors when player joins
 	 */
 	private resetGame(room: Room) {
-		room.state = initGame(room.config, room.seed, room.playerIds);
+		const ids = this.getPlayerIds(room);
+		room.state = initGame(room.config, room.seed, ids);
 
 		const inputsById: Record<string, TurnInput> = {};
-		for (const id of room.playerIds) inputsById[id] = 0;
+		for (const id of ids) inputsById[id] = 0;
 		room.inputsById = inputsById;
 
-		for (const id of room.playerIds) {
+		for (const id of ids) {
 			if (!(id in room.sceneById)) room.sceneById[id] = "lobby";
 		}
 	}
-	
+
+
 };
