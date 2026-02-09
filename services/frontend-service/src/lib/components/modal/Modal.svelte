@@ -38,7 +38,7 @@
 			</header>
 
 			<!-- Scrollable Content -->
-			<div class="px-6 py-4 overflow-y-auto text-sm text-gray-300 scrollbar-thin scrollbar-track-neutral-800/50 scrollbar-thumb-neutral-700/50 hover:scrollbar-thumb-neutral-600/50">
+		<div class="px-6 py-4 overflow-y-auto text-sm text-gray-300 modal-scroll">
 				{@render children()}
 			</div>
 		</div>
