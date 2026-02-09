@@ -18,14 +18,14 @@
     	console.log("userStore ($userStore):", $userStore);
   	});
 
-	// Styling based on *status only*
+	// Styling
 	const styling = $derived(() => {
 		if (scene === "game") {
 			return {
-				borderColor: "border-white/50",
-				badgeBg: "bg-white",
-				badgeText: "text-black text-xs",
-				statusLabel: "IN GAME",
+			borderColor: "border-[rgba(0,255,136,1)]",
+			badgeBg: "bg-[rgba(0,255,136,1)]",
+			badgeText: "text-white text-xs",
+			statusLabel: "READY",
 			};
 		}
 
@@ -37,13 +37,13 @@
 		};
 	});
 
-	const hostBorder = $derived(() =>
-		isHost ? "border-[rgba(0,255,136,0.5)]" : styling().borderColor
+	const readyBoarder = $derived(() =>
+		scene === "game" ? "border-[rgba(0,255,136,1)]" : styling().borderColor
 	);
 </script>
 
 <div
-	class="backdrop-blur-[10px] bg-black/40 border {hostBorder()} rounded-2xl h-70 w-full relative flex items-center justify-center"
+	class="backdrop-blur-[10px] bg-black/40 border {readyBoarder()} rounded-2xl h-70 w-full relative flex items-center justify-center"
 >
 	<!-- Rank Badge (top left) -->
 	<div class="absolute top-2.75 left-2.75 bg-black/20 rounded h-5 px-2 flex items-center">
@@ -53,8 +53,8 @@
 	<!-- Labels (top right) -->
 	<div class="absolute top-2.75 right-2.75 flex gap-2">
 		{#if isHost}
-			<div class="bg-[#0f8] rounded-[10px] h-5 px-2 flex items-center justify-center">
-				<p class="text-[10px] font-bold text-black">HOST</p>
+			<div class="bg-[#3b82f6] rounded-[10px] h-5 px-2 flex items-center justify-center">
+				<p class="text-[10px] font-bold text-white">HOST</p>
 			</div>
 		{/if}
 
