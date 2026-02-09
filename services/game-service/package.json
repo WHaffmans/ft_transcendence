@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "simulate": "tsx src/cli/simulate.ts",
+    "simulate": "tsx src/cli/game_simulate.ts",
     "build": "npx tsc -p tsconfig.json",
     "test": "vitest",
     "test:run": "vitest run"
@@ -19,6 +19,7 @@
   "dependencies": {
     "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
     "esbuild": "0.27.2",
+    "openskill": "^4.1.0",
     "typescript": "^5.6.0"
   }
 }
