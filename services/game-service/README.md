@@ -61,6 +61,8 @@ npm i -D vitest
 
 npm i ws
 npm i -D @types/ws
+
+npm i openskill
 ```
 
 ---
