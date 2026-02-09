@@ -23,13 +23,13 @@
 		</button>
 
 		<!-- Modal -->
-		<div class="relative z-10 w-lg max-w-[90vw] flex flex-col max-h-[85vh] shadow-xl rounded-xl bg-neutral-900">
+		<div class="relative z-10 w-lg max-w-[90vw] flex flex-col max-h-[60vh] shadow-xl rounded-xl bg-neutral-900">
 			<!-- Fixed Header -->
-			<header class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10">
+			<header class="relative flex items-center justify-center px-6 pt-6 pb-4 border-b border-white/10">
 				<h2 class="text-lg font-medium text-white">{title}</h2>
 				<button
 					type="button"
-					class="text-gray-400 transition-colors hover:text-white"
+					class="absolute text-gray-400 transition-colors right-6 hover:text-white"
 					onclick={onClose}
 					aria-label="Close modal"
 				>
