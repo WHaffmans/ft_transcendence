@@ -76,9 +76,20 @@ export function step(
 		}
 		
 		// Collision
-		const selfIgnore = new Set<number>([p.tailSegIndex]);
 		const effectiveRadius = config.playerRadius * 2;
-		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
+		const hit = checkCollisionThisTick(
+			next.spatial,
+			next.segments,
+			p.id,
+			prevX,
+			prevY,
+			p.x,
+			p.y,
+			effectiveRadius,
+			p.tailSegIndex,
+			5,
+		);
+
 
 		if (hit) {
 			p.alive = false;
