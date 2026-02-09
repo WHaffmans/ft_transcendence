@@ -6,17 +6,24 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/20 15:39:51 by qmennen       ########   odam.nl         */
+/*   Updated: 2026/02/09 15:09:58 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import type WebSocket from "ws";
 
+// Game
 import { initGame } from "../engine/init";
 import type { GameState } from "../engine/init";
 import type { GameConfig } from "../engine/config";
 import { step } from "../engine/step";
 import type { TurnInput } from "../engine/step";
+
+// Utils
+import { finishGame } from "../stores/backend_api";
+import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter";
+
+// External
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
@@ -33,6 +40,7 @@ type Room = {
 	players: Player[];
 	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
+	finishOrder: string[];					// [firstOut, ..., winner]
 
 	// Handle ticks
 	timer?: NodeJS.Timeout | null;
@@ -139,6 +147,7 @@ export class RoomManager {
 			players: [...players],
 			sceneById,
 			inputsById,
+			finishOrder: [],
 			subscribers: new Set(),
 		};
 
@@ -534,16 +543,38 @@ export class RoomManager {
 		const dtMs = Math.round(1000 / tickRate);
 
 		room.timer = setInterval(() => {
-			if (room.phase !== "running") return;
+			if (room.phase !== "running")
+				return;
 
 			const inputsSnapshot = { ...room.inputsById };
+			
+			const prevAliveById = new Map<string, boolean>();
+			for (const p of room.state.players)
+				prevAliveById.set(p.id, p.alive);
 
 			const res = step(room.state, inputsSnapshot, room.config);
 			room.state = res.state;
+
+			for (const p of room.state.players) {
+				const wasAlive = prevAliveById.get(p.id) ?? false;
+				const isAlive = p.alive;
+
+				if (wasAlive && !isAlive) {
+					if (!room.finishOrder.includes(p.id))
+						room.finishOrder.push(p.id);
+				}
+			}
+
 			this.broadcastState(roomId);
 
 			if (res.justFinished) {
-				this.finishRoom(roomId, res.winnerId);
+				const winnerId = res.winnerId;
+
+				if (winnerId && !room.finishOrder.includes(winnerId)) {
+					room.finishOrder.push(winnerId);
+				}
+
+				this.finishRoom(roomId, winnerId);
 			}
 
 		}, dtMs);
@@ -552,11 +583,9 @@ export class RoomManager {
 	/**
 	 * When a game winner has been set, game ends
 	 */
-	private finishRoom(roomId: string, winnerId: string | null) {
+	private async finishRoom(roomId: string, winnerId: string | null) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
-
-		// Guard: prevent double-finish
 		if (room.phase === "finished") return;
 
 		room.phase = "finished";
@@ -566,9 +595,23 @@ export class RoomManager {
 			room.timer = null;
 		}
 
+		if (winnerId) {
+			if (!room.finishOrder.includes(winnerId)) room.finishOrder.push(winnerId);
+		} else {
+			if (room.finishOrder.length === 0) {
+				room.finishOrder = room.players.map((p) => p.playerId);
+			} else {
+				for (const p of room.players) {
+					if (!room.finishOrder.includes(p.playerId))
+						room.finishOrder.push(p.playerId);
+				}
+			}
+		}
+
 		logInfo("room.finished", {
 			roomId,
 			winnerId,
+			finishOrder: room.finishOrder,
 		});
 
 		const msg = {
@@ -578,6 +621,50 @@ export class RoomManager {
 		} satisfies ServerMsg;
 
 		this.broadcast(roomId, msg);
+
+		// Persist game with new ratings
+		try {
+			// 1) Convert room players -> PlayerRating[]
+			const playerRatings = room.players.map((p) => ({
+				id: p.playerId,
+				mu: p.rating_mu,
+				sigma: p.rating_sigma,
+			}));
+
+			// 2) Compute new ratings with OpenSkill
+			const updated = updateRatingsOpenSkill(playerRatings, {
+				finishOrder: room.finishOrder,
+			});
+
+			// 3) Merge updated mu/sigma back into room.players
+			const updatedById = new Map(updated.map((u) => [u.id, u] as const));
+
+			room.players = room.players.map((p) => {
+				const u = updatedById.get(p.playerId);
+				if (!u)
+					return (p);
+				return {
+					...p,
+					rating_mu: u.mu,
+					rating_sigma: u.sigma,
+				};
+			});
+
+			// 4) Build backend payload
+			const payload = this.toFinishPayload(
+				room.players.map((p) => ({
+					playerId: p.playerId,
+					rating_mu: p.rating_mu,
+					rating_sigma: p.rating_sigma,
+				})),
+				room.finishOrder,
+			);
+
+			await finishGame(roomId, payload);
+			logInfo("backend.finish_ok", { roomId });
+		} catch (err) {
+			logError("backend.finish_failed", { roomId, err });
+		}
 	}
 
 	/**
@@ -594,6 +681,41 @@ export class RoomManager {
 		for (const id of ids) {
 			if (!(id in room.sceneById)) room.sceneById[id] = "lobby";
 		}
+
+		room.finishOrder = [];
+	}
+
+
+	private toFinishPayload(
+		roomPlayers: { playerId: string; rating_mu: number; rating_sigma: number }[],
+		finishOrder: string[],
+	) {
+		const n = finishOrder.length;
+		const rankById = new Map<string, number>();
+		for (let i = 0; i < n; i++) {
+			const id = finishOrder[i];
+			rankById.set(id, n - i);
+		}
+
+		// Fallback
+		for (const p of roomPlayers) {
+			if (!rankById.has(p.playerId)) rankById.set(p.playerId, 2);
+		}
+
+		return {
+			users: roomPlayers.map((p) => ({
+				user_id: Number(p.playerId),
+				rank: rankById.get(p.playerId)!,
+				rating_mu: p.rating_mu,
+				rating_sigma: p.rating_sigma,
+			})),
+		};
+	}
+
+	private mapStatusForBackend(status: string): string {
+		if (status === "finished")
+			return ("completed");
+		return (status);
 	}
 
 

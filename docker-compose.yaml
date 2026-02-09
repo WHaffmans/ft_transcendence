@@ -56,7 +56,7 @@ services:
       - OAUTH_REDIRECT=${OAUTH_REDIRECT}
       - APP_FRONTEND_URL=${DOMAIN}
       - BUILD=DEV
-      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - BACKEND_INTERNAL_API_KEY=${BACKEND_INTERNAL_API_KEY}
     networks:
       - transcendence-internal
     ports:
@@ -81,6 +81,8 @@ services:
       dockerfile: Dockerfile.dev
       additional_contexts:
         game-ws-protocol: ./packages/game-ws-protocol
+    env_file:
+      - ./.env
     environment:
       - NODE_ENV=development
       - HOST=0.0.0.0

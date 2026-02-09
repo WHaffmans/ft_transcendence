@@ -102,7 +102,7 @@ class GameController extends Controller
 
     public function finishGame(FinishGameRequest $request, Game $game)
     {
-        $game->status = 'finished';
+        $game->status = 'completed';
         $game->save();
 
         $results = $request->input('users', []);

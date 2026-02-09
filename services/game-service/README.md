@@ -1,39 +1,6 @@
 # Game Service
 
-`ws://localhost:8443/ws`
-
-
-# TODO
-
-1.  Run compose install:
-
-```bash
-  # PHP composer
-  cd services/backend-service/src
-  composer install
-```
-
-2. Make dependencies
-
-```bash
-  make deps
-```
-
-3. npm install
-
-```bash
-  # update workspace
-  npm --workspace @ft/game-ws-protocol run build
-
-  # In folder
-  rm -rf node_modules; rm -f package-lock.json; npm cache verify
-```
-
-4. Restart game service
-
-```bash
-docker compose up -d --build game-service
-```
+## TODOs
 
 - [x] Get a uuid (game id). From this I will make a link.
 - [x] Use trafeak for the web socket. Now using a socket. Should not expose a port.
@@ -46,27 +13,78 @@ docker compose up -d --build game-service
 - [ ] Websocket IO?
 - [ ] Switch to http from ws in the treafik document?
 
-### New notes
-
-- First player in lobby creates room.
-- Join room callback, refrech lobby list for all players.
-- Move to canvas, wait to start. Call to start.
+---
+<br/>
 
 
-### Setup
+
+## Setup help
+
+1.  Run compose install:
 
 ```bash
-npm i -D tsx
-npm i -D vitest
+	# PHP composer
+	cd services/backend-service/src
+	composer install
+```
 
-npm i ws
-npm i -D @types/ws
+2. Make dependencies
 
-npm i openskill
+```bash
+	make deps
+```
+
+3. npm install
+
+```bash
+	# update workspace
+	npm --workspace @ft/game-ws-protocol run build
+
+	# In folder
+	rm -rf node_modules; rm -f package-lock.json; npm cache verify
+```
+
+4. Restart game service
+
+```bash
+	docker compose up -d --build game-service
+```
+
+5. Add env vars
+
+```bash
+	# game-service <--> backend-service (internal)
+	BACKEND_INTERNAL_BASE_URL=http://backend-service:4000/internal
+	BACKEND_INTERNAL_API_KEY=<key>
+```
+
+6. Test backend service with key
+
+```bash
+	# In backend container
+	docker compose exec backend-service sh
+
+	# Use fetch
+	node -e 'fetch("http://backend-service:4000/internal/test",{headers:{"X-Internal-Api-Key":"<key>"}}).then(async r=>{console.log("status",r.status); console.log(await r.text())}).catch(console.error)'
+```
+
+7. Ensure npm packages
+
+```bash
+	npm i -D tsx
+	npm i -D vitest
+
+	npm i ws
+	npm i -D @types/ws
+
+	npm i openskill
+	npm i dotenv
 ```
 
 ---
 <br/>
+
+
 
 # Rooms
 

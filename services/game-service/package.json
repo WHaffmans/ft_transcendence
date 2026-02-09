@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+    "dotenv": "^17.2.4",
     "esbuild": "0.27.2",
     "openskill": "^4.1.0",
     "typescript": "^5.6.0"

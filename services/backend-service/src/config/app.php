@@ -105,7 +105,7 @@ return [
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
-    'internal_api_key' => env('INTERNAL_API_KEY'),
+    'internal_api_key' => env('BACKEND_INTERNAL_API_KEY'),
 
     'previous_keys' => [
         ...array_filter(

@@ -1,3 +1,14 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   openskill_adapter.ts                               :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2026/02/09 13:17:50 by quentinbeuk   #+#    #+#                 */
+/*   Updated: 2026/02/09 13:17:53 by quentinbeuk   ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
 
 
 import { rating as osRating, rate as osRate, ordinal as osOrdinal } from "openskill";
