@@ -23,12 +23,13 @@
 		</button>
 
 		<!-- Modal -->
-		<div class="relative z-10 w-lg max-w-[90vw] p-6 shadow-xl rounded-xl bg-neutral-900">
-			<header class="flex items-center justify-between mb-4">
+		<div class="relative z-10 w-lg max-w-[90vw] flex flex-col max-h-[85vh] shadow-xl rounded-xl bg-neutral-900">
+			<!-- Fixed Header -->
+			<header class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10">
 				<h2 class="text-lg font-medium text-white">{title}</h2>
 				<button
 					type="button"
-					class="text-gray-400 hover:text-white"
+					class="text-gray-400 transition-colors hover:text-white"
 					onclick={onClose}
 					aria-label="Close modal"
 				>
@@ -36,7 +37,8 @@
 				</button>
 			</header>
 
-			<div class="text-sm text-gray-300">
+			<!-- Scrollable Content -->
+			<div class="px-6 py-4 overflow-y-auto text-sm text-gray-300">
 				{@render children()}
 			</div>
 		</div>

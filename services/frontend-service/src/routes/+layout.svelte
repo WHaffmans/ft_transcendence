@@ -5,6 +5,8 @@
 	import { modalStore } from '$lib/components/modal/modal';
 	import { modalContent } from '$lib/components/modal/modalContent';
 	import Modal from '$lib/components/modal/Modal.svelte';
+	import PrivacyPolicyModal from '$lib/components/modal/PrivacyPolicyModal.svelte';
+	import TermsOfServiceModal from '$lib/components/modal/TermsOfServiceModal.svelte';
 	import type { LayoutData } from './$types';
 	import type { User } from '$lib/types/types';
 
@@ -43,7 +45,23 @@
 </div>
 
 <!-- Global Modal System -->
-{#if $modalStore.type && $modalStore.type in modalContent}
+{#if $modalStore.type === 'privacy'}
+	<Modal
+		open={true}
+		title="Privacy Policy"
+		onClose={() => modalStore.close()}
+	>
+		<PrivacyPolicyModal />
+	</Modal>
+{:else if $modalStore.type === 'terms'}
+	<Modal
+		open={true}
+		title="Terms of Service"
+		onClose={() => modalStore.close()}
+	>
+		<TermsOfServiceModal />
+	</Modal>
+{:else if $modalStore.type && $modalStore.type in modalContent}
 	<Modal
 		open={true}
 		title={modalContent[$modalStore.type].title}
