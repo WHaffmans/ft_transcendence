@@ -1,3 +1,4 @@
+
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
@@ -8,4 +9,4 @@ export const load: PageServerLoad = async ({ params, parent }) => {
         lobbyId: id,
         user
     };
-};
+}

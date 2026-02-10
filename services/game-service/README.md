@@ -1,72 +1,91 @@
 # Game Service
 
-`ws://localhost:8443/ws`
+## TODOs
+
+- [ ] Leave lobby
+- [ ] Only send new trail segments to frontend.
+- [ ] How to standerdise canvas size?
+- [ ] How to authenticate? SSL internal?
+- [ ] Websocket IO?
+- [ ] Switch to http from ws in the treafik document?
+- [x] Get a uuid (game id). From this I will make a link.
+- [x] Use trafeak for the web socket. Now using a socket. Should not expose a port.
+- [x] Send full object to game/uuid page.
+- [x] Use protocol for messaging in web socket.
+- [x] Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
+
+---
+<br/>
 
 
-# TODO
+
+## Setup help
 
 1.  Run compose install:
 
 ```bash
-  # PHP composer
-  cd services/backend-service/src
-  composer install
+	# PHP composer
+	cd services/backend-service/src
+	composer install
 ```
 
 2. Make dependencies
 
 ```bash
-  make deps
+	make deps
 ```
 
 3. npm install
 
 ```bash
-  # Wipe all caches
-  rm -rf node_modules package-lock.json
-  rm -rf services/**/node_modules services/**/package-lock.json
-  rm -rf packages/**/node_modules packages/**/package-lock.json
+	# update workspace
+	npm --workspace @ft/game-ws-protocol run build
 
-  # In folder
-  rm -rf node_modules; rm -f package-lock.json; npm cache verify
+	# In folder
+	rm -rf node_modules; rm -f package-lock.json; npm cache verify
 ```
 
 4. Restart game service
 
 ```bash
-docker compose up -d --build game-service
+	docker compose up -d --build game-service
 ```
 
-- [x] Get a uuid (game id). From this I will make a link.
-- [x] Use trafeak for the web socket. Now using a socket. Should not expose a port.
-- [ ] Send full object to game/uuid page.
-- [ ] Use protocol for messaging in web socket.
-- [ ] Only send new trail segments to frontend.
-- [ ] How to standerdise canvas size?
-- [ ] Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
-- [ ] How to authenticate? SSL internal?
-- [ ] Websocket IO?
-- [ ] Switch to http from ws in the treafik document?
-
-### New notes
-
-- First player in lobby creates room.
-- Join room callback, refrech lobby list for all players.
-- Move to canvas, wait to start. Call to start.
-
-
-### Setup
+5. Add env vars
 
 ```bash
-npm i -D tsx
-npm i -D vitest
+	# game-service <--> backend-service (internal)
+	BACKEND_INTERNAL_BASE_URL=http://backend-service:4000/internal
+	BACKEND_INTERNAL_API_KEY=<key>
+```
 
-npm i ws
-npm i -D @types/ws
+6. Test backend service with key
+
+```bash
+	# In backend container
+	docker compose exec backend-service sh
+
+	# Use fetch
+	node -e 'fetch("http://backend-service:4000/internal/test",{headers:{"X-Internal-Api-Key":"<key>"}}).then(async r=>{console.log("status",r.status); console.log(await r.text())}).catch(console.error)'
+```
+
+7. Ensure npm packages
+
+```bash
+	npm i -D tsx
+	npm i -D vitest
+
+	npm i ws
+	npm i -D @types/ws
+
+	npm i openskill
+	npm i dotenv
 ```
 
 ---
 <br/>
+
+
 
 # Rooms
 

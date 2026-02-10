@@ -3,6 +3,7 @@ import { z } from "zod";
 import { RoomId, PlayerId } from "../common/primitives.js";
 
 export const GamePhaseSchema = z.enum(["lobby", "ready", "running", "finished"]);
+export const PlayerPhaseSchema = z.enum(["lobby", "game"]);
 
 export const ColorRGBASchema = z.object({
 	r: z.number().int().min(0).max(255),
@@ -19,7 +20,7 @@ export const PlayerStateSchema = z.object({
 	alive: z.boolean(),
 	gapTicksLeft: z.number().int(),
 	tailSegIndex: z.number().int(),
-  	color: ColorRGBASchema,
+	color: ColorRGBASchema,
 });
 
 export const SegmentSchema = z.object({
@@ -37,10 +38,14 @@ export const GameStateSnapshotSchema = z.object({
 	tick: z.number().int(),
 	seed: z.number().int(),
 	rngState: z.number().int().optional(),
+	hostId: PlayerId,
+	playerIds: z.array(PlayerId),
+	sceneById: z.record(PlayerId, PlayerPhaseSchema),
 	players: z.array(PlayerStateSchema),
 	segments: z.array(SegmentSchema),
-	roomId: RoomId.optional(),
+	roomId: RoomId,
 });
 
 export type GamePhase = z.infer<typeof GamePhaseSchema>;
+export type PlayerPhase = z.infer<typeof PlayerPhaseSchema>;
 export type GameStateSnapshot = z.infer<typeof GameStateSnapshotSchema>;

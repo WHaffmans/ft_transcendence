@@ -168,11 +168,20 @@ export function checkCollisionThisTick(
 	x: number,
 	y: number,
 	radius: number,
-	ignoreLastSegmentsOfSelf: Set<number>,
+	selfTailSegIndex: number,
+	selfIgnoreCount = 2,
 ): boolean {
 
 	// The swept path for this tick
-	const move: Segment = { x1: prevX, y1: prevY, x2: x, y2: y, ownerId };
+	const move: Segment = {
+		x1: prevX,
+		y1: prevY,
+		x2: x,
+		y2: y,
+		ownerId,
+		color: { r: 0, g: 0, b: 0, a: 0 },
+		isGap: true,
+	};
 
 	// Broad-phase AABB of the swept segment, expanded by radius.
 	const minX = Math.min(prevX, x) - radius;
@@ -182,28 +191,28 @@ export function checkCollisionThisTick(
 
 	// Returns indices into `segments[]` for segments whose registered cells overlap this AABB.
 	const candidates = queryAabb(hash, minX, minY, maxX, maxY);
-
 	const r2 = radius * radius;
+
+	// Compute ignore window for SELF
+	const selfIgnoreLo =
+		selfTailSegIndex >= 0
+			? Math.max(0, selfTailSegIndex - (selfIgnoreCount - 1))
+			: -1;
+	const selfIgnoreHi = selfTailSegIndex;
 
 	// Narrow-phase exact checks on candidates only
 	for (const idx of candidates) {
-		if (idx == null || idx < 0 || idx >= segments.length) continue;
+		if (idx == null || idx < 0 || idx >= segments.length)
+			continue;
 
-		if (ignoreLastSegmentsOfSelf.has(idx)) continue;
-
-		// True collision if the minimal distance between segments is within radius
 		const s = segments[idx];
+
+		if (s.ownerId === ownerId && selfTailSegIndex >= 0) {
+			if (idx >= selfIgnoreLo && idx <= selfIgnoreHi)
+				continue;
+		}
+
 		const d2 = distSegToSegSq(move, s);
-
-		const moveCell1 = worldToCell(hash, move.x1, move.y1);
-		const moveCell2 = worldToCell(hash, move.x2, move.y2);
-		const candCell1 = worldToCell(hash, s.x1, s.y1);
-		const candCell2 = worldToCell(hash, s.x2, s.y2);
-
-		console.log("MOVE", move);
-		console.log("CELL move", moveCell1, moveCell2, "cand", candCell1, candCell2);
-		console.log("CAND", { idx, owner: s.ownerId, x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, d2, r2: r2 });
-
 		if (d2 <= r2)
 			return (true);
 	}

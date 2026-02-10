@@ -10,9 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { DEFAULT_CONFIG } from "../engine/config.ts";
-import { initGame } from "../engine/init.ts";
-import { step } from "../engine/step.ts";
+import { DEFAULT_CONFIG } from "../engine/config.js";
+import { initGame } from "../engine/init.js";
+import { step } from "../engine/step.js";
 
 const seed = 1234;
 let state = initGame(DEFAULT_CONFIG, seed, ["p1", "p2"]);

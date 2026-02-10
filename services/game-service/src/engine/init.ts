@@ -12,6 +12,7 @@
 
 import { GameConfig } from "./config.ts";
 import { makeRng } from "./rng.ts";
+import { randomInt } from "node:crypto";
 import { SpatialHash, createSpatialHash } from "./spatial_hash.ts";
 
 export type ColorRGBA = {
@@ -46,6 +47,8 @@ export type GameState = {
 	players: PlayerState[];
 	segments: Segment[];
 	spatial: SpatialHash;
+	winnerId: string | null;
+	deathIdByIndex: Map<number, string>;	// (index, playerId)
 };
 
 function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
@@ -81,7 +84,8 @@ function playerColor(index: number, total: number): ColorRGBA {
 
 
 export function initGame(config: GameConfig, seed: number, playerIds: string[]): GameState {
-	const rng = makeRng(seed);
+	const actualSeed = seed ? 0 : randomInt(0, 100);
+	const rng = makeRng(actualSeed);
 
 	// Determine spawn
 	const players = playerIds.map((id, i) => ({
@@ -104,5 +108,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		players,
 		segments: [],
 		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
+		winnerId: null,
+		deathIdByIndex: new Map(),
 	};
 }

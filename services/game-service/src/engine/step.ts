@@ -19,16 +19,31 @@ import { insertSegmentDDA } from "./spatial_hash.ts";
 
 export type TurnInput = -1 | 0 | 1;
 
+export type StepResult = {
+	state: GameState;
+	justFinished: boolean;
+	winnerId: string | null;
+};
+
 function randIntInclusive(rng: any, min: number, max: number) {
 	const t = rng.nextFloat();
 	return min + Math.floor(t * (max - min + 1));
+}
+
+function recordDeath(state: GameState, playerId: string) {
+	for (const id of state.deathIdByIndex.values()) {
+		if (id === playerId) return;
+	}
+
+	const idx = state.deathIdByIndex.size;
+	state.deathIdByIndex.set(idx, playerId);
 }
 
 export function step(
 	state: GameState,
 	inputsById: Record<string, TurnInput>,
 	config: GameConfig
-): GameState {
+): StepResult {
 
 	// Clone state
 	const next: GameState = {
@@ -56,16 +71,29 @@ export function step(
 		// Wall death
 		if (p.x < 0 || p.x > config.arenaWidth || p.y < 0 || p.y > config.arenaHeight) {
 			p.alive = false;
+			recordDeath(next, p.id);
 			continue;
 		}
 		
 		// Collision
-		const selfIgnore = new Set<number>([p.tailSegIndex]);
 		const effectiveRadius = config.playerRadius * 2;
-		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
+		const hit = checkCollisionThisTick(
+			next.spatial,
+			next.segments,
+			p.id,
+			prevX,
+			prevY,
+			p.x,
+			p.y,
+			effectiveRadius,
+			p.tailSegIndex,
+			5,
+		);
+
 
 		if (hit) {
 			p.alive = false;
+			recordDeath(next, p.id);
 			continue;
 		}
 
@@ -92,5 +120,19 @@ export function step(
 	}
 
 	next.rngState = rng.state;
-	return (next);
+
+	// Compute winner
+	const alive = next.players.filter(p => p.alive);
+	let winnerId: string | null = null;
+
+	if (alive.length === 1) {
+		winnerId = alive[0].id;
+		next.winnerId = winnerId;
+	}
+
+	return {
+		state: next,
+		justFinished: winnerId !== null,
+		winnerId,
+	};
 }

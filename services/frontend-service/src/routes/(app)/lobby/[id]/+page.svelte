@@ -1,101 +1,144 @@
 <script lang="ts">
-  import LobbyGrid from "$lib/components/lobby/LobbyGrid.svelte";
-  import PlayerCard from "$lib/components/lobby/PlayerCard.svelte";
-  import WaitingCard from "$lib/components/lobby/WaitingCard.svelte";
-  import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
-  import { wsStore } from "$lib/stores/ws.js";
-  import type { Game } from "$lib/types/types.js";
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
+	import LobbyGrid from "$lib/components/lobby/LobbyGrid.svelte";
+	import PlayerCard from "$lib/components/lobby/PlayerCard.svelte";
+	import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
+	import { wsStore } from "$lib/stores/ws";
+	import { userStore } from "$lib/stores/user";
+	import type { Game, User } from "$lib/types/types";
+	import { goto } from "$app/navigation";
 
-  let { data } = $props();
-  let game = $state(null as Game | null);
-  let joined = $state(false);
-  let userId = $derived(data.user?.id);
+	let { data } = $props();
 
-  $effect(() => {
-    const last = $wsStore.messages?.shift();
-    const type = last?.type;
 
-    if (type === "joined" || type === "left") {
-      console.log("Lobby detected join/leave, refetching game data.");
-      fetchGameData();
-    }
-  });
+	/* ====================================================================== */
+	/*                           REST / GAME RECORD                           */
+	/* ====================================================================== */
 
-  async function fetchGameData() {
-    try {
-      const response = await fetch(`/api/games/${data.lobbyId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-      const gameData = await response.json();
-      console.log("Fetched game data:", gameData);
-      game = gameData;
+	let gameRecord = $state<Game | null>(null);
+	let lastLoadedLobbyId: string | null = null;
 
-      if (!joined) {
-        joinRoom();
-        joined = true;
-      }
-    } catch (err) {
-      console.error("Error fetching game data:", err);
-    }
-  }
+	async function loadGameRecord(lobbyId: string) {
+		try {
+			const res = await fetch(`/api/games/${lobbyId}`, {
+				method: "GET",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			gameRecord = await res.json();
+		} catch (err) {
+			console.error("loadGameRecord failed:", err);
+		}
+	}
 
-  function joinRoom() {
-    if (!game) {
-      console.log("ERROR: joinGame() - No game object");
-      return;
-    }
+	const userDirectory = $derived(() => {
+		const map = new Map<string, User>();
+		for (const u of gameRecord?.users ?? []) map.set(String(u.id), u);
+		return map;
+	});
 
-    const playerId = userId;
-    if (playerId == null) {
-      console.log("ERROR: joinGame() - player ID null");
-      return;
-    }
 
-    // TODO: I still don't like this logic here
-    if (game.users.length === 1 && game.users[0].id === playerId) {
-      wsStore.createRoom(data.lobbyId, 1, String(playerId));
-    }
-    wsStore.joinRoom(data.lobbyId, String(playerId));
-  }
+	/* ====================================================================== */
+	/*                           WS / LIVE ROOM STATE                         */
+	/* ====================================================================== */
 
-  onMount(() => {
-    if (!userId) {
-      console.log("ERROR: onMount() - user ID null");
-      goto("/dashboard", { replaceState: true });
-      return;
-    }
-    wsStore.connect();
-    fetchGameData();
-  });
+	const liveRoomState = $derived(() => $wsStore.latestState);
+	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
+	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
+	const hostIdLive = $derived(() => liveRoomState()?.hostId ?? null);
+
+	const playersInRoom = $derived(() =>
+		roomPlayerIdsLive()
+			.map((id) => userDirectory().get(String(id)))
+			.filter(Boolean) as User[]
+	);
+
+	let lastJoinedKey: string | null = null;
+
+	function joinLobbySession(lobbyId: string, user: User) {
+		const seed = gameRecord?.seed ?? 0;
+
+		const player = {
+			playerId: String(user.id),
+			rating_mu: Number(user.rating_mu ?? 25),
+			rating_sigma: Number(user.rating_sigma ?? 8.333),
+		};
+
+		wsStore.createOrJoinRoom(lobbyId, seed, player);
+		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
+	}
+
+
+	/* ====================================================================== */
+	/*                                TRIGGERS                                */
+	/* ====================================================================== */
+
+	$effect(() => {
+		const lobbyId = data.lobbyId;
+		
+		// 1. Auth guard
+		const user = $userStore ?? null;
+		if (!user?.id) {
+			goto("/dashboard", { replaceState: true });
+			return;
+		}
+		const playerId = String(user.id);
+
+
+		// 2. Load REST record once per lobbyId
+		if (lobbyId && lastLoadedLobbyId !== lobbyId) {
+			lastLoadedLobbyId = lobbyId;
+			loadGameRecord(lobbyId);
+		}
+
+		// 3. Join WS session
+		if (!lobbyId) return;
+		const joinKey = `${lobbyId}:${playerId}`;
+		if (lastJoinedKey !== joinKey) {
+			lastJoinedKey = joinKey;
+			joinLobbySession(lobbyId, user);
+		}
+	});
+
+	let lastRosterKey = "";
+	$effect(() => {
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		const ids = roomPlayerIdsLive().map(String).sort();
+		const key = ids.join(",");
+		if (key === lastRosterKey) return;
+
+		lastRosterKey = key;
+		loadGameRecord(lobbyId);
+	});
 </script>
 
+
 <svelte:head>
-  <title>Lobby - ACHTUNG</title>
+	<title>Lobby - ACHTUNG</title>
 </svelte:head>
 
 <section class="relative overflow-hidden">
-  <!-- Main content -->
-  <div class="flex flex-col items-start justify-between gap-6 lg:flex-row">
-    <!-- Left Section - Player Slots -->
-    <LobbyGrid>
-      {#each game?.users as player}
-        {#if player}
-          <PlayerCard {player} />
-        {:else}
-          <WaitingCard />
-        {/if}
-      {/each}
-    </LobbyGrid>
+	<!-- Main content -->
+	<div class="flex flex-col items-start justify-between gap-6 lg:flex-row">
+		<!-- Left Section - Player Slots -->
+		<LobbyGrid>
+			{#each playersInRoom() as player (player.id)}
+				<PlayerCard
+					{player}
+					scene={sceneByIdLive()[String(player.id)] ?? "lobby"}
+					isHost={String(player.id) === String(hostIdLive())}
+				/>
+			{/each}
+		</LobbyGrid>
 
-    <!-- Right Section - Match Settings -->
-    <div class="w-full lg:w-ranking shrink-0">
-      <MatchSettings isHost={false} game={game!} />
-    </div>
-  </div>
+		<!-- Right Section - Match Settings -->
+		<div class="w-full lg:w-ranking shrink-0">
+			<MatchSettings
+				isHost={String($userStore?.id) === String(hostIdLive())}
+				game={gameRecord!}
+			/>
+		</div>
+	</div>
 </section>
