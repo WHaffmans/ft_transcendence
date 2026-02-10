@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/09 13:17:37 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/09 15:00:13 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:35:10 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,16 +31,20 @@ export async function backendFetch<T>({ method = "GET", path, body }: BackendFet
 	const baseUrl = requiredEnv("BACKEND_INTERNAL_BASE_URL");
 	const token = requiredEnv("BACKEND_INTERNAL_API_KEY");
 
-	const res = await fetch(`${baseUrl}${path}`, {
-		method,
-		headers: {
-			"Content-Type": "application/json",
-			"Accept": "application/json",
-			"X-Internal-Api-Key": token,
-		},
-		body: body === undefined ? undefined : JSON.stringify(body),
-	});
+	const canHaveBody = method !== "GET" && method !== "HEAD";
 
+	const init: RequestInit = {
+	method,
+	headers: {
+		Accept: "application/json",
+		"Content-Type": "application/json",
+		"X-Internal-Api-Key": token,
+	},
+	...(canHaveBody && body !== undefined ? { body: JSON.stringify(body) } : {}),
+	};
+
+
+	const res = await fetch(`${baseUrl}${path}`, init);
 	const raw = await res.text();
 
 	if (!res.ok) {

@@ -1,5 +1,5 @@
 
-import { defaultRating, updateRatingsOpenSkill } from "../open_skill/index";
+import { defaultRating, updateRatingsOpenSkill } from "../open_skill/index.js";
 
 const players = [
 	defaultRating("alice"),

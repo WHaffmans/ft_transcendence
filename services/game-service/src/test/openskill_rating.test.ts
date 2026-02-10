@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { defaultRating, updateRatingsOpenSkill } from "../open_skill/index";
+import { defaultRating, updateRatingsOpenSkill } from "../open_skill/index.js";
 
 /**
  * Helpers

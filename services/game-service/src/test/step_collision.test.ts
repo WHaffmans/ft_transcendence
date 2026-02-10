@@ -6,17 +6,17 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/22 12:20:12 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2025/12/22 12:49:36 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:23:42 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { describe, it, expect } from "vitest";
 
-import { step } from "../engine/step";
-import type { TurnInput } from "../engine/step";
-import { createSpatialHash } from "../engine/spatial_hash";
-import type { GameState } from "../engine/init";
-import type { GameConfig } from "../engine/config";
+import { step } from "../engine/step.js";
+import type { TurnInput } from "../engine/step.js";
+import { createSpatialHash } from "../engine/spatial_hash.js";
+import type { GameState } from "../engine/init.js";
+import type { GameConfig } from "../engine/config.js";
 
 /**
  * Helper for player id retrieval

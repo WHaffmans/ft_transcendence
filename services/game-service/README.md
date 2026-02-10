@@ -82,6 +82,17 @@
 	npm i dotenv
 ```
 
+8. Strong typing checking
+
+```bash
+	npm -w services/game-service run build
+	ls services/game-service/dist
+	npm -w services/game-service run start
+
+	# Watch
+	npm -w services/game-service run typecheck:watch
+```
+
 ---
 <br/>
 

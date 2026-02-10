@@ -6,22 +6,22 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/09 15:09:58 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:38:35 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import type WebSocket from "ws";
 
 // Game
-import { initGame } from "../engine/init";
-import type { GameState } from "../engine/init";
-import type { GameConfig } from "../engine/config";
-import { step } from "../engine/step";
-import type { TurnInput } from "../engine/step";
+import { initGame } from "../engine/init.js";
+import type { GameState } from "../engine/init.js";
+import type { GameConfig } from "../engine/config.js";
+import { step } from "../engine/step.js";
+import type { TurnInput } from "../engine/step.js";
 
 // Utils
-import { finishGame } from "../stores/backend_api";
-import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter";
+import { finishGame } from "../stores/backend_api.js";
+import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter.js";
 
 // External
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
@@ -692,9 +692,9 @@ export class RoomManager {
 	) {
 		const n = finishOrder.length;
 		const rankById = new Map<string, number>();
-		for (let i = 0; i < n; i++) {
-			const id = finishOrder[i];
-			rankById.set(id, n - i);
+
+		for (const [i, id] of finishOrder.entries()) {
+			rankById.set(id, n - 1);
 		}
 
 		// Fallback
@@ -710,12 +710,6 @@ export class RoomManager {
 				rating_sigma: p.rating_sigma,
 			})),
 		};
-	}
-
-	private mapStatusForBackend(status: string): string {
-		if (status === "finished")
-			return ("completed");
-		return (status);
 	}
 
 
