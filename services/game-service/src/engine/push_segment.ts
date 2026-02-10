@@ -1,7 +1,7 @@
 
-import type { Segment } from "./init.ts";
-import type { TurnInput } from "./step.ts";
-import type { ColorRGBA } from "./init.ts";
+import type { Segment } from "./init.js";
+import type { TurnInput } from "./step.js";
+import type { ColorRGBA } from "./init.js";
 
 type SegmentDelta =
   | { kind: "added"; index: number; x1: number; y1: number; x2: number; y2: number }

@@ -6,15 +6,15 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/16 10:15:43 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:23:52 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
-import type { GameConfig } from "../engine/config";
-import { DEFAULT_CONFIG } from "../engine/config";
-import { RoomManager } from "../app/room_manager";
+import type { GameConfig } from "../engine/config.js";
+import { DEFAULT_CONFIG } from "../engine/config.js";
+import { RoomManager } from "../app/room_manager.js";
 
 // ---------------------
 // define
@@ -45,6 +45,26 @@ function safeSendServer(ws: WebSocket, msg: ServerMsg) {
 		return;
 	}
 	ws.send(JSON.stringify(parsed.data));
+}
+
+function normalizeConfig(partial: unknown): GameConfig {
+	const p =
+		partial && typeof partial === "object" && partial !== null
+			? (partial as Partial<GameConfig>)
+			: undefined;
+
+	const config: GameConfig = {
+		...DEFAULT_CONFIG,
+		...(p ?? {}),
+	};
+
+	for (const [k, v] of Object.entries(config)) {
+		if (typeof v === "number" && !Number.isFinite(v)) {
+			throw new Error(`Invalid config: ${k} is ${v}`);
+		}
+	}
+
+	return config;
 }
 
 function assertNever(x: never): never {
@@ -91,68 +111,38 @@ export function startPublicWsServer(
 
 			const msg: ClientMsg = parsed.data;
 
-			console.log("IN", {
-				type: msg.type,
-				roomId: "roomId" in msg ? msg.roomId : undefined,
-				playerId: "playerId" in msg ? msg.playerId : undefined,
-			});
+			// ! Log all incomming traffic
+			// console.log("IN", {
+			// 	type: msg.type,
+			// 	roomId: "roomId" in msg ? msg.roomId : undefined,
+			// 	playerId: "playerId" in msg ? msg.playerId : undefined,
+			// });
 
 			// Handle messages
 			try {
 				switch (msg.type) {
-					case "create_room": {
-						
-						// Check already joined
-						if (boundRoomId || boundPlayerId) {
-							throw new Error("Already joined a room; open a new socket to create a new room");
-						}
+					case "create_or_join_room": {
 
-						const playerIds = msg.players.map((p) => p.playerId);
-						if (playerIds.length === 0) {
-							throw new Error("create_room: players must not be empty");
-						}
-
-						// Partial GameConfig
-						const partial = msg.config && typeof msg.config === "object" && msg.config !== null
-							? (msg.config as Partial<GameConfig>)
-							: undefined;
-
-						const config: GameConfig = {
-							...DEFAULT_CONFIG,
-							...(partial ?? {}),
-						};
-
-						for (const [k, v] of Object.entries(config)) {
-							if (typeof v === "number" && !Number.isFinite(v)) {
-								throw new Error(`Invalid config: ${k} is ${v}`);
-							}
-						}
-
-						rooms.createRoom({
-							roomId: msg.roomId,
-							seed: msg.seed,
-							config,
-							playerIds,
-						});
-
-						rooms.subscribe(msg.roomId, ws);
-						console.log(`Room ${msg.roomId} created with players: ${playerIds.join(",")}`);
-						safeSendServer(ws, { type: "room_created", roomId: msg.roomId });
-						return;
-					}
-
-					case "join_room": {
 						if (boundRoomId || boundPlayerId) {
 							throw new Error("Already joined a room on this socket");
 						}
 
 						boundRoomId = msg.roomId;
-						boundPlayerId = msg.playerId;
+						boundPlayerId = msg.player.playerId;
 
-						rooms.addPlayerToRoom(boundRoomId, boundPlayerId);
+						const config = normalizeConfig(msg.config);
+						const seed = msg.seed;
+
+						rooms.createOrJoinRoom({
+							roomId: boundRoomId,
+							player: msg.player,
+							seed,
+							config,
+						});
+
 						rooms.subscribe(boundRoomId, ws);
-						console.log(`Player ${boundPlayerId} joined room ${boundRoomId}`);
-						rooms.broadcast(boundRoomId, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						rooms.broadcastState(boundRoomId);
 						return;
 					}
 
@@ -171,7 +161,6 @@ export function startPublicWsServer(
 						rooms.updatePlayerScene(boundRoomId, boundPlayerId, msg.scene);
 						rooms.broadcastState(boundRoomId);
 						rooms.willUpdateRoomPhase(boundRoomId);
-						console.log(`Player ${boundPlayerId} entered scene ${msg.scene}`);
 						return;
 					}
 
@@ -190,24 +179,9 @@ export function startPublicWsServer(
 							throw new Error(`Room is not ready (phase=${room.phase})`);
 						}
 
-						console.log(`Room ${boundRoomId} has started`);
 						rooms.setRoomToRunning(boundRoomId);
 						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
-						rooms.startLoop(msg.roomId);
-						return;
-					}
-
-					case "start": {
-						const room = rooms.get(msg.roomId);
-						if (!room) {
-							throw new Error(`Room not found: ${msg.roomId}: all rooms: ${[...rooms.rooms.keys()].join(", ")}`);
-						}
-
 						rooms.startRoom(msg.roomId);
-
-						console.log(`Room started: ${msg.roomId}`);
-
-						rooms.broadcast(msg.roomId, { type: "started", roomId: msg.roomId });
 						return;
 					}
 
@@ -215,7 +189,6 @@ export function startPublicWsServer(
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
-						console.log(`Player ${boundPlayerId} left room ${boundRoomId}`);
 						rooms.broadcast(msg.roomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId} satisfies ServerMsg);
 						rooms.unsubscribe(boundRoomId, ws);
 

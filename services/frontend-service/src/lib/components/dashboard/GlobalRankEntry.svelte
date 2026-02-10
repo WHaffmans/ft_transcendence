@@ -1,12 +1,11 @@
 <script lang="ts">
-	import type { RankingPlayer } from '$lib/types/types';
-
 	interface Props {
-		player: RankingPlayer;
+		player: any;
+		position: number;
 		isCurrentUser?: boolean;
 	}
 
-	let { player, isCurrentUser = false }: Props = $props();
+	let { player, position, isCurrentUser = false }: Props = $props();
 
 	// Determine position color based on rank
 	const getPositionColor = (position: number): string => {
@@ -23,21 +22,24 @@
 	};
 
 	// Determine background for top 1
-	const getBackgroundClass = (position: number, isUser: boolean): string => {
+	const getBackgroundClass = (pos: number, isUser: boolean): string => {
+		if (isUser && pos === 1) return 'bg-[rgba(255,215,0,0.1)] border border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.5)]';
+		// Optional enhanced style for current user in first place
+		// if (isUser && pos === 1) return 'bg-[rgba(255,215,0,0.1)] border border-[#ffd700] shadow-[0_0_10px_rgba(255,215,0,0.5)]';
+		if (pos === 1) return 'bg-[rgba(255,215,0,0.05)]';
 		if (isUser) return 'bg-[rgba(59,130,246,0.1)] border border-[#3b82f6]';
-		if (position === 1) return 'bg-[rgba(255,215,0,0.05)]';
 		return '';
 	};
 
 	// Determine rank color
-	const getRankColor = (position: number): string => {
-		if (position === 1) return 'text-[#0f8]';
+	const getRankColor = (pos: number): string => {
+		if (pos === 1) return 'text-[#0f8]';
 		return 'text-white';
 	};
 
-	const positionColorClass = $derived(isCurrentUser ? 'text-[#3b82f6]' : getPositionColor(player.position));
-	const backgroundClass = $derived(getBackgroundClass(player.position, isCurrentUser));
-	const rankColorClass = $derived(getRankColor(player.position));
+	const positionColorClass = $derived(isCurrentUser && position > 3 ?  'text-[#3b82f6]' : getPositionColor(position));
+	const backgroundClass = $derived(getBackgroundClass(position, isCurrentUser));
+	const rankColorClass = $derived(getRankColor(position));
 </script>
 
 <div
@@ -47,27 +49,27 @@
 	<div class="flex items-center gap-4">
 		<!-- Position Number -->
 		<p class="text-sm font-bold text-center {positionColorClass}">
-			{player.position}
+			{position}
 		</p>
 
 		<!-- Player Info -->
 		<div class="flex items-center gap-2">
 			<!-- Avatar -->
 			<img
-				src={player.avatar}
-				alt={player.username}
+				src={player.avatar_url || '/placeholders/avatars/placeholder.png'}
+				alt={player.name}
 				class="w-6 h-6 rounded-full object-cover"
 			/>
 
 			<!-- Username -->
 			<p class="text-sm font-bold text-white text-center">
-				{player.username}
+				{player.name}
 			</p>
 		</div>
 	</div>
 
 	<!-- Right: Rank Score -->
 	<p class="text-sm font-bold text-center {rankColorClass}">
-		{player.rank}
+		{player.rating}
 	</p>
 </div>

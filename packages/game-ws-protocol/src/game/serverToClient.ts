@@ -14,11 +14,6 @@ export const ErrorPayloadSchema = z.object({
  * =========================
  */
 
-export const RoomCreatedMsgSchema = z.object({
-	type: z.literal("room_created"),
-	roomId: RoomId,
-});
-
 export const JoinedMsgSchema = z.object({
 	type: z.literal("joined"),
 	roomId: RoomId,
@@ -34,7 +29,13 @@ export const LeftMsgSchema = z.object({
 export const GameStartedMsgSchema = z.object({
 	type: z.literal("game_started"),
 	roomId: RoomId,
-})
+});
+
+export const GameFinishedMsgSchema = z.object({
+	type: z.literal("game_finished"),
+	roomId: RoomId,
+	winnerId: PlayerId.nullable(),
+});
 
 export const StateMsgSchema = z.object({
 	type: z.literal("state"),
@@ -47,10 +48,10 @@ export const ErrorMsgSchema = z.object({
 });
 
 export const ServerMsgSchema = z.discriminatedUnion("type", [
-	RoomCreatedMsgSchema,
 	JoinedMsgSchema,
 	LeftMsgSchema,
 	GameStartedMsgSchema,
+	GameFinishedMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,
 ]);

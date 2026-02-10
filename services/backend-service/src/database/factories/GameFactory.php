@@ -17,7 +17,7 @@ class GameFactory extends Factory
 	 */
 	public function definition(): array
 	{
-		$status = $this->faker->randomElement(['pending', 'ready', 'active', 'completed']);
+		$status = $this->faker->randomElement([ 'ready', 'active', 'completed']);
 
 		return [
 			'status' => $status,
@@ -27,7 +27,9 @@ class GameFactory extends Factory
 	public function configure()
 	{
 		return $this->afterCreating(function (\App\Models\Game $game) {
-			$users = \App\Models\User::all()->random($this->faker->numberBetween(2, 4));
+			$users = \App\Models\User::whereNotIn('name', ['Ferry', 'Hein', 'Quentin', 'Quinten', 'Willem'])
+				->get()
+				->random($this->faker->numberBetween(2, 4));
 			$game->users()->attach($users->pluck('id'));
 
 			if ($game->status === 'completed') {

@@ -1,24 +1,26 @@
 {
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "simulate": "tsx src/cli/simulate.ts",
-    "build": "npx tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:watch": "tsc -p tsconfig.json --noEmit --watch --preserveWatchOutput",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "simulate": "tsx src/cli/game_simulate.ts"
+  },
+  "dependencies": {
+    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+    "dotenv": "^17.2.4",
+    "openskill": "^4.1.0",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
     "@types/ws": "^8.18.1",
     "esbuild": "0.27.2",
     "tsx": "^4.21.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.0.0",
-    "ws": "^8.19.0"
-  },
-  "dependencies": {
-    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
-    "esbuild": "0.27.2",
-    "typescript": "^5.6.0"
+    "vitest": "^2.0.0"
   }
 }

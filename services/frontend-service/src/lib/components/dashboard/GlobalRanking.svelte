@@ -1,29 +1,14 @@
 <script lang="ts">
 	import GlobalRankEntry from './GlobalRankEntry.svelte';
-	import type { RankingPlayer } from '$lib/types/types';
 	import Footer from '$lib/components/Footer.svelte'
 
 	interface Props {
-		topPlayers: RankingPlayer[];
-		currentUser: {
-			id: number;
-			username: string;
-			avatar: string;
-			rank: number;
-			position: number;
-		};
+		leaderboard: any[];
+		currentUser: any;
+		userPosition: number;
 	}
 
-	let { topPlayers, currentUser }: Props = $props();
-
-	// Create current user player object
-	const currentUserPlayer: RankingPlayer = $derived({
-		id: currentUser.id,
-		position: currentUser.position,
-		username: currentUser.username,
-		rank: currentUser.rank,
-		avatar: currentUser.avatar
-	});
+	let { leaderboard, currentUser, userPosition }: Props = $props();
 </script>
 
 <div class="relative flex flex-col w-full glass h-ranking lg:w-ranking rounded-2xl">
@@ -44,8 +29,19 @@
 
 	<!-- Top 5 Players -->
 	<div class="flex flex-col gap-1 px-2 mb-auto">
-		{#each topPlayers as player (player.position)}
-			<GlobalRankEntry {player} />
+		{#each leaderboard.slice(0, 5) as player, index (player.id)}
+			{#if currentUser && player.id === currentUser.id}
+				<GlobalRankEntry 
+					player={player} 
+					position={index + 1} 
+					isCurrentUser={true} 
+				/>
+			{:else}
+				<GlobalRankEntry 
+					player={player} 
+					position={index + 1} 
+				/>
+			{/if}
 		{/each}
 	</div>
 
@@ -55,9 +51,15 @@
 	</div>
 
 	<!-- Current User Position -->
-	<div class="px-2 pb-4">
-		<GlobalRankEntry player={currentUserPlayer} isCurrentUser={true} />
-	</div>
+	{#if currentUser && userPosition > 5}
+		<div class="px-2 pb-4">
+			<GlobalRankEntry 
+				player={currentUser} 
+				position={userPosition}
+				isCurrentUser={true} 
+			/>
+		</div>
+	{/if}
 
 	<!-- Footer -->
 	<div class="px-6 pt-6 pb-6">

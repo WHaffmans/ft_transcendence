@@ -6,29 +6,44 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/01/09 09:41:42 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:42:13 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { GameConfig } from "./config.ts";
-import { makeRng } from "./rng.ts";
-import type { GameState } from "./init.ts";
-import { pushOrExtendSegment } from "./push_segment.ts";
-import { checkCollisionThisTick } from "./collision.ts"
-import { insertSegmentDDA } from "./spatial_hash.ts";
+import { GameConfig } from "./config.js";
+import { makeRng } from "./rng.js";
+import type { GameState } from "./init.js";
+import { pushOrExtendSegment } from "./push_segment.js";
+import { checkCollisionThisTick } from "./collision.js"
+import { insertSegmentDDA } from "./spatial_hash.js";
 
 export type TurnInput = -1 | 0 | 1;
+
+export type StepResult = {
+	state: GameState;
+	justFinished: boolean;
+	winnerId: string | null;
+};
 
 function randIntInclusive(rng: any, min: number, max: number) {
 	const t = rng.nextFloat();
 	return min + Math.floor(t * (max - min + 1));
 }
 
+function recordDeath(state: GameState, playerId: string) {
+	for (const id of state.deathIdByIndex.values()) {
+		if (id === playerId) return;
+	}
+
+	const idx = state.deathIdByIndex.size;
+	state.deathIdByIndex.set(idx, playerId);
+}
+
 export function step(
 	state: GameState,
 	inputsById: Record<string, TurnInput>,
 	config: GameConfig
-): GameState {
+): StepResult {
 
 	// Clone state
 	const next: GameState = {
@@ -56,16 +71,29 @@ export function step(
 		// Wall death
 		if (p.x < 0 || p.x > config.arenaWidth || p.y < 0 || p.y > config.arenaHeight) {
 			p.alive = false;
+			recordDeath(next, p.id);
 			continue;
 		}
 		
 		// Collision
-		const selfIgnore = new Set<number>([p.tailSegIndex]);
 		const effectiveRadius = config.playerRadius * 2;
-		const hit = checkCollisionThisTick(next.spatial, next.segments, p.id, prevX, prevY, p.x, p.y, effectiveRadius, selfIgnore);
+		const hit = checkCollisionThisTick(
+			next.spatial,
+			next.segments,
+			p.id,
+			prevX,
+			prevY,
+			p.x,
+			p.y,
+			effectiveRadius,
+			p.tailSegIndex,
+			5,
+		);
+
 
 		if (hit) {
 			p.alive = false;
+			recordDeath(next, p.id);
 			continue;
 		}
 
@@ -92,5 +120,22 @@ export function step(
 	}
 
 	next.rngState = rng.state;
-	return (next);
+
+	// Compute winner
+	const alive = next.players.filter(p => p.alive);
+	let winnerId: string | null = null;
+
+	if (alive.length === 1) {
+		const [only] = alive;
+		if (only) {
+			winnerId = only.id;
+			next.winnerId = winnerId;
+		}
+	}
+
+	return {
+		state: next,
+		justFinished: winnerId !== null,
+		winnerId,
+	};
 }
