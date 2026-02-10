@@ -1,23 +1,21 @@
 <script lang="ts">
   import Navbar from "$lib/components/app/Navbar.svelte";
-
-  import { apiStore } from "$lib/stores/api";
-  import { goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
+  import { apiStore } from "$lib/stores/api";
 
   let { data, children } = $props();
 
-  const handleLogout = async () => {
-    console.log("Logging out...");
-    const success = await apiStore.logout();
-    if (success) {
-      await invalidateAll();
-      goto("/", { replaceState: true });
-      toast.success("Logged out successfully");
-    } else {
-      toast.error("Logout failed");
-    }
-  };
+	const handleLogout = () => {
+		console.log('Logging out...');
+		apiStore.logout().then(() => {
+			toast.success("Successfully logged out.");
+			goto('/', { replaceState: true });
+		}).catch((error) => {
+			console.error("Logout failed:", error);
+			toast.error("Failed to log out. Please try again.");
+		});
+	};
 
   const handleOpenSettings = () => {
     // goto('/dashboard/settings');

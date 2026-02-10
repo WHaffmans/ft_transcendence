@@ -6,13 +6,14 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/01/09 09:54:57 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:22:45 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { GameConfig } from "./config.ts";
-import { makeRng } from "./rng.ts";
-import { SpatialHash, createSpatialHash } from "./spatial_hash.ts";
+import { GameConfig } from "./config.js";
+import { makeRng } from "./rng.js";
+import { randomInt } from "node:crypto";
+import { SpatialHash, createSpatialHash } from "./spatial_hash.js";
 
 export type ColorRGBA = {
 	r: number,
@@ -46,6 +47,8 @@ export type GameState = {
 	players: PlayerState[];
 	segments: Segment[];
 	spatial: SpatialHash;
+	winnerId: string | null;
+	deathIdByIndex: Map<number, string>;	// (index, playerId)
 };
 
 function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
@@ -81,7 +84,8 @@ function playerColor(index: number, total: number): ColorRGBA {
 
 
 export function initGame(config: GameConfig, seed: number, playerIds: string[]): GameState {
-	const rng = makeRng(seed);
+	const actualSeed = seed ? 0 : randomInt(0, 100);
+	const rng = makeRng(actualSeed);
 
 	// Determine spawn
 	const players = playerIds.map((id, i) => ({
@@ -104,5 +108,7 @@ export function initGame(config: GameConfig, seed: number, playerIds: string[]):
 		players,
 		segments: [],
 		spatial: createSpatialHash(config.arenaWidth, config.arenaHeight, cellSize),
+		winnerId: null,
+		deathIdByIndex: new Map(),
 	};
 }
