@@ -1,0 +1,2 @@
+# Merge driver for encrypted .env files
+*.env.encrypted merge=env-encrypted
