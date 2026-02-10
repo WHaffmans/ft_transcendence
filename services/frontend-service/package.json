@@ -12,25 +12,28 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
+		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.48.5",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@tailwindcss/vite": "^4.1.17",
+		"@types/marked": "^5.0.2",
 		"bits-ui": "^2.14.4",
 		"embla-carousel-svelte": "^8.6.0",
 		"svelte": "^5.43.8",
 		"svelte-check": "^4.3.4",
+		"tailwind-scrollbar": "^4.0.2",
 		"tailwindcss": "^4.1.17",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.2",
-		"vite-plugin-checker": "^0.12.0",
-		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
+		"vite-plugin-checker": "^0.12.0"
 	},
 	"dependencies": {
+		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
 		"clsx": "^2.1.1",
 		"js-sha256": "^0.11.1",
+		"marked": "^17.0.1",
 		"svelte-sonner": "^1.0.7",
-		"tailwind-merge": "^3.4.0",
-		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol"
+		"tailwind-merge": "^3.4.0"
 	}
 }
