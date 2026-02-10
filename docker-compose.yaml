@@ -5,10 +5,8 @@ services:
   frontend-service:
     container_name: frontend-service
     build:
-      context: ./services/frontend-service
-      dockerfile: Dockerfile.dev
-      additional_contexts:
-        game-ws-protocol: ./packages/game-ws-protocol
+      context: .
+      dockerfile: services/frontend-service/Dockerfile.dev
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
@@ -77,10 +75,8 @@ services:
   game-service:
     container_name: game-service
     build:
-      context: ./services/game-service
-      dockerfile: Dockerfile.dev
-      additional_contexts:
-        game-ws-protocol: ./packages/game-ws-protocol
+      context: .
+      dockerfile: services/game-service/Dockerfile.dev
     env_file:
       - ./.env
     environment:
@@ -95,10 +91,8 @@ services:
       - "3002:3002" # internal
       - "3003:3003" # external
     volumes:
-      - ./services/game-service:/app/services/game-service
-      - game_service_node_modules:/app/services/game-service/node_modules
-      - ./packages/game-ws-protocol:/app/packages/game-ws-protocol
-      - game_ws_protocol_node_modules:/app/packages/game-ws-protocol/node_modules
+      - ./services/game-service/src:/app/services/game-service/src
+      - ./packages/game-ws-protocol/src:/app/packages/game-ws-protocol/src
     depends_on:
       - backend-service
     restart: unless-stopped
@@ -122,7 +116,15 @@ services:
       - ./services/gateway/conf:/etc/traefik/conf:ro
       - ./certs:/certs:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80/ping",
+        ]
       start_period: 10s
       interval: 10s
       timeout: 5s
@@ -160,10 +162,6 @@ services:
 # ==============================================================================
 volumes:
   mariadb_data:
-    driver: local
-  game_service_node_modules:
-    driver: local
-  game_ws_protocol_node_modules:
     driver: local
 
 # ==============================================================================

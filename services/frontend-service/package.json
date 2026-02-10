@@ -1,5 +1,5 @@
 {
-	"name": "svelte-app",
+	"name": "frontend-service",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -28,7 +28,7 @@
 		"vite-plugin-checker": "^0.12.0"
 	},
 	"dependencies": {
-		"@ft/game-ws-protocol": "file:../../packages/game-ws-protocol",
+		"@ft/game-ws-protocol": "*",
 		"clsx": "^2.1.1",
 		"js-sha256": "^0.11.1",
 		"marked": "^17.0.1",

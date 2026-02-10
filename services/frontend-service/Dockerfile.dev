@@ -1,22 +1,28 @@
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy and build game-ws-protocol package
-COPY --from=game-ws-protocol / /app/packages/game-ws-protocol
-WORKDIR /app/packages/game-ws-protocol
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm run build
+# Copy root workspace files
+COPY package.json package-lock.json* ./
 
-# Setup frontend-service
-WORKDIR /app/services/frontend-service
-COPY package*.json ./
+# Copy all workspace package.json files for dependency resolution
+COPY packages/game-ws-protocol/package.json ./packages/game-ws-protocol/
+COPY services/game-service/package.json ./services/game-service/
+COPY services/frontend-service/package.json ./services/frontend-service/
+
+# Install all dependencies via workspace
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy and build game-ws-protocol
+COPY packages/game-ws-protocol ./packages/game-ws-protocol
+RUN npm run -w @ft/game-ws-protocol build
 
+# Copy frontend-service source
+COPY services/frontend-service ./services/frontend-service
+
+WORKDIR /app/services/frontend-service
 
 CMD ["npm", "run", "dev", "--", "--host"]

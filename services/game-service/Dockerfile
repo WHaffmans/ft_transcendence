@@ -1,41 +1,48 @@
 
-FROM node:20-alpine AS builder
+# ============================================================================
+# PRUNE STAGE - Generate minimal monorepo
+# ============================================================================
+FROM node:22-alpine AS pruner
+
+RUN apk add --no-cache libc6-compat
+RUN npm install -g turbo
+
+WORKDIR /app
+COPY . .
+RUN turbo prune @ft/game-service --docker
+
+# ============================================================================
+# BUILD STAGE - Install deps and build
+# ============================================================================
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy and build game-ws-protocol package
-COPY packages/game-ws-protocol /app/packages/game-ws-protocol
-WORKDIR /app/packages/game-ws-protocol
-RUN npm install && npm run build
+# First install dependencies (using pruned package.json files)
+COPY --from=pruner /app/out/json/ .
+RUN npm ci
 
-# Copy game-service package files and install dependencies
-WORKDIR /app/services/game-service
-COPY services/game-service/package*.json ./
-RUN npm install
-
-# Copy source code
-COPY services/game-service .
-
-# Build
-RUN npm run build
+# Copy source code and build
+COPY --from=pruner /app/out/full/ .
+RUN npm run -w @ft/game-ws-protocol build
+RUN npm run -w @ft/game-service build
 
 # ============================================================================
-# RUN STAGE
+# RUN STAGE - Production image
 # ============================================================================
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy game-ws-protocol package from builder
-COPY --from=builder /app/packages/game-ws-protocol ./packages/game-ws-protocol
+# Copy pruned package files for production install
+COPY --from=pruner /app/out/json/ .
+RUN npm ci --omit=dev --ignore-scripts
 
-# Copy package files for installing production dependencies
-COPY services/game-service/package*.json ./services/game-service/
+# Copy built artifacts
+COPY --from=builder /app/packages/game-ws-protocol/dist ./packages/game-ws-protocol/dist
+COPY --from=builder /app/packages/game-ws-protocol/package.json ./packages/game-ws-protocol/
+COPY --from=builder /app/services/game-service/dist ./services/game-service/dist
+
 WORKDIR /app/services/game-service
-RUN npm install --omit=dev
 
-# Copy built application from builder stage
-COPY --from=builder /app/services/game-service/dist ./dist
-
-
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/index.js"]

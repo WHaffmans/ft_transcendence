@@ -1,72 +1,55 @@
 
 # ============================================================================
-# BUILD STAGE
+# PRUNE STAGE - Generate minimal monorepo
 # ============================================================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS pruner
+
+RUN apk add --no-cache libc6-compat
+RUN npm install -g turbo
+
+WORKDIR /app
+COPY . .
+RUN turbo prune frontend-service --docker
+
+# ============================================================================
+# BUILD STAGE - Install deps and build
+# ============================================================================
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install openssl for certificate generation
-RUN apk add --no-cache openssl
+# First install dependencies (using pruned package.json files)
+COPY --from=pruner /app/out/json/ .
+RUN npm ci
 
-# Copy game-ws-protocol package
-COPY packages/game-ws-protocol /app/packages/game-ws-protocol
-
-# Build the shared package
-WORKDIR /app/packages/game-ws-protocol
-RUN npm install && npm run build
-
-# Copy frontend service package files
-WORKDIR /app/services/frontend-service
-COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./
-
-# Install all dependencies (including devDependencies needed for build)
-RUN npm install
-
-# Copy frontend source code
-COPY services/frontend-service .
-
-# Build the production bundle
-RUN npm run build
-
-# Generate self-signed certificate with SANs
-# RUN mkdir -p /app/certs && \
-# 	openssl req -x509 -newkey rsa:4096 -nodes \
-# 	-keyout /app/certs/key.pem \
-# 	-out /app/certs/cert.pem \
-# 	-days 365 \
-# 	-subj "/C=US/ST=State/L=City/O=Organization/CN=frontend-service" \
-# 	-addext "subjectAltName=DNS:frontend-service,DNS:localhost,IP:127.0.0.1"
+# Copy source code and build
+COPY --from=pruner /app/out/full/ .
+RUN npm run -w @ft/game-ws-protocol build
+RUN npm run -w frontend-service build
 
 # ============================================================================
-# RUN STAGE
+# RUN STAGE - Production image
 # ============================================================================
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy game-ws-protocol package from builder
-COPY --from=builder /app/packages/game-ws-protocol ./packages/game-ws-protocol
+# Copy pruned package files for production install
+COPY --from=pruner /app/out/json/ .
+RUN npm ci --omit=dev --ignore-scripts
 
-# Copy package files for installing production dependencies
-COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./services/frontend-service/
-
-# Install only production dependencies (omit devDependencies)
-WORKDIR /app/services/frontend-service
-RUN npm install --omit=dev --ignore-scripts
-
-# Copy built application from builder stage
-COPY --from=builder /app/services/frontend-service/build ./build
-
-# Copy SSL certificates from builder stage
-# COPY --from=builder /app/certs ./certs
+# Copy built artifacts
+COPY --from=builder /app/packages/game-ws-protocol/dist ./packages/game-ws-protocol/dist
+COPY --from=builder /app/packages/game-ws-protocol/package.json ./packages/game-ws-protocol/
+COPY --from=builder /app/services/frontend-service/build ./services/frontend-service/build
 
 # Copy production server script
-COPY services/frontend-service/production-server.js ./
+COPY --from=pruner /app/out/full/services/frontend-service/production-server.js ./services/frontend-service/
 
-# Start production server with HTTPS
+WORKDIR /app/services/frontend-service
+
 CMD ["node", "production-server.js"]
 

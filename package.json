@@ -1,6 +1,7 @@
 {
   "name": "ft_transcendence",
   "private": true,
+  "packageManager": "npm@10.9.4",
   "workspaces": [
     "services/*",
     "packages/*"
@@ -24,8 +25,8 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
-    "i": "^0.3.7",
     "tsx": "^4.21.0",
+    "turbo": "^2.8.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.16"
