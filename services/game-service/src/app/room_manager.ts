@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 10:38:35 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 11:33:13 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -283,6 +283,61 @@ export class RoomManager {
 			subscribers: room.subscribers.size,
 			playerCount: room.players.length,
 		});
+	}
+
+	/**
+	 * Remove a player from the room when in Lobby
+	 */
+	public willLeaveLobby(roomId: string, playerId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		if (room.sceneById[playerId] !== "lobby") return;
+		
+		// Drop player
+		const idx = room.players.findIndex(p => String((p as any).id) === String(playerId));
+		if (idx === -1) return;
+
+		delete room.sceneById[playerId];
+		delete room.inputsById[playerId];
+
+		room.players.splice(idx, 1);
+		
+		// Host
+		if (room.hostId === playerId) {
+			if (room.players.length > 0) {
+				// Promote first remaining player
+				const newHostId = String((room.players[0] as any).id);
+				room.hostId = newHostId;
+			} else {
+				room.hostId = "";
+			}
+		}
+
+		logInfo("room.willLeaveLobby", {
+			roomId,
+			playerId,
+			playerCountAfter: room.players.length,
+			newHost: room.hostId,
+		});
+
+		// If room is empty
+		if (room.players.length === 0) {
+			if (room.timer) {
+				clearInterval(room.timer as any);
+				room.timer = null;
+
+				logInfo("room.willLeaveLobby.deleted", {
+					roomId,
+					reason: "empty_after_leave",
+					playerId
+				});
+
+				// TODO: Broadcast room closed
+			}
+			this.rooms.delete(roomId);
+			return;
+		}
 	}
 
 

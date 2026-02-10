@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 10:23:52 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 11:27:50 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,6 +189,7 @@ export function startPublicWsServer(
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
+						rooms.willLeaveLobby(msg.roomId, msg.playerId);
 						rooms.broadcast(msg.roomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId} satisfies ServerMsg);
 						rooms.unsubscribe(boundRoomId, ws);
 
