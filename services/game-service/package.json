@@ -11,7 +11,7 @@
     "simulate": "tsx src/cli/game_simulate.ts"
   },
   "dependencies": {
-    "@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+    "@ft/game-ws-protocol": "file:../../packages/game-ws-protocol",
     "dotenv": "^17.2.4",
     "openskill": "^4.1.0",
     "ws": "^8.19.0"

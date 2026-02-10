@@ -17,7 +17,7 @@ WORKDIR /app/packages/game-ws-protocol
 RUN npm install && npm run build
 
 # Copy frontend service package files
-WORKDIR /app
+WORKDIR /app/services/frontend-service
 COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./
 
 # Install all dependencies (including devDependencies needed for build)
@@ -52,13 +52,14 @@ WORKDIR /app
 COPY --from=builder /app/packages/game-ws-protocol ./packages/game-ws-protocol
 
 # Copy package files for installing production dependencies
-COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./
+COPY services/frontend-service/package.json services/frontend-service/package-lock.json* ./services/frontend-service/
 
 # Install only production dependencies (omit devDependencies)
+WORKDIR /app/services/frontend-service
 RUN npm install --omit=dev --ignore-scripts
 
 # Copy built application from builder stage
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/services/frontend-service/build ./build
 
 # Copy SSL certificates from builder stage
 # COPY --from=builder /app/certs ./certs

@@ -3,18 +3,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY --from=game-ws-protocol / /packages/game-ws-protocol
+# Copy and build game-ws-protocol package
+COPY --from=game-ws-protocol / /app/packages/game-ws-protocol
+WORKDIR /app/packages/game-ws-protocol
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm run build
 
-RUN cd /packages/game-ws-protocol \
-  && if [ -f package-lock.json ]; then npm ci; else npm install; fi \
-  && npm run build
-
+# Setup game-service
+WORKDIR /app/services/game-service
 COPY package*.json ./
 RUN npm install
 
 # Copy source code
 COPY . .
 
-EXPOSE 3002 3003
 
 CMD ["npm", "run", "dev"]

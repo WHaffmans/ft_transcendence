@@ -25,16 +25,15 @@
 		"tailwindcss": "^4.1.17",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.2",
-		"vite-plugin-checker": "^0.12.0",
-		"@ft/game-ws-protocol": "file:./packages/game-ws-protocol"
+		"vite-plugin-checker": "^0.12.0"
 	},
 	"dependencies": {
-		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+		"@ft/game-ws-protocol": "file:../../packages/game-ws-protocol",
 		"clsx": "^2.1.1",
 		"js-sha256": "^0.11.1",
 		"marked": "^17.0.1",
 		"svelte-sonner": "^1.0.7",
 		"tailwind-merge": "^3.4.0",
-		"@ft/game-ws-protocol": "file:./packages/game-ws-protocol"
+		"zod": "^4.3.5"
 	}
 }
