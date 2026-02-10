@@ -6,15 +6,15 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/01/16 10:15:43 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:23:52 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
-import type { GameConfig } from "../engine/config";
-import { DEFAULT_CONFIG } from "../engine/config";
-import { RoomManager } from "../app/room_manager";
+import type { GameConfig } from "../engine/config.js";
+import { DEFAULT_CONFIG } from "../engine/config.js";
+import { RoomManager } from "../app/room_manager.js";
 
 // ---------------------
 // define

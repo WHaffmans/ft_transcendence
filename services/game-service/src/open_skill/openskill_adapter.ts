@@ -6,13 +6,13 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/09 13:17:50 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/09 13:17:53 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:45:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import { rating as osRating, rate as osRate, ordinal as osOrdinal } from "openskill";
-import type { FinishResult, PlayerId, PlayerRating, UpdatedPlayerRating } from "./types";
+import type { FinishResult, PlayerId, PlayerRating, UpdatedPlayerRating } from "./types.js";
 
 /**
  * finishOrder: [firstOut, ..., winner]
@@ -42,9 +42,14 @@ export function updateRatingsOpenSkill(
 	const newTeams = osRate(teams, { rank });
 
 	const updatedById = new Map<PlayerId, UpdatedPlayerRating>();
-	for (let i = 0; i < result.finishOrder.length; i++) {
-		const id = result.finishOrder[i];
-		const newR = newTeams[i][0];
+	
+	for (const [i, id] of result.finishOrder.entries()) {
+		const team = newTeams.at(i);
+		const newR = team?.[0];
+		if (!newR) {
+			throw new Error(`updateRatingsOpenSkill: missing new rating for player ${id} at index ${i}`);
+		}
+		
 		updatedById.set(id, {
 			id,
 			mu: newR.mu,
@@ -53,7 +58,12 @@ export function updateRatingsOpenSkill(
 		});
 	}
 
-	return players.map((p) => updatedById.get(p.id)!);
+		return players.map((p) => {
+			const updated = updatedById.get(p.id);
+			if (!updated)
+				throw new Error(`updateRatingsOpenSkill: missing updated rating for player ${p.id}`);
+		return (updated);
+	});
 }
 
 export function defaultRating(id: PlayerId): PlayerRating {

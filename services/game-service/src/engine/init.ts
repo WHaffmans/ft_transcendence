@@ -6,14 +6,14 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/01/09 09:54:57 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:22:45 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { GameConfig } from "./config.ts";
-import { makeRng } from "./rng.ts";
+import { GameConfig } from "./config.js";
+import { makeRng } from "./rng.js";
 import { randomInt } from "node:crypto";
-import { SpatialHash, createSpatialHash } from "./spatial_hash.ts";
+import { SpatialHash, createSpatialHash } from "./spatial_hash.js";
 
 export type ColorRGBA = {
 	r: number,

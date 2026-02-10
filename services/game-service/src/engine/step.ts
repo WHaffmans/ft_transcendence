@@ -6,16 +6,16 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/01/09 09:41:42 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/10 10:42:13 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { GameConfig } from "./config.ts";
-import { makeRng } from "./rng.ts";
-import type { GameState } from "./init.ts";
-import { pushOrExtendSegment } from "./push_segment.ts";
-import { checkCollisionThisTick } from "./collision.ts"
-import { insertSegmentDDA } from "./spatial_hash.ts";
+import { GameConfig } from "./config.js";
+import { makeRng } from "./rng.js";
+import type { GameState } from "./init.js";
+import { pushOrExtendSegment } from "./push_segment.js";
+import { checkCollisionThisTick } from "./collision.js"
+import { insertSegmentDDA } from "./spatial_hash.js";
 
 export type TurnInput = -1 | 0 | 1;
 
@@ -126,8 +126,11 @@ export function step(
 	let winnerId: string | null = null;
 
 	if (alive.length === 1) {
-		winnerId = alive[0].id;
-		next.winnerId = winnerId;
+		const [only] = alive;
+		if (only) {
+			winnerId = only.id;
+			next.winnerId = winnerId;
+		}
 	}
 
 	return {

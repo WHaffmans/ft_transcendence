@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   collision.ts                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: qbeukelm <qbeukelm@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/18 10:10:00 by quentinbeuk       #+#    #+#             */
-/*   Updated: 2025/12/23 11:21:35 by qbeukelm         ###   ########.fr       */
+/*                                                        ::::::::            */
+/*   collision.ts                                       :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2025/12/18 10:10:00 by quentinbeuk   #+#    #+#                 */
+/*   Updated: 2026/02/10 10:40:00 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,8 @@
  * 		- Narrow-phase: then do exact math checks on those candidates.
  */
 
-import { SpatialHash, queryAabb } from "./spatial_hash";
-import type { Segment } from "./init";
+import { SpatialHash, queryAabb } from "./spatial_hash.js";
+import type { Segment } from "./init.js";
 
 /**
  * Clamp a value into the interval [lo, hi]
@@ -206,6 +206,7 @@ export function checkCollisionThisTick(
 			continue;
 
 		const s = segments[idx];
+		if (!s) continue;
 
 		if (s.ownerId === ownerId && selfTailSegIndex >= 0) {
 			if (idx >= selfIgnoreLo && idx <= selfIgnoreHi)
