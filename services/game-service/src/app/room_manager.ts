@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 11:33:13 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/11 12:38:56 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ import { step } from "../engine/step.js";
 import type { TurnInput } from "../engine/step.js";
 
 // Utils
-import { finishGame } from "../stores/backend_api.js";
+import { finishGame, leaveGame, startGame } from "../stores/backend_api.js";
 import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter.js";
 
 // External
@@ -288,14 +288,14 @@ export class RoomManager {
 	/**
 	 * Remove a player from the room when in Lobby
 	 */
-	public willLeaveLobby(roomId: string, playerId: string) {
+	public async willLeaveLobby(roomId: string, playerId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
 		if (room.sceneById[playerId] !== "lobby") return;
 		
 		// Drop player
-		const idx = room.players.findIndex(p => String((p as any).id) === String(playerId));
+		const idx = room.players.findIndex(p => (p as any).playerId === playerId);
 		if (idx === -1) return;
 
 		delete room.sceneById[playerId];
@@ -307,12 +307,14 @@ export class RoomManager {
 		if (room.hostId === playerId) {
 			if (room.players.length > 0) {
 				// Promote first remaining player
-				const newHostId = String((room.players[0] as any).id);
+				const newHostId = String((room.players[0] as any).playerId);
 				room.hostId = newHostId;
 			} else {
 				room.hostId = "";
 			}
 		}
+
+		await this.persistLeaveRoom(roomId, playerId);
 
 		logInfo("room.willLeaveLobby", {
 			roomId,
@@ -321,22 +323,25 @@ export class RoomManager {
 			newHost: room.hostId,
 		});
 
+		this.broadcastState(roomId);
+
 		// If room is empty
 		if (room.players.length === 0) {
-			if (room.timer) {
-				clearInterval(room.timer as any);
-				room.timer = null;
-
-				logInfo("room.willLeaveLobby.deleted", {
-					roomId,
-					reason: "empty_after_leave",
-					playerId
-				});
-
-				// TODO: Broadcast room closed
-			}
-			this.rooms.delete(roomId);
+			this.closeRoom(roomId);
 			return;
+		}
+	}
+
+	private async persistLeaveRoom(roomId: string, playerId: string) {
+		const userId = Number(playerId);
+		const payload = {
+			user_id: userId,
+		};
+		try {
+			await leaveGame(roomId, payload);
+			logInfo("backend.leave_ok", { roomId });
+		} catch (err) {
+			logError("backend.leave_failed", { roomId, err });
 		}
 	}
 
@@ -580,7 +585,13 @@ export class RoomManager {
 	/**
 	 * Start the game loop, will broadcast state
 	 */
-	startRoom(roomId: string) {
+	async startRoom(roomId: string) {
+		try {
+			await startGame(roomId);
+			logInfo("backend.start_ok", { roomId });
+		} catch (err) {
+			logError("backend.start_failed", { roomId, err });
+		}
 		this.startLoop(roomId);
 	}
 
