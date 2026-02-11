@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
   import { apiStore } from "$lib/stores/api";
+  import { modalStore } from "$lib/components/modal/modal";
 
   let { data, children } = $props();
 
@@ -18,7 +19,7 @@
 	};
 
   const handleOpenSettings = () => {
-    // goto('/dashboard/settings');
+    modalStore.open('profileSettings');
   };
 </script>
 

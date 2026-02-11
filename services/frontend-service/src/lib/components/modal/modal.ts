@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-export type ModalType = 'privacy' | 'terms' | 'settings' | 'profile' | 'friends' | null;
+export type ModalType = 'privacy' | 'terms' | 'profileSettings' | null;
 
 interface ModalState {
 	type: ModalType;
