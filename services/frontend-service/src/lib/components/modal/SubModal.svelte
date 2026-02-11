@@ -11,8 +11,10 @@
 	let { title, children, footer, onBack }: Props = $props();
 </script>
 
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onBack(); } }} />
+
 <!-- Overlay on top of the base modal -->
-<div class="fixed inset-0 z-60 flex items-center justify-center">
+<div class="fixed inset-0 flex items-center justify-center z-60" role="dialog" aria-modal="true" aria-label={title}>
 	<!-- Backdrop -->
 	<button
 		type="button"
@@ -29,7 +31,7 @@
 		<header class="relative flex items-center justify-center px-6 pt-5 pb-4 border-b border-white/10">
 			<button
 				type="button"
-				class="absolute left-5 text-gray-400 transition-colors hover:text-white"
+				class="absolute text-gray-400 transition-colors left-5 hover:text-white"
 				onclick={onBack}
 				aria-label="Go back"
 			>
@@ -39,7 +41,7 @@
 		</header>
 
 		<!-- Content -->
-		<div class="flex-1 overflow-y-auto px-6 py-5">
+		<div class="flex-1 px-6 py-5 overflow-y-auto">
 			{@render children()}
 		</div>
 

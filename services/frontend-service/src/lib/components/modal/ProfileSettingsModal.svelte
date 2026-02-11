@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { userStore } from '$lib/stores/user';
+	import { toast } from 'svelte-sonner';
 	import SubModal from './SubModal.svelte';
 
 	// Derive current values from the store (reactive)
@@ -19,8 +20,15 @@
 
 	// --- Change Avatar draft state ---
 	let draftAvatarUrl = $state('');
-	let hasAvatarChanged = $derived(draftAvatarUrl !== '' && draftAvatarUrl !== editedAvatar);
+	let avatarLoadError = $state(false);
+	let hasAvatarChanged = $derived(draftAvatarUrl !== '' && draftAvatarUrl !== editedAvatar && !avatarLoadError);
 	let fileInput: HTMLInputElement | undefined = $state();
+
+	// Reset error state when URL changes
+	$effect(() => {
+		draftAvatarUrl;
+		avatarLoadError = false;
+	});
 
 	function handleFileSelect(event: Event) {
 		const file = (event.target as HTMLInputElement).files?.[0];
@@ -46,6 +54,39 @@
 
 	function undoAvatar() {
 		draftAvatarUrl = editedAvatar;
+	}
+
+	// --- Change Nickname draft state ---
+	let draftNickname = $state('');
+	let hasNicknameChanged = $derived(draftNickname.trim() !== '' && draftNickname.trim() !== editedNickname);
+
+	function openNicknameSubModal() {
+		draftNickname = editedNickname;
+		activeSubModal = 'nickname';
+	}
+
+	function keepNickname() {
+		localNickname = draftNickname.trim();
+		activeSubModal = null;
+	}
+
+	function undoNickname() {
+		draftNickname = editedNickname;
+	}
+
+	// --- Delete Account state ---
+	let deleteConfirmInput = $state('');
+	let canDelete = $derived(deleteConfirmInput === editedNickname);
+
+	function openDeleteSubModal() {
+		deleteConfirmInput = '';
+		activeSubModal = 'delete';
+	}
+
+	function confirmDelete() {
+		// TODO: wire to backend DELETE /api/user
+		toast.success('Good Bye :(');
+		activeSubModal = null;
 	}
 </script>
 
@@ -75,14 +116,14 @@
 		<button
 			type="button"
 			class="flex h-14 w-4/5 items-center justify-center rounded-lg bg-white text-sm font-bold text-black shadow-lg transition hover:-translate-y-0.5"
-			onclick={() => (activeSubModal = 'nickname')}
+			onclick={openNicknameSubModal}
 		>
 			CHANGE NICKNAME
 		</button>
 		<button
 			type="button"
 			class="flex h-14 w-4/5 items-center justify-center rounded-lg bg-[#f36] text-sm font-bold text-black shadow-[0px_4px_15px_0px_rgba(255,51,102,0.25)] transition hover:-translate-y-0.5 hover:shadow-[0px_6px_20px_0px_rgba(255,51,102,0.35)]"
-			onclick={() => (activeSubModal = 'delete')}
+			onclick={openDeleteSubModal}
 		>
 			DELETE ACCOUNT
 		</button>
@@ -98,6 +139,7 @@
 				src={draftAvatarUrl}
 				alt="Avatar preview"
 				class="object-cover w-3/5 rounded-full aspect-square"
+				onerror={() => (avatarLoadError = true)}
 			/>
 
 			<!-- URL input -->
@@ -142,6 +184,85 @@
 					onclick={undoAvatar}
 				>
 					UNDO
+				</button>
+			</div>
+		{/snippet}
+	</SubModal>
+{/if}
+
+<!-- Change Nickname Sub-Modal -->
+{#if activeSubModal === 'nickname'}
+	<SubModal title="Change Nickname" onBack={() => (activeSubModal = null)}>
+		<div class="flex flex-col items-center gap-5">
+			<!-- Current nickname display -->
+			<p class="text-3xl font-bold text-white">{draftNickname}</p>
+
+			<!-- Nickname input -->
+			<input
+				type="text"
+				placeholder="Enter new nickname…"
+				maxlength="20"
+				bind:value={draftNickname}
+				class="w-full px-4 py-3 text-sm text-white placeholder-gray-500 transition border rounded-lg outline-none border-white/10 bg-white/5 focus:border-white/25"
+			/>
+		</div>
+
+		{#snippet footer()}
+			<div class="flex items-center justify-center gap-3">
+				<button
+					type="button"
+					class="flex h-11 w-2/5 items-center justify-center rounded-lg bg-white text-xs font-bold text-black shadow-lg transition hover:-translate-y-0.5 disabled:opacity-30 disabled:pointer-events-none"
+					disabled={!hasNicknameChanged}
+					onclick={keepNickname}
+				>
+					KEEP
+				</button>
+				<button
+					type="button"
+					class="flex h-11 w-2/5 items-center justify-center rounded-lg bg-white text-xs font-bold text-black shadow-lg transition hover:-translate-y-0.5 disabled:opacity-30 disabled:pointer-events-none"
+					disabled={!hasNicknameChanged}
+					onclick={undoNickname}
+				>
+					UNDO
+				</button>
+			</div>
+		{/snippet}
+	</SubModal>
+{/if}
+
+<!-- Delete Account Sub-Modal -->
+{#if activeSubModal === 'delete'}
+	<SubModal title="Delete Account" onBack={() => (activeSubModal = null)}>
+		<div class="flex flex-col items-center gap-5">
+			<!-- Warning -->
+			<p class="text-sm text-center text-gray-400">
+				This action is <span class="font-bold text-red-400">permanent</span> and cannot be undone.
+				All your data, match history, and rankings will be lost.
+			</p>
+
+			<!-- Instruction -->
+			<p class="text-sm text-center text-gray-300">
+				Type <span class="font-bold text-white">{editedNickname}</span> to confirm.
+			</p>
+
+			<!-- Confirmation input -->
+			<input
+				type="text"
+				placeholder="Enter your nickname…"
+				bind:value={deleteConfirmInput}
+				class="w-full px-4 py-3 text-sm text-white placeholder-gray-500 transition border rounded-lg outline-none border-white/10 bg-white/5 focus:border-white/25"
+			/>
+		</div>
+
+		{#snippet footer()}
+			<div class="flex items-center justify-center">
+				<button
+					type="button"
+					class="flex h-11 w-3/5 items-center justify-center rounded-lg bg-[#f36] text-xs font-bold text-black shadow-[0px_4px_15px_0px_rgba(255,51,102,0.25)] transition hover:-translate-y-0.5 hover:shadow-[0px_6px_20px_0px_rgba(255,51,102,0.35)] disabled:opacity-30 disabled:pointer-events-none"
+					disabled={!canDelete}
+					onclick={confirmDelete}
+				>
+					DELETE ACCOUNT
 				</button>
 			</div>
 		{/snippet}

@@ -11,8 +11,10 @@
 	let { open, title, children, onClose }: Props = $props();
 </script>
 
+<svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') onClose(); }} />
+
 {#if open}
-	<div class="fixed inset-0 z-50 flex items-center justify-center">
+	<div class="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title}>
 		<!-- Backdrop -->
 		<button
 			type="button"
