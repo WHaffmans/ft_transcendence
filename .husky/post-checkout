@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 
+# Configure Git merge driver for encrypted .env files
+git config merge.env-encrypted.name "Merge driver for encrypted .env files"
+git config merge.env-encrypted.driver "bash scripts/merge-env-encrypted.sh %O %A %B %L %P"
+
 # Arguments: previous_head new_head branch_checkout_flag
 # Flag is 1 for branch checkout, 0 for file checkout
 CHECKOUT_TYPE=$3

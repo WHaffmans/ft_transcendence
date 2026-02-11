@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 
+# Configure Git merge driver for encrypted .env files
+git config merge.env-encrypted.name "Merge driver for encrypted .env files"
+git config merge.env-encrypted.driver "bash scripts/merge-env-encrypted.sh %O %A %B %L %P"
+
 # Auto-decrypt .env files after merge/pull (if key exists)
 if [ -f ".env.key" ]; then
     echo "🔓 Decrypting updated .env files..."

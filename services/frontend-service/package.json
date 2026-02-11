@@ -1,5 +1,5 @@
 {
-	"name": "svelte-app",
+	"name": "frontend-service",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -12,8 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
-		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/adapter-node": "^5.3.6",
 		"@sveltejs/kit": "^2.48.5",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@tailwindcss/vite": "^4.1.17",
@@ -29,11 +28,12 @@
 		"vite-plugin-checker": "^0.12.0"
 	},
 	"dependencies": {
-		"@ft/game-ws-protocol": "file:/packages/game-ws-protocol",
+		"@ft/game-ws-protocol": "*",
 		"clsx": "^2.1.1",
 		"js-sha256": "^0.11.1",
 		"marked": "^17.0.1",
 		"svelte-sonner": "^1.0.7",
-		"tailwind-merge": "^3.4.0"
+		"tailwind-merge": "^3.4.0",
+		"zod": "^4.3.5"
 	}
 }

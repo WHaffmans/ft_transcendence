@@ -61,8 +61,8 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending',
         ]);
 
-        $pendingUsers = User::whereIn('name', ['Quinten', 'Ferry', 'Hein'])->get();
-        $pendingGame->users()->attach($pendingUsers->pluck('id'));
+        // $pendingUsers = User::whereIn('name', ['Quinten', 'Ferry', 'Hein'])->get();
+        // $pendingGame->users()->attach($pendingUsers->pluck('id'));
 
         
 
