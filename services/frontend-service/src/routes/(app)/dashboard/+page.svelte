@@ -2,6 +2,7 @@
   import { toast } from "svelte-sonner";
   import GlobalRanking from "$lib/components/dashboard/GlobalRanking.svelte";
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
+  import RankChart from "$lib/components/dashboard/RankChart.svelte";
   import { goto } from "$app/navigation";
 
   let { data } = $props();
@@ -58,10 +59,13 @@
     <section class="flex flex-col gap-6 sm:flex-row">
       <StatCard title="Current Rank">
         {#snippet children()}
-          <div class="flex items-center justify-center flex-1">
-            <p class="text-[64px] font-bold text-white leading-none">
+          <div class="flex flex-col w-full h-full">
+            <p class="text-[36px] font-bold text-white leading-none">
               {data.user?.rating ?? 0}
             </p>
+            <div class="mt-auto">
+              <RankChart rankHistory={data.rankHistory ?? []} />
+            </div>
           </div>
         {/snippet}
       </StatCard>
