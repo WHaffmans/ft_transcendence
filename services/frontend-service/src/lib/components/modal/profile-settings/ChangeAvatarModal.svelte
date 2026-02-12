@@ -78,12 +78,18 @@
 <SubModal title="Change Avatar" {onBack}>
 	<div class="flex flex-col items-center gap-5">
 		<!-- Live avatar preview -->
-		<img
-			src={draftAvatarUrl}
-			alt="Avatar preview"
-			class="object-cover w-3/5 rounded-full aspect-square"
-			onerror={() => (avatarLoadError = true)}
-		/>
+		{#if draftAvatarUrl}
+			<img
+				src={draftAvatarUrl}
+				alt="Avatar preview"
+				class="object-cover w-3/5 rounded-full aspect-square"
+				onerror={() => (avatarLoadError = true)}
+			/>
+		{:else}
+			<div class="flex items-center justify-center w-3/5 border rounded-full aspect-square bg-white/5 border-white/10">
+				<span class="text-3xl text-gray-500">?</span>
+			</div>
+		{/if}
 
 		<!-- URL input -->
 		<input
