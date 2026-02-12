@@ -24,15 +24,33 @@ export interface RankPoint {
     rating: number;
 }
 
+export interface LastMatchPlayer {
+    id: number;
+    name: string;
+    rating: number;
+    delta: number | null;
+    rank: number;
+    isCurrentUser: boolean;
+}
+
+export interface LastMatchData {
+    players: LastMatchPlayer[];
+    date: string;
+}
+
+function computeRating(pivot: PivotData): number {
+    return Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
+}
+
 function buildRankHistory(matches: Match[], userId: number): RankPoint[] {
     return matches
         .slice()
-        .reverse() // oldest first for chronological order
+        .reverse()
         .reduce<RankPoint[]>((history, match) => {
             const pivot = match.users.find((u) => u.id === userId)?.user_game;
             if (!pivot?.rating_mu || !pivot?.rating_sigma) return history;
 
-            const rating = Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
+            const rating = computeRating(pivot);
             const date = new Date(match.updated_at).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
@@ -41,6 +59,53 @@ function buildRankHistory(matches: Match[], userId: number): RankPoint[] {
             history.push({ date, rating });
             return history;
         }, []);
+}
+
+function buildLastMatchData(matches: Match[], userId: number): LastMatchData | null {
+    if (matches.length === 0) return null;
+
+    const lastMatch = matches[0];
+    const previousMatch = matches[1] ?? null;
+
+    const players: LastMatchPlayer[] = lastMatch.users.map((user) => {
+        const postRating = computeRating(user.user_game);
+        let delta: number | null = null;
+
+        if (user.id === userId && previousMatch) {
+            const prevPivot = previousMatch.users.find((u) => u.id === userId)?.user_game;
+            if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
+                delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
+            }
+        } else if (user.id !== userId) {
+            // Search earlier matches for this opponent's prior appearance
+            for (let i = 1; i < matches.length; i++) {
+                const prevPivot = matches[i].users.find((u) => u.id === user.id)?.user_game;
+                if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
+                    delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
+                    break;
+                }
+            }
+        }
+
+        return {
+            id: user.id,
+            name: user.name,
+            rating: postRating,
+            delta,
+            rank: user.user_game.rank,
+            isCurrentUser: user.id === userId
+        };
+    });
+
+    // Sort by rank (lower = better finish)
+    players.sort((a, b) => a.rank - b.rank);
+
+    const date = new Date(lastMatch.updated_at).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+    });
+
+    return { players, date };
 }
 
 export const load = (async ({ fetch, parent }) => {
@@ -70,10 +135,11 @@ export const load = (async ({ fetch, parent }) => {
     const userPosition = sortedUsers.findIndex((u: any) => u.id === user.id) + 1;
     const totalPlayers = allUsers.length;
     const rankHistory = buildRankHistory(matches, user.id);
+    const lastMatch = buildLastMatchData(matches, user.id);
 
     return {
         leaderboard,
-        lastMatch: matches[0] || null,
+        lastMatch,
         rankHistory,
         userPosition,
         totalPlayers

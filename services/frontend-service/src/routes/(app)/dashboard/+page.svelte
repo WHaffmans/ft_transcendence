@@ -3,6 +3,7 @@
   import GlobalRanking from "$lib/components/dashboard/GlobalRanking.svelte";
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
   import RankChart from "$lib/components/dashboard/RankChart.svelte";
+  import LastMatch from "$lib/components/dashboard/LastMatch.svelte";
   import { goto } from "$app/navigation";
 
   let { data } = $props();
@@ -73,14 +74,7 @@
       <StatCard title="Last Match">
         {#snippet children()}
           {#if data.lastMatch}
-            <div class="flex items-center justify-between w-full pt-6">
-              <p class="text-lg font-medium text-white">
-                vs. {data.lastMatch.users?.find((u: any) => u.id !== data.user?.id)?.name ?? 'Unknown'}
-              </p>
-              <span class="text-sm font-bold text-[#0f8]">
-                {data.lastMatch.status}
-              </span>
-            </div>
+            <LastMatch match={data.lastMatch} />
           {:else}
             <div class="flex items-center justify-center flex-1">
               <p class="text-[#888] text-base">No matches yet</p>
