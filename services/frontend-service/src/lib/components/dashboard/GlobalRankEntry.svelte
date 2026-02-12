@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { userStore } from '$lib/stores/user';
+
 	interface Props {
 		player: any;
 		position: number;
@@ -6,6 +8,10 @@
 	}
 
 	let { player, position, isCurrentUser = false }: Props = $props();
+
+	// Use live store values for the current user, static data for others
+	let displayName = $derived(isCurrentUser ? ($userStore?.name ?? player.name) : player.name);
+	let displayAvatar = $derived(isCurrentUser ? ($userStore?.avatar_url ?? player.avatar_url) : player.avatar_url);
 
 	// Determine position color based on rank
 	const getPositionColor = (position: number): string => {
@@ -56,14 +62,14 @@
 		<div class="flex items-center gap-2">
 			<!-- Avatar -->
 			<img
-				src={player.avatar_url || '/placeholders/avatars/placeholder.png'}
-				alt={player.name}
+				src={displayAvatar || '/placeholders/avatars/placeholder.png'}
+				alt={displayName}
 				class="w-6 h-6 rounded-full object-cover"
 			/>
 
 			<!-- Username -->
 			<p class="text-sm font-bold text-white text-center">
-				{player.name}
+				{displayName}
 			</p>
 		</div>
 	</div>
