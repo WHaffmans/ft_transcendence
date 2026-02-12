@@ -10,7 +10,7 @@
   const handleLogin = async () => {
     const success = await apiStore.login();
     if (success) {
-      toast.success("Welcome back!");
+      toast.success("Welcome!");
       await invalidateAll();
       goto("/dashboard");
     } else {

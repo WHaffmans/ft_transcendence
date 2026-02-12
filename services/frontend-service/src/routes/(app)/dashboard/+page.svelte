@@ -58,7 +58,7 @@
 
     <!-- Stats row -->
     <section class="flex flex-col gap-6 sm:flex-row">
-      <StatCard title="Current Rank">
+      <StatCard title="Current Rating">
         {#snippet children()}
           <div class="flex flex-col w-full h-full">
             <p class="text-[36px] font-bold text-white leading-none">
