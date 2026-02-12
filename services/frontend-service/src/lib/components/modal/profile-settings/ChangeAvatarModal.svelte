@@ -30,7 +30,6 @@
 		draftOverride = value;
 	}
 
-	// TODO: data URLs from FileReader exceed backend VARCHAR(255) — needs a file upload endpoint
 	function handleFileSelect(event: Event) {
 		const file = (event.target as HTMLInputElement).files?.[0];
 		if (!file || !file.type.startsWith('image/')) {
