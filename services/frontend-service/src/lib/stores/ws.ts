@@ -16,6 +16,7 @@ import {
 /* ========================================================================== */
 
 type Player = z.infer<typeof PlayerSchema>;
+type PlayerMeta = { name: string; avatar_url?: string };
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
 
 type WSStoreState = {
@@ -24,6 +25,7 @@ type WSStoreState = {
 	latestState: StateMsg["snapshot"] | null;
 	roomId: string | null;
 	playerId: string | null;
+	playerMetaById: Record<string, PlayerMeta>;
 	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
@@ -47,6 +49,7 @@ function createWebSocketStore() {
 		latestState: null,
 		roomId: null,
 		playerId: null,
+		playerMetaById: {},
 		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
@@ -146,6 +149,7 @@ function createWebSocketStore() {
 			latestState: null,
 			roomId: null,
 			playerId: null,
+			playerMetaById: {},
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
@@ -157,7 +161,12 @@ function createWebSocketStore() {
 	/* ========================================================================== */
 
 	function createOrJoinRoom(roomId: string, seed: number, player: Player) {
-		update((s) => ({ ...s, roomId, playerId: player.playerId }));
+		update((s) => ({
+			...s,
+			roomId,
+			playerId: player.playerId,
+			playersById: { ...s.playerMetaById, [String(player.playerId)]: player },
+	}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
 			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, player } }));
@@ -204,6 +213,7 @@ function createWebSocketStore() {
 			roomId: null,
 			playerId: null,
 			latestState: null,
+			playerMetaById: {},
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		}));
@@ -226,6 +236,25 @@ function createWebSocketStore() {
 		return get(store).latestState?.hostId ?? null;
 	}
 
+	function setPlayerMeta(playerId: string, meta: PlayerMeta) {
+		const id = String(playerId);
+
+		update((s) => {
+			const prev = s.playerMetaById[id];
+			if (
+				prev &&
+				prev.name === meta.name &&
+				(prev.avatar_url ?? null) === (meta.avatar_url ?? null)
+				) {
+					return (s);
+			}
+
+			return {
+				...s,
+				playerMetaById: { ...s.playerMetaById, [id]: meta },
+			};
+		});
+	}
 
 	return {
 		subscribe,
@@ -239,6 +268,7 @@ function createWebSocketStore() {
 		getRoomPlayerIds,
 		getSceneById,
 		getHostId,
+		setPlayerMeta,
 	};
 }
 

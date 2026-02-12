@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/12 11:56:04 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/12 14:28:49 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,18 +34,18 @@ export type GameConfig = {
 
 // Set default values
 export const DEFAULT_CONFIG: GameConfig = {
-	tickRate: 10,
+	tickRate: 30,
 
 	arenaWidth: 800,
 	arenaHeight: 800,
 
-	speed: 10.0,
+	speed: 4.0,
 	turnRate: 0.2,
 	playerRadius: 4,
 
 	gapChance: 0.03,
-	gapMinTicks: 5,
-	gapMaxTicks: 15,
+	gapMinTicks: 2,
+	gapMaxTicks: 8,
 
 	spawnPadding: 60,
 	spawnAngle: 0.35,

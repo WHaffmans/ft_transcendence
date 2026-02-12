@@ -53,10 +53,25 @@
 			.filter(Boolean) as User[]
 	);
 
+	$effect(() => {
+		const users = gameRecord?.users ?? [];
+		for (const u of users) {
+			wsStore.setPlayerMeta(String(u.id), {
+			name: u.name,
+			avatar_url: u.avatar_url,
+			});
+		}
+	});
+
 	let lastJoinedKey: string | null = null;
 
 	function joinLobbySession(lobbyId: string, user: User) {
 		const seed = gameRecord?.seed ?? 0;
+
+		wsStore.setPlayerMeta(String(user.id), {
+			name: user.name,
+			avatar_url: user.avatar_url,
+		});
 
 		const player = {
 			playerId: String(user.id),
