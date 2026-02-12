@@ -5,10 +5,8 @@ services:
   frontend-service:
     container_name: frontend-service
     build:
-      context: ./services/frontend-service
-      dockerfile: Dockerfile.dev
-      additional_contexts:
-        game-ws-protocol: ./packages/game-ws-protocol
+      context: .
+      dockerfile: services/frontend-service/Dockerfile.dev
     environment:
       - NODE_ENV=development
       - PUBLIC_DOMAIN=${DOMAIN}
@@ -19,12 +17,12 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./services/frontend-service/src:/app/src
-      - ./services/frontend-service/static:/app/static
-      - ./services/frontend-service/package.json:/app/package.json:ro
-      - ./services/frontend-service/tsconfig.json:/app/tsconfig.json:ro
-      - ./services/frontend-service/svelte.config.js:/app/svelte.config.js:ro
-      - ./services/frontend-service/vite.config.ts:/app/vite.config.ts:ro
+      - ./services/frontend-service/src:/app/services/frontend-service/src
+      - ./services/frontend-service/static:/app/services/frontend-service/static
+      - ./services/frontend-service/package.json:/app/services/frontend-service/package.json:ro
+      - ./services/frontend-service/tsconfig.json:/app/services/frontend-service/tsconfig.json:ro
+      - ./services/frontend-service/svelte.config.js:/app/services/frontend-service/svelte.config.js:ro
+      - ./services/frontend-service/vite.config.ts:/app/services/frontend-service/vite.config.ts:ro
     depends_on:
       backend-service:
         condition: service_healthy
@@ -77,10 +75,8 @@ services:
   game-service:
     container_name: game-service
     build:
-      context: ./services/game-service
-      dockerfile: Dockerfile.dev
-      additional_contexts:
-        game-ws-protocol: ./packages/game-ws-protocol
+      context: .
+      dockerfile: services/game-service/Dockerfile.dev
     env_file:
       - ./.env
     environment:
@@ -95,9 +91,8 @@ services:
       - "3002:3002" # internal
       - "3003:3003" # external
     volumes:
-      - ./services/game-service:/app
-      - game_service_node_modules:/app/node_modules
-      - ./packages/game-ws-protocol:/app/protocol
+      - ./services/game-service/src:/app/services/game-service/src
+      - ./packages/game-ws-protocol/src:/app/packages/game-ws-protocol/src
     depends_on:
       - backend-service
     restart: unless-stopped
@@ -121,7 +116,15 @@ services:
       - ./services/gateway/conf:/etc/traefik/conf:ro
       - ./certs:/certs:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80/ping",
+        ]
       start_period: 10s
       interval: 10s
       timeout: 5s
@@ -159,8 +162,6 @@ services:
 # ==============================================================================
 volumes:
   mariadb_data:
-    driver: local
-  game_service_node_modules:
     driver: local
 
 # ==============================================================================

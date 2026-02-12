@@ -1,4 +1,4 @@
-import type { PageLoad } from "../../$types";
+import type { PageLoad } from "./$types";
 
 // Disable SSR
 export const ssr = false;

@@ -16,13 +16,17 @@ echo ""
 echo "📦 Setting up root workspace..."
 cd "$PROJECT_ROOT"
 
-echo "  └─ Installing root dependencies..."
+echo "  └─ Installing all dependencies (npm workspaces)..."
 npm install
 
 if [ ! -f ".husky/_/husky.sh" ]; then
     echo "  └─ Initializing Husky..."
     npx husky init
 fi
+
+# Build shared packages
+echo "  └─ Building shared packages..."
+npm run -w @ft/game-ws-protocol build
 
 echo "  ✅ Done"
 echo ""
@@ -47,21 +51,8 @@ else
     echo ""
 fi
 
-# Find all services with package.json (Node.js services)
-find "$SERVICES_DIR" -maxdepth 2 -name "package.json" -type f | while read -r package_file; do
-    service_dir="$(dirname "$package_file")"
-    service_name="$(basename "$service_dir")"
-
-    echo "📦 Setting up Node.js service: $service_name"
-    cd "$service_dir"
-
-    echo "  └─ Installing npm dependencies..."
-    npm install
-
-    echo "  ✅ Done"
-    echo ""
-done
-
+# Note: Node.js services are handled by npm workspaces from the root install
+# No need to run npm install in individual service directories
 
 #if composer is not present install composer locally
 if ! command -v composer &> /dev/null

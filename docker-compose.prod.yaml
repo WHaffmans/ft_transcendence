@@ -1,2 +1,153 @@
 # Production override - use production Dockerfile without hot reload
 
+services:
+  # ============================================================================
+  # FRONTEND
+  # ============================================================================
+  frontend-service:
+    container_name: frontend-service
+    build:
+      context: .
+      dockerfile: services/frontend-service/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=5173
+      - PUBLIC_DOMAIN=${DOMAIN}
+      - PUBLIC_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - PUBLIC_OAUTH_REDIRECT_URI=${OAUTH_REDIRECT}
+    networks:
+      - transcendence-production
+    depends_on:
+      backend-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "http://localhost:3000/health"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================================
+  # BACKEND SERVICES
+  # ============================================================================
+
+  backend-service:
+    container_name: backend-service
+    build:
+      context: ./services/backend-service
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/backend-service/src/.env
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_REDIRECT=${OAUTH_REDIRECT}
+      - APP_FRONTEND_URL=${DOMAIN}
+      - BUILD=PROD
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+    networks:
+      - transcendence-production
+    ports:
+      - "4000:4000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/up"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  game-service:
+    container_name: game-service
+    build:
+      context: .
+      dockerfile: services/game-service/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - INTERNAL_WS_PORT=3002
+      - PUBLIC_WS_PORT=3003
+      - AUTH_SERVICE_URL=http://backend-service:4000
+    networks:
+      - transcendence-production
+    ports:
+      - "3002:3002" # internal
+      - "3003:3003" # external
+    depends_on:
+      - backend-service
+    restart: unless-stopped
+
+  # ============================================================================
+  # INFRASTRUCTURE
+  # ============================================================================
+  gateway:
+    container_name: gateway
+    image: traefik:v3.2
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    networks:
+      - transcendence-production
+    ports:
+      - "8080:80"
+      - "8443:443"
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./services/gateway/conf:/etc/traefik/conf:ro
+      - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  mariadb:
+    container_name: mariadb
+    image: mariadb:10.11
+    environment:
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    networks:
+      - transcendence-production
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./services/mariadb/conf/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+# ==============================================================================
+# VOLUMES
+# ==============================================================================
+volumes:
+  mariadb_data:
+    driver: local
+  game_service_node_modules:
+    driver: local
+
+# ==============================================================================
+# NETWORKS
+# ==============================================================================
+networks:
+  transcendence-production:
+    driver: bridge
