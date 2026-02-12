@@ -30,7 +30,7 @@
 				<!-- Left: rank position + name -->
 				<div class="flex items-center gap-2 min-w-0">
 					<span class="text-xs font-bold text-[#555] w-4 shrink-0">
-						#{player.rank + 1}
+						#{player.rank}
 					</span>
 					<span
 						class="text-sm font-medium truncate {player.isCurrentUser
