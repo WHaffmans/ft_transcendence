@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/09 13:17:37 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 10:35:10 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/11 09:44:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,10 +65,30 @@ export async function backendFetch<T>({ method = "GET", path, body }: BackendFet
 	return (parsed as T);
 }
 
+export async function startGame(gameId: string, payload?: unknown) {
+	return postGameAction(gameId, "start", payload);
+}
+
+export async function leaveGame(gameId: string, payload?: unknown) {
+	return postGameAction(gameId, "leave", payload);
+}
+
 export async function finishGame(roomId: string, payload: unknown) {
 	return backendFetch<void>({
 		method: "POST",
 		path: `/games/${roomId}/finish`,
 		body: payload,
+	});
+}
+
+async function postGameAction(
+	gameId: string,
+	action: "start" | "leave",
+	payload?: unknown,
+) {
+	return backendFetch<void>({
+		method: "POST",
+		path: `/games/${gameId}/${action}`,
+		...(payload !== undefined ? { body: payload } : {}),
 	});
 }

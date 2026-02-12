@@ -9,8 +9,6 @@ Route::middleware('auth.internal')->group(function () {
 		return response()->json(['message' => 'Internal route accessed'], 200);
 	});
 
-	// TODO: Body is array of player objects
-
 	/*
 	```
 		return [
