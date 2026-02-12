@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+@source "../node_modules/flowbite-svelte/dist";
+@source "../node_modules/@flowbite-svelte-plugins/chart/dist";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
