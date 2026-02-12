@@ -2,8 +2,7 @@ api:
   insecure: true
   dashboard: true
 
-ping:
-  entryPoint: "websecure"
+ping: {}
 
 entryPoints:
   websecure:

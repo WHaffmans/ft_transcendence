@@ -88,6 +88,7 @@ services:
       - PUBLIC_WS_PORT=3443
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - AUTH_SERVICE_URL=${PROD_AUTH_SERVICE_URL}
+      - BACKEND_INTERNAL_BASE_URL=https://backend-service:4443
     networks:
       - transcendence-production
     volumes:
@@ -115,7 +116,7 @@ services:
       - ./services/gateway/conf/prod:/etc/traefik/conf:ro
       - ./certs:/certs:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ping"]
       start_period: 10s
       interval: 10s
       timeout: 5s

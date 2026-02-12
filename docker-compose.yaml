@@ -91,6 +91,7 @@ services:
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - BACKEND_INTERNAL_BASE_URL=http://backend-service:4000
     networks:
       - transcendence-internal
     ports:
