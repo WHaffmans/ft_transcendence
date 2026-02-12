@@ -11,7 +11,11 @@
 	let { open, title, children, onClose }: Props = $props();
 </script>
 
-<svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') onClose(); }} />
+<svelte:window onkeydown={(e) => {
+	if (open && e.key === 'Escape') {
+		onClose();
+	}
+}} />
 
 {#if open}
 	<div class="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title}>
@@ -40,7 +44,7 @@
 			</header>
 
 			<!-- Scrollable Content -->
-		<div class="px-6 py-4 overflow-y-auto text-sm text-gray-300 modal-scroll">
+			<div class="px-6 py-4 overflow-y-auto text-sm text-gray-300 modal-scroll">
 				{@render children()}
 			</div>
 		</div>

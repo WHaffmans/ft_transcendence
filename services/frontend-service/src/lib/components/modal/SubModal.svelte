@@ -11,7 +11,12 @@
 	let { title, children, footer, onBack }: Props = $props();
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onBack(); } }} />
+<svelte:window onkeydown={(e) => {
+	if (e.key === 'Escape') {
+		e.stopPropagation();
+		onBack();
+	}
+}} />
 
 <!-- Overlay on top of the base modal -->
 <div class="fixed inset-0 flex items-center justify-center z-60" role="dialog" aria-modal="true" aria-label={title}>

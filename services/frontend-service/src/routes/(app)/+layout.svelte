@@ -5,7 +5,7 @@
   import { apiStore } from "$lib/stores/api";
   import { modalStore } from "$lib/components/modal/modal";
 
-  let { data, children } = $props();
+  let { children } = $props();
 
 	const handleLogout = () => {
 		console.log('Logging out...');
@@ -27,8 +27,6 @@
   <!-- App navigation -->
   <nav>
     <Navbar
-      username={data.user?.name ?? "Guest"}
-      avatar={data.user?.avatar_url ?? ""}
       onLogout={handleLogout}
       onOpenSettings={handleOpenSettings}
     />

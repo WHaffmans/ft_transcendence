@@ -5,9 +5,9 @@
 	import { modalStore } from '$lib/components/modal/modal';
 	import { modalConfig } from '$lib/components/modal/modalConfig';
 	import Modal from '$lib/components/modal/Modal.svelte';
-	import PrivacyPolicyModal from '$lib/components/modal/PrivacyPolicyModal.svelte';
-	import TermsOfServiceModal from '$lib/components/modal/TermsOfServiceModal.svelte';
-	import ProfileSettingsModal from '$lib/components/modal/ProfileSettingsModal.svelte';
+	import PrivacyPolicyModal from '$lib/components/modal/privacy/PrivacyPolicyModal.svelte';
+	import TermsOfServiceModal from '$lib/components/modal/terms/TermsOfServiceModal.svelte';
+	import ProfileSettingsModal from '$lib/components/modal/profile-settings/ProfileSettingsModal.svelte';
 	import type { LayoutData } from './$types';
 	import type { User } from '$lib/types/types';
 
