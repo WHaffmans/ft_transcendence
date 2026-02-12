@@ -2,7 +2,6 @@
   import { goto, invalidateAll } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
   import { toast } from "svelte-sonner";
-  import SignInButton from "./SignInButton.svelte";
 
   const landingLogo = "/logo.png";
   const subtitle = "The Kurve Web Edition";
@@ -37,5 +36,10 @@
   </header>
 
   <!-- Primary call to action -->
-  <SignInButton onClick={handleLogin} label="Login" />
+  <button
+    onclick={handleLogin}
+    class="bg-white text-black font-bold text-[18px] px-16.75 py-5.25 rounded-xl shadow-button ease-out w-75 h-16 flex items-center justify-center cursor-pointer"
+  >
+    Login
+  </button>
 </section>

@@ -11,13 +11,7 @@ export const modalConfig: Record<Exclude<ModalType, null>, ModalMetadata> = {
 	terms: {
 		title: 'Terms of Service'
 	},
-	settings: {
-		title: 'Settings'
-	},
-	profile: {
-		title: 'Profile'
-	},
-	friends: {
-		title: 'Friends'
+	profileSettings: {
+		title: 'Profile Settings'
 	}
 };

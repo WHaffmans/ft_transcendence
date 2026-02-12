@@ -46,7 +46,7 @@
 
         <button
           onclick={handleFindMatch}
-          class="flex h-14 w-55 items-center justify-center gap-2 rounded-lg bg-white text-sm font-bold text-black shadow-lg transition hover:-translate-y-0.5"
+          class="btn-primary h-14 w-55 gap-2 text-sm"
         >
           <span class="h-2 w-2 animate-pulse rounded-full bg-[#0f8]"></span>
           FIND MATCH

@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { userStore } from '$lib/stores/user';
+
   interface Props {
-    username: string;
-    avatar: string;
     onLogout?: () => void;
     onOpenSettings?: () => void;
   }
 
-  let { username, avatar, onLogout, onOpenSettings }: Props = $props();
+  let { onLogout, onOpenSettings }: Props = $props();
+
+  let username = $derived($userStore?.name ?? 'Guest');
+  let avatar = $derived($userStore?.avatar_url ?? '');
 
   const handleLogoutClick = () => {
     onLogout?.();
