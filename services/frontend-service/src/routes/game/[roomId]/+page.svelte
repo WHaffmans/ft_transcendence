@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { wsStore } from "$lib/stores/ws";
-  //   import { apiStore } from "$lib/stores/api.js";
   import type { ServerMsg } from "@ft/game-ws-protocol";
 
   type StateMsg = Extract<ServerMsg, { type: "state" }>;
@@ -26,8 +25,8 @@
     phase === "lobby"
       ? "Waiting for all players to join..."
       : phase === "ready"
-        ? "Press Space to start"
-        : null; // running/finished = no overlay
+        ? "Ready to start! Press "
+        : null;
 
   $: showOverlay = overlayText !== null;
 
@@ -37,17 +36,18 @@
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
+  const GAME_W = 808;
+  const GAME_H = 808;
+
   function resizeCanvas() {
     if (!canvas || !ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
 
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = `${GAME_W}px`;
+    canvas.style.height = `${GAME_H}px`;
+    canvas.width = Math.floor(GAME_W * dpr);
+    canvas.height = Math.floor(GAME_H * dpr);
 
     // draw in CSS pixels
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -63,14 +63,10 @@
   function draw(snapshot: StateMsg["snapshot"] | null) {
     if (!ctx) return;
 
-    const W = window.innerWidth;
-    const H = window.innerHeight;
+    const W = GAME_W;
+    const H = GAME_H;
 
     ctx.clearRect(0, 0, W, H);
-
-    // background
-    ctx.fillStyle = "#0b0b0b";
-    ctx.fillRect(0, 0, W, H);
 
     if (!snapshot) return;
 
@@ -197,50 +193,188 @@
   });
 </script>
 
-<canvas bind:this={canvas} style="display:block; width:100vw; height:100vh;"
-></canvas>
+<div class="page">
+  <div class="layout">
+    <!-- Left: game -->
+    <div class="glass rounded-2xl relative">
+      <canvas class="gameCanvas" bind:this={canvas}></canvas>
+    </div>
 
-<div
-  style="
-		position:fixed;
-		left:12px;
-		bottom:12px;
-		background:rgba(0,0,0,0.5);
-		color:white;
-		padding:8px 10px;
-		border-radius:8px;
-		font:12px system-ui;
-	"
->
-  {$wsStore.status}
+    <!-- Right: Players -->
+    <aside class="right">
+      <div class="glass h-ranking rounded-2xl w-full flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 pt-6">
+          <p class="text-xs font-bold text-[#888] uppercase">Players</p>
+
+          <span class="wsPill" data-status={$wsStore.status}>
+            {$wsStore.status}
+          </span>
+        </div>
+
+        <div class="px-6">
+          <div class="h-px w-full bg-white/10 mt-2.5"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 flex flex-col px-6 py-6">
+          <!-- TODO: player list -->
+          <div class="text-xs text-white/40">Player list goes here</div>
+        </div>
+      </div>
+    </aside>
+  </div>
 </div>
 
 {#if showOverlay}
-  <div
-    style="
-			position:fixed;
-			inset:0;
-			display:flex;
-			align-items:center;
-			justify-content:center;
-			pointer-events:none;
-		"
-  >
-    <div
-      style="
-				background:rgba(0,0,0,0.55);
-				color:white;
-				padding:14px 18px;
-				border-radius:12px;
-				font:14px system-ui;
-				letter-spacing:0.2px;
-			"
-    >
+  <div class="overlay">
+    <div class="overlayCard">
       {#if phase === "ready"}
-        {overlayText} <b>Space</b>
+        {overlayText} <span class="keycap">SPACE</span>
       {:else}
         {overlayText}
       {/if}
     </div>
   </div>
 {/if}
+
+<style>
+  .page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+  }
+
+  .overlayCard {
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font: 14px system-ui;
+    letter-spacing: 0.2px;
+  }
+
+  .layout {
+    display: flex;
+    gap: 24px;
+    height: 808px;
+    align-items: stretch;
+  }
+
+  .gameCanvas {
+    width: 808px;
+    height: 808px;
+    display: block;
+
+    border-radius: 12px;
+    outline: 2px solid rgba(255, 255, 255, 0.15);
+    outline-offset: 0;
+
+    background-image:
+      url("/assets/lobby-grid-pattern.png"),
+      linear-gradient(
+        90deg,
+        rgba(26, 26, 26, 0.6) 0%,
+        rgba(26, 26, 26, 0.6) 100%
+      );
+    background-size: 40px 40px, auto;
+    background-position: top left;
+    background-repeat: repeat, no-repeat;
+  }
+
+  .right {
+    width: 360px;
+    height: 100%;
+    display: flex;
+  }
+
+  .right > .glass {
+    height: 100%;
+  }
+
+  .keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 4px 40px;
+    margin-left: 6px;
+
+    background: rgba(91, 91, 91, 0.65);
+    border-radius: 2px;
+
+    font: 12px system-ui;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .wsPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+
+    font: 11px system-ui;
+    letter-spacing: 0.2px;
+
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .wsPill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .wsPill[data-status="open"] {
+    border-color: rgba(0, 255, 136, 0.35);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .wsPill[data-status="open"]::before {
+    background: rgba(0, 255, 136, 0.8);
+  }
+
+  .wsPill[data-status="closed"],
+  .wsPill[data-status="error"] {
+    border-color: rgba(255, 80, 80, 0.35);
+  }
+
+  .wsPill[data-status="closed"]::before,
+  .wsPill[data-status="error"]::before {
+    background: rgba(255, 80, 80, 0.8);
+  }
+
+  /* <!-- TODO: Handle Small Screens --> */
+  @media (max-width: 1240px) {
+    .layout {
+      flex-direction: column;
+      align-items: center;
+    }
+    .right {
+      width: 808px;
+      height: auto;
+      min-height: 200px;
+    }
+  }
+</style>
