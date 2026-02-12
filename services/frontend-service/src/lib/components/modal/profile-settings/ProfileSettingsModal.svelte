@@ -27,21 +27,21 @@
 	<div class="flex flex-col items-center gap-3">
 		<button
 			type="button"
-			class="flex h-14 w-4/5 items-center justify-center rounded-lg bg-white text-sm font-bold text-black shadow-lg transition hover:-translate-y-0.5"
+			class="btn-primary h-14 w-4/5 text-sm"
 			onclick={() => (activeSubModal = 'avatar')}
 		>
 			CHANGE AVATAR
 		</button>
 		<button
 			type="button"
-			class="flex h-14 w-4/5 items-center justify-center rounded-lg bg-white text-sm font-bold text-black shadow-lg transition hover:-translate-y-0.5"
+			class="btn-primary h-14 w-4/5 text-sm"
 			onclick={() => (activeSubModal = 'nickname')}
 		>
 			CHANGE NICKNAME
 		</button>
 		<button
 			type="button"
-			class="flex h-14 w-4/5 items-center justify-center rounded-lg bg-[#f36] text-sm font-bold text-black shadow-[0px_4px_15px_0px_rgba(255,51,102,0.25)] transition hover:-translate-y-0.5 hover:shadow-[0px_6px_20px_0px_rgba(255,51,102,0.35)]"
+			class="btn-danger h-14 w-4/5 text-sm"
 			onclick={() => (activeSubModal = 'delete')}
 		>
 			DELETE ACCOUNT

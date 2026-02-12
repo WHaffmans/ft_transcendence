@@ -104,7 +104,7 @@
 		/>
 		<button
 			type="button"
-			class="rounded-lg bg-white px-4 py-2 text-xs font-bold text-black shadow-lg transition hover:-translate-y-0.5"
+			class="px-4 py-2 text-xs btn-primary"
 			onclick={() => fileInput?.click()}
 		>
 			BROWSE FROM DEVICE
@@ -115,7 +115,7 @@
 		<div class="flex items-center justify-center gap-3">
 			<button
 				type="button"
-				class="flex h-11 w-2/5 items-center justify-center rounded-lg bg-white text-xs font-bold text-black shadow-lg transition hover:-translate-y-0.5 disabled:opacity-30 disabled:pointer-events-none"
+				class="w-2/5 text-xs btn-primary h-11"
 				disabled={!hasChanged || saving}
 				onclick={keep}
 			>
@@ -123,7 +123,7 @@
 			</button>
 			<button
 				type="button"
-				class="flex h-11 w-2/5 items-center justify-center rounded-lg bg-white text-xs font-bold text-black shadow-lg transition hover:-translate-y-0.5 disabled:opacity-30 disabled:pointer-events-none"
+				class="w-2/5 text-xs btn-primary h-11"
 				disabled={!hasChanged || saving}
 				onclick={undo}
 			>

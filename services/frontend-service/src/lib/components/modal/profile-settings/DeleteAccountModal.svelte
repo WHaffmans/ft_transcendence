@@ -70,7 +70,7 @@
 		<div class="flex items-center justify-center">
 			<button
 				type="button"
-				class="flex h-11 w-3/5 items-center justify-center rounded-lg bg-[#f36] text-xs font-bold text-black shadow-[0px_4px_15px_0px_rgba(255,51,102,0.25)] transition hover:-translate-y-0.5 hover:shadow-[0px_6px_20px_0px_rgba(255,51,102,0.35)] disabled:opacity-30 disabled:pointer-events-none"
+				class="btn-danger h-11 w-3/5 text-xs"
 				disabled={!canDelete || saving}
 				onclick={confirmDelete}
 			>
