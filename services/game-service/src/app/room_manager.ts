@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/11 12:38:56 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/12 09:45:50 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@ import type WebSocket from "ws";
 
 // Game
 import { initGame } from "../engine/init.js";
-import type { GameState } from "../engine/init.js";
+import type { GameState, PlayerState } from "../engine/init.js";
 import type { GameConfig } from "../engine/config.js";
 import { step } from "../engine/step.js";
 import type { TurnInput } from "../engine/step.js";
@@ -94,12 +94,24 @@ export class RoomManager {
 		return (this.rooms.get(roomId));
 	}
 
-	getPlayerIds(room: Room): string[] {
+	private getPlayerIds(room: Room): string[] {
 		return (room.players.map((p) => p.playerId));
 	}
 
-	getPlayer(room: Room, playerId: string): Player | undefined {
+	private getPlayer(room: Room, playerId: string): Player | undefined {
 		return (room.players.find((p) => p.playerId === playerId));
+	}
+
+	private getPlayerState(state: GameState, playerId: string): PlayerState | null {
+		return (state.players.find(p => p.id === playerId) ?? null);
+	}
+
+	// TODO: Use This
+	private getRoomOrThrow(roomId: string): Room {
+		const room = this.rooms.get(roomId);
+		if (!room)
+			throw new Error(`Unknown roomId: ${roomId}`);
+		return (room);
 	}
 
 
@@ -190,8 +202,7 @@ export class RoomManager {
 	 * Add a player to the room
 	 */
 	private addPlayerToRoom(roomId: string, player: Player) {
-		const room = this.get(roomId);
-		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 		if (room.phase === "finished") throw new Error(`Room ${roomId} is finished`);
 
 		const existing = this.getPlayer(room, player.playerId);
@@ -266,8 +277,7 @@ export class RoomManager {
 	 * Close current room
 	 */
 	public closeRoom(roomId: string, reason = "closed") {
-		const room = this.get(roomId);
-		if (!room) return;
+		const room = this.getRoomOrThrow(roomId);
 
 		if (room.timer) clearInterval(room.timer);
 
@@ -285,16 +295,8 @@ export class RoomManager {
 		});
 	}
 
-	/**
-	 * Remove a player from the room when in Lobby
-	 */
-	public async willLeaveLobby(roomId: string, playerId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
-
-		if (room.sceneById[playerId] !== "lobby") return;
-		
-		// Drop player
+	private async dropPlayer(roomId: string, playerId: string) {
+		const room = this.getRoomOrThrow(roomId);
 		const idx = room.players.findIndex(p => (p as any).playerId === playerId);
 		if (idx === -1) return;
 
@@ -303,7 +305,7 @@ export class RoomManager {
 
 		room.players.splice(idx, 1);
 		
-		// Host
+		// Set new Host
 		if (room.hostId === playerId) {
 			if (room.players.length > 0) {
 				// Promote first remaining player
@@ -316,7 +318,41 @@ export class RoomManager {
 
 		await this.persistLeaveRoom(roomId, playerId);
 
-		logInfo("room.willLeaveLobby", {
+		// If room is empty
+		if (room.players.length === 0) {
+			this.closeRoom(roomId);
+		}
+	}
+
+	/**
+	 * Remove a player from the room when in Lobby
+	 */
+	public async willLeaveLobby(roomId: string, playerId: string) {
+		const room = this.getRoomOrThrow(roomId);
+
+		if (room.sceneById[playerId] !== "lobby") return;
+		
+		await this.dropPlayer(roomId, playerId);
+
+		logInfo("room.leave_lobby", {
+			roomId,
+			playerId,
+			playerCountAfter: room.players.length,
+			newHost: room.hostId,
+		});
+
+		this.broadcastState(roomId);
+	}
+
+	private async willLeaveGame(roomId: string, playerId: string) {
+		const room = this.getRoomOrThrow(roomId);
+		if (room.sceneById[playerId] !== "game") return;
+		
+		if (!room.finishOrder.includes(playerId)) room.finishOrder.push(playerId);
+		this.setPlayerAlive(roomId, playerId, false);
+		await this.dropPlayer(roomId, playerId);
+
+		logInfo("room.leave_game", {
 			roomId,
 			playerId,
 			playerCountAfter: room.players.length,
@@ -325,12 +361,37 @@ export class RoomManager {
 
 		this.broadcastState(roomId);
 
-		// If room is empty
-		if (room.players.length === 0) {
-			this.closeRoom(roomId);
-			return;
+		if (room.phase === "running" && room.players.length === 1) {
+			const [onlyPlayer] = room.players;
+			if (!onlyPlayer)
+				return;
+			const winnerId = onlyPlayer.playerId;
+			await this.finishRoom(roomId, winnerId);
 		}
 	}
+
+	public onPlayerDisconnected(roomId: string, playerId: string, ws: WebSocket, meta: any) {
+		const room = this.getRoomOrThrow(roomId);
+
+		this.unsubscribe(roomId, ws);
+
+		logInfo("room.player_disconnected", {
+			roomId,
+			playerId,
+			playerSceme: room.sceneById[playerId],
+			reason: meta
+		});
+
+		switch (room.sceneById[playerId]) {
+			case "lobby":
+				void this.willLeaveLobby(roomId, playerId);
+				break;
+			case "game":
+				void this.willLeaveGame(roomId, playerId);
+				break;
+		}
+	}
+
 
 	private async persistLeaveRoom(roomId: string, playerId: string) {
 		const userId = Number(playerId);
@@ -345,6 +406,17 @@ export class RoomManager {
 		}
 	}
 
+	private setPlayerAlive(roomId: string, playerId: string, newAlive: boolean) {
+		const room = this.getRoomOrThrow(roomId);
+		const p = this.getPlayerState(room.state, playerId);
+  		if (!p) return;
+
+		if (p.alive === newAlive)
+			return;
+  		p.alive = newAlive;
+	}
+	
+
 
 	/* ====================================================================== */
 	/*                                SOCKET                                  */
@@ -355,9 +427,7 @@ export class RoomManager {
 	 * `set`, no duplicates
 	 */
 	subscribe(roomId: string, ws: WebSocket) {
-		const room = this.rooms.get(roomId);
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 
 		const before = room.subscribers.size;
 		room.subscribers.add(ws);
@@ -373,9 +443,7 @@ export class RoomManager {
 	 * Remove a web socket from list of subscribers
 	 */
 	unsubscribe(roomId: string, ws: WebSocket) {
-		const room = this.rooms.get(roomId);
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 		
 		const before = room.subscribers.size;
 		room.subscribers.delete(ws);
@@ -408,9 +476,7 @@ export class RoomManager {
 	 * Update the scene for a player
 	 */
 	updatePlayerScene(roomId: string, playerId: string, scene: PlayerPhase ) {
-		const room = this.rooms.get(roomId);
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 
 		if (!this.getPlayer(room, playerId))
 			throw new Error(`Unknown playerId ${playerId} for room ${roomId}`);
@@ -434,9 +500,7 @@ export class RoomManager {
 	 * lobby -> ready
 	 */
 	willUpdateRoomPhase(roomId: string) {
-		const room = this.get(roomId);
-		if (!room)
-			throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 
 		if (room.phase !== "lobby")
 			return;
@@ -466,8 +530,7 @@ export class RoomManager {
 	 * Set room to `running`
 	 */
 	setRoomToRunning(roomId: string) {
-		const room = this.get(roomId);
-		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 
 		if (room.phase !== "ready") {
 			logInfo("room.phase_change_rejected", {
@@ -498,9 +561,7 @@ export class RoomManager {
 	 */
 	pushInput(args: { roomId: string; playerId: string; turn: TurnInput }) {
 		const { roomId, playerId, turn } = args;
-		
-		const room = this.rooms.get(roomId);
-		if (!room) throw new Error(`Unknown roomId: ${roomId}`);
+		const room = this.getRoomOrThrow(roomId);
 
 		if (!(playerId in room.inputsById)) {
 			throw new Error(`Unknown playerId ${playerId} for room ${roomId}`);
@@ -518,8 +579,7 @@ export class RoomManager {
 	 * Send a message to all players
 	 */
 	broadcast(roomId: string, msg: ServerMsg) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
+		const room = this.getRoomOrThrow(roomId);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, msg);
@@ -530,8 +590,7 @@ export class RoomManager {
 	 * Send current room state to all players
 	 */
 	broadcastState(roomId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
+		const room = this.getRoomOrThrow(roomId);
 
 		this.broadcast(roomId, {
 			type: "state",
@@ -599,8 +658,7 @@ export class RoomManager {
 	 * Start game loop
 	 */
 	private startLoop(roomId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
+		const room = this.getRoomOrThrow(roomId);
 
 		if (room.timer)
 			return;
@@ -646,33 +704,78 @@ export class RoomManager {
 		}, dtMs);
 	}
 
+	// TODO: use
+	/**
+	 * Stops the room tick timer
+	 */
+	private stopRoomTimer(room: Room) {
+		if (!room.timer) return;
+		clearInterval(room.timer);
+		room.timer = null;
+	}
+
+	private applyFinishOrder(room: Room, winnerId: string | null) {
+		if (winnerId && !room.finishOrder.includes(winnerId)) room.finishOrder.push(winnerId);
+
+		for (const p of room.players) {
+			if (!room.finishOrder.includes(p.playerId)) room.finishOrder.push(p.playerId);
+		}
+	}
+
+	private computeAndApplyNewRatings(room: Room) {
+		const playerIds = new Set(room.players.map(p => p.playerId));
+  		const finishOrder = room.finishOrder.filter(id => playerIds.has(id));
+		
+		const playerRatings = room.players.map((p) => ({
+			id: p.playerId,
+			mu: p.rating_mu,
+			sigma: p.rating_sigma,
+		}));
+
+		logInfo("ratings.pre", {
+			players: room.players.map((p) => ({
+				id: p.playerId,
+				mu: p.rating_mu,
+				sigma: p.rating_sigma,
+			})),
+		});
+
+		// Compute new ratings with OpenSkill
+		const updated = updateRatingsOpenSkill(playerRatings, { finishOrder });
+		
+		// Merge updated mu/sigma back into room.players
+		const updatedById = new Map(updated.map((u) => [u.id, u] as const));
+
+		room.players = room.players.map((p) => {
+			const u = updatedById.get(p.playerId);
+			if (!u) return p;
+
+			return {
+				...p,
+				rating_mu: u.mu,
+				rating_sigma: u.sigma,
+			};
+		});
+
+		logInfo("ratings.post", {
+			players: room.players.map((p) => ({
+				id: p.playerId,
+				mu: p.rating_mu,
+				sigma: p.rating_sigma,
+			})),
+		});
+	}
+
 	/**
 	 * When a game winner has been set, game ends
 	 */
 	private async finishRoom(roomId: string, winnerId: string | null) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
+		const room = this.getRoomOrThrow(roomId);
 		if (room.phase === "finished") return;
 
 		room.phase = "finished";
-
-		if (room.timer) {
-			clearInterval(room.timer);
-			room.timer = null;
-		}
-
-		if (winnerId) {
-			if (!room.finishOrder.includes(winnerId)) room.finishOrder.push(winnerId);
-		} else {
-			if (room.finishOrder.length === 0) {
-				room.finishOrder = room.players.map((p) => p.playerId);
-			} else {
-				for (const p of room.players) {
-					if (!room.finishOrder.includes(p.playerId))
-						room.finishOrder.push(p.playerId);
-				}
-			}
-		}
+		this.stopRoomTimer(room);
+		this.applyFinishOrder(room, winnerId);
 
 		logInfo("room.finished", {
 			roomId,
@@ -685,38 +788,13 @@ export class RoomManager {
 			roomId,
 			winnerId,
 		} satisfies ServerMsg;
-
 		this.broadcast(roomId, msg);
 
 		// Persist game with new ratings
 		try {
-			// 1) Convert room players -> PlayerRating[]
-			const playerRatings = room.players.map((p) => ({
-				id: p.playerId,
-				mu: p.rating_mu,
-				sigma: p.rating_sigma,
-			}));
+			this.computeAndApplyNewRatings(room);
 
-			// 2) Compute new ratings with OpenSkill
-			const updated = updateRatingsOpenSkill(playerRatings, {
-				finishOrder: room.finishOrder,
-			});
-
-			// 3) Merge updated mu/sigma back into room.players
-			const updatedById = new Map(updated.map((u) => [u.id, u] as const));
-
-			room.players = room.players.map((p) => {
-				const u = updatedById.get(p.playerId);
-				if (!u)
-					return (p);
-				return {
-					...p,
-					rating_mu: u.mu,
-					rating_sigma: u.sigma,
-				};
-			});
-
-			// 4) Build backend payload
+			// Build backend payload
 			const payload = this.toFinishPayload(
 				room.players.map((p) => ({
 					playerId: p.playerId,
@@ -760,7 +838,7 @@ export class RoomManager {
 		const rankById = new Map<string, number>();
 
 		for (const [i, id] of finishOrder.entries()) {
-			rankById.set(id, n - 1);
+			rankById.set(id, i + 1);
 		}
 
 		// Fallback

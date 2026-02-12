@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 11:27:50 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/12 08:33:48 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,7 +223,22 @@ export function startPublicWsServer(
 			}
 		});
 
-		ws.on("close", () => rooms.unsubscribeAll(ws));
+		ws.on("close", (code, reason) => {
+			if (boundRoomId && boundPlayerId) {
+				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
+			} else {
+				rooms.unsubscribeAll(ws);
+			}
+		});
+
+		ws.on("error", () => {
+			if (boundRoomId && boundPlayerId) {
+				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
+
+			} else {
+				rooms.unsubscribeAll(ws);
+			}
+		});
 	});
 
 	console.log(`public WS on ws://localhost:${opts.port}${opts.path ?? "/ws"}`);
