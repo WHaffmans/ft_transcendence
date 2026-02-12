@@ -54,7 +54,7 @@ services:
       - APP_FRONTEND_URL=${PROD_DOMAIN}
       - APP_URL=${PROD_DOMAIN}
       - BUILD=PROD
-      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - BACKEND_INTERNAL_API_KEY=${BACKEND_INTERNAL_API_KEY}
       - GITHUB_CLIENT_ID=${PROD_GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${PROD_GITHUB_CLIENT_SECRET}
       - GITHUB_REDIRECT_URI=${PROD_DOMAIN}/auth/callback/github
@@ -88,7 +88,8 @@ services:
       - PUBLIC_WS_PORT=3443
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - AUTH_SERVICE_URL=${PROD_AUTH_SERVICE_URL}
-      - BACKEND_INTERNAL_BASE_URL=https://backend-service:4443
+      - BACKEND_INTERNAL_BASE_URL=https://backend-service:4443/api/internal
+      - BACKEND_INTERNAL_API_KEY=${BACKEND_INTERNAL_API_KEY}
     networks:
       - transcendence-production
     volumes:

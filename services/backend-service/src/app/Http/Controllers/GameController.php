@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\FinishGameRequest;
 use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class GameController extends Controller
@@ -121,6 +122,11 @@ class GameController extends Controller
                 'rating_mu' => $result['rating_mu'],
                 'rating_sigma' => $result['rating_sigma'],
             ]);
+            $user = User::find($result['user_id']);
+            if ($user) { $user->update([ 
+                'rating_mu' => $result['rating_mu'],
+                'rating_sigma' => $result['rating_sigma'],
+                 ]); }
         }
 
         return response()->json($game->load('users'));
