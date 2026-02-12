@@ -55,6 +55,12 @@ services:
       - APP_FRONTEND_URL=${DOMAIN}
       - BUILD=DEV
       - BACKEND_INTERNAL_API_KEY=${BACKEND_INTERNAL_API_KEY}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=http://${DOMAIN}/auth/callback/github
+      - INTRA_CLIENT_ID=${INTRA_CLIENT_ID}
+      - INTRA_CLIENT_SECRET=${INTRA_CLIENT_SECRET}
+      - INTRA_REDIRECT_URI=http://${DOMAIN}/auth/callback/intra
     networks:
       - transcendence-internal
     ports:
@@ -84,7 +90,7 @@ services:
       - HOST=0.0.0.0
       - INTERNAL_WS_PORT=3002
       - PUBLIC_WS_PORT=3003
-      - AUTH_SERVICE_URL=http://backend-service:4000
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
     networks:
       - transcendence-internal
     ports:
@@ -112,8 +118,8 @@ services:
       - "8443:443"
       - "127.0.0.1:8081:8080"
     volumes:
-      - ./services/gateway/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./services/gateway/conf:/etc/traefik/conf:ro
+      - ./services/gateway/conf/dev/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./services/gateway/conf/dev:/etc/traefik/conf:ro
       - ./certs:/certs:ro
     healthcheck:
       test:
