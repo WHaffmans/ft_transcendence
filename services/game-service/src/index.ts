@@ -18,8 +18,8 @@ import "dotenv/config";
 
 const rooms = new RoomManager();
 
-const publicPort = Number(3443);
 const isProduction = process.env.NODE_ENV === "production";
+const publicPort = isProduction ? 3443 : 3003;
 
 // Create HTTPS server for production
 let httpsServer = undefined;
