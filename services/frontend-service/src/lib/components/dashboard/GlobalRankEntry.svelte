@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { userStore } from '$lib/stores/user';
+	import type { User } from '$lib/types/types';
 
 	interface Props {
-		player: any;
+		player: User;
 		position: number;
 		isCurrentUser?: boolean;
 	}
