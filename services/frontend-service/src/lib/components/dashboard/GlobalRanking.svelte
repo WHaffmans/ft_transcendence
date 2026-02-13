@@ -1,10 +1,11 @@
 <script lang="ts">
 	import GlobalRankEntry from './GlobalRankEntry.svelte';
 	import Footer from '$lib/components/Footer.svelte'
+	import type { User } from '$lib/types/types';
 
 	interface Props {
-		leaderboard: any[];
-		currentUser: any;
+		leaderboard: User[];
+		currentUser: User | null;
 		userPosition: number;
 	}
 

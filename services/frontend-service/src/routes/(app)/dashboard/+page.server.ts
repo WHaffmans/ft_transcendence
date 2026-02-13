@@ -1,5 +1,5 @@
 import type { ServerLoad } from '@sveltejs/kit';
-import type { RatingPoint, LastMatchData, LastMatchPlayer } from '$lib/types/types';
+import type { RatingPoint, LastMatchData, LastMatchPlayer, User } from '$lib/types/types';
 
 interface PivotData {
     rating_mu: number;
@@ -115,8 +115,8 @@ export const load = (async ({ fetch, parent }) => {
     const matches: Match[] = matchesRes.ok ? await matchesRes.json() : [];
     const allUsers = allUsersRes.ok ? await allUsersRes.json() : [];
 
-    const sortedUsers = allUsers.sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0));
-    const userPosition = sortedUsers.findIndex((u: any) => u.id === user.id) + 1;
+    const sortedUsers = allUsers.sort((a: User, b: User) => (b.rating ?? 0) - (a.rating ?? 0));
+    const userPosition = sortedUsers.findIndex((u: User) => u.id === user.id) + 1;
     const totalPlayers = allUsers.length;
     const ratingHistory = buildRatingHistory(matches, user.id);
     const lastMatch = buildLastMatchData(matches, user.id);

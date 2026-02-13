@@ -10,11 +10,12 @@
 	import ProfileSettingsModal from '$lib/components/modal/profile-settings/ProfileSettingsModal.svelte';
 	import type { LayoutData } from './$types';
 	import type { User } from '$lib/types/types';
+	import type { Snippet } from 'svelte';
 
 	let {
 		data,
 		children
-	}: { data: LayoutData & { user: User | null }; children: any } = $props();
+	}: { data: LayoutData & { user: User | null }; children: Snippet } = $props();
 
 	$effect(() => {
 		userStore.set(data.user);
