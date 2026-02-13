@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
+
 @source "../node_modules/flowbite-svelte/dist";
 @source "../node_modules/@flowbite-svelte-plugins/chart/dist";
 
