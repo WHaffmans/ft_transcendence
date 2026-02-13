@@ -16,7 +16,7 @@
 	<!-- Profile display -->
 	<div class="flex flex-col items-center gap-3 p-6">
 		<img
-			src={avatar}
+			src={avatar || '/placeholders/avatars/placeholder.png'}
 			alt={nickname}
 			class="object-cover w-1/3 rounded-full aspect-square"
 		/>
