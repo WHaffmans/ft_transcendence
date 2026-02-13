@@ -19,7 +19,7 @@ interface Match {
     users: MatchUser[];
 }
 
-export interface RankPoint {
+export interface RatingPoint {
     date: string;
     rating: number;
 }
@@ -42,11 +42,11 @@ function computeRating(pivot: PivotData): number {
     return Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
 }
 
-function buildRankHistory(matches: Match[], userId: number): RankPoint[] {
+function buildRatingHistory(matches: Match[], userId: number): RatingPoint[] {
     return matches
         .slice()
         .reverse()
-        .reduce<RankPoint[]>((history, match) => {
+        .reduce<RatingPoint[]>((history, match) => {
             const pivot = match.users.find((u) => u.id === userId)?.user_game;
             if (!pivot?.rating_mu || !pivot?.rating_sigma) return history;
 
@@ -115,7 +115,7 @@ export const load = (async ({ fetch, parent }) => {
         return {
             leaderboard: [],
             lastMatch: null,
-            rankHistory: [],
+            ratingHistory: [],
             userPosition: 0,
             totalPlayers: 0
         };
@@ -134,13 +134,13 @@ export const load = (async ({ fetch, parent }) => {
     const sortedUsers = allUsers.sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0));
     const userPosition = sortedUsers.findIndex((u: any) => u.id === user.id) + 1;
     const totalPlayers = allUsers.length;
-    const rankHistory = buildRankHistory(matches, user.id);
+    const ratingHistory = buildRatingHistory(matches, user.id);
     const lastMatch = buildLastMatchData(matches, user.id);
 
     return {
         leaderboard,
         lastMatch,
-        rankHistory,
+        ratingHistory,
         userPosition,
         totalPlayers
     };

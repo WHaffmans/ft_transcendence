@@ -2,7 +2,7 @@
   import { toast } from "svelte-sonner";
   import GlobalRanking from "$lib/components/dashboard/GlobalRanking.svelte";
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
-  import RankChart from "$lib/components/dashboard/RankChart.svelte";
+  import RatingChart from "$lib/components/dashboard/RatingChart.svelte";
   import LastMatch from "$lib/components/dashboard/LastMatch.svelte";
   import { goto } from "$app/navigation";
 
@@ -65,7 +65,7 @@
               {data.user?.rating ?? 0}
             </p>
             <div class="mt-auto">
-              <RankChart rankHistory={data.rankHistory ?? []} />
+              <RatingChart ratingHistory={data.ratingHistory ?? []} />
             </div>
           </div>
         {/snippet}

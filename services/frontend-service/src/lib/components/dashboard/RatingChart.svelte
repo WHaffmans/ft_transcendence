@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Chart } from '@flowbite-svelte-plugins/chart';
 	import type { ApexOptions } from 'apexcharts';
-	import type { RankPoint } from '../../../routes/(app)/dashboard/+page.server';
+	import type { RatingPoint } from '../../../routes/(app)/dashboard/+page.server';
 
 	interface Props {
-		rankHistory: RankPoint[];
+		ratingHistory: RatingPoint[];
 	}
 
-	let { rankHistory }: Props = $props();
+	let { ratingHistory }: Props = $props();
 
 	const trend = $derived.by(() => {
-		if (rankHistory.length < 2) return 'neutral';
-		const first = rankHistory[0].rating;
-		const last = rankHistory[rankHistory.length - 1].rating;
+		if (ratingHistory.length < 2) return 'neutral';
+		const first = ratingHistory[0].rating;
+		const last = ratingHistory[ratingHistory.length - 1].rating;
 		return last >= first ? 'up' : 'down';
 	});
 
@@ -61,13 +61,13 @@
 		},
 		series: [
 			{
-				name: 'Rank',
-				data: rankHistory.map((p) => p.rating),
+				name: 'Rating',
+				data: ratingHistory.map((p) => p.rating),
 				color: seriesColor
 			}
 		],
 		xaxis: {
-			categories: rankHistory.map((p) => p.date),
+			categories: ratingHistory.map((p) => p.date),
 			labels: { show: false },
 			axisBorder: { show: false },
 			axisTicks: { show: false },
@@ -77,7 +77,7 @@
 	});
 </script>
 
-{#if rankHistory.length >= 2}
+{#if ratingHistory.length >= 2}
 	<div class="w-full">
 		<Chart {options} />
 	</div>

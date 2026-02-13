@@ -74,7 +74,7 @@
 		</div>
 	</div>
 
-	<!-- Right: Rank Score -->
+	<!-- Right: Rating -->
 	<p class="text-sm font-bold text-center {rankColorClass}">
 		{player.rating}
 	</p>
