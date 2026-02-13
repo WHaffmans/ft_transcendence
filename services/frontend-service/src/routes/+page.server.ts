@@ -1,9 +1,9 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async( {cookies} ) => {
-    console.log("Checking authentication status in +page.server.ts");
-    if (cookies.get('access_token')) {
+export const load: PageServerLoad = async ({ parent }) => {
+    const { user } = await parent();
+    if (user) {
         throw redirect(302, '/dashboard');
     }
 };

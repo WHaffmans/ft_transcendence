@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { apiStore } from "$lib/stores/api";
   import { toast } from "svelte-sonner";
 
@@ -10,8 +10,7 @@
     const success = await apiStore.login();
     if (success) {
       toast.success("Welcome!");
-      await invalidateAll();
-      goto("/dashboard");
+      goto("/dashboard", { invalidateAll: true });
     } else {
       toast.error("Login failed");
     }

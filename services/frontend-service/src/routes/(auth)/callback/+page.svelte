@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
 
   let isProcessing = true;
   let error = "";
@@ -29,7 +29,7 @@
           window.location.origin,
         );
         setTimeout(() => window.close(), 100);
-        await invalidateAll();
+
       }
     } else {
       goto("/", { replaceState: true });
