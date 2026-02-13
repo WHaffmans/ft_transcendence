@@ -111,9 +111,9 @@ export const load = (async ({ fetch, parent }) => {
         fetch('/api/users')
     ]);
 
-    const leaderboard = leaderboardRes.ok ? await leaderboardRes.json() : [];
-    const matches: Match[] = matchesRes.ok ? await matchesRes.json() : [];
-    const allUsers = allUsersRes.ok ? await allUsersRes.json() : [];
+    const leaderboard = leaderboardRes.ok ? await leaderboardRes.json().catch(() => []) : [];
+    const matches: Match[] = matchesRes.ok ? await matchesRes.json().catch(() => []) : [];
+    const allUsers = allUsersRes.ok ? await allUsersRes.json().catch(() => []) : [];
 
     const sortedUsers = allUsers.sort((a: User, b: User) => (b.rating ?? 0) - (a.rating ?? 0));
     const userPosition = sortedUsers.findIndex((u: User) => u.id === user.id) + 1;
