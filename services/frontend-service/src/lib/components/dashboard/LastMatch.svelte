@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LastMatchData } from '../../../routes/(app)/dashboard/+page.server';
+	import type { LastMatchData } from '$lib/types/types';
 
 	interface Props {
 		match: LastMatchData;

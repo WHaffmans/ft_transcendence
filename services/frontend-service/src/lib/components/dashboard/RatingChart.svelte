@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Chart } from '@flowbite-svelte-plugins/chart';
 	import type { ApexOptions } from 'apexcharts';
-	import type { RatingPoint } from '../../../routes/(app)/dashboard/+page.server';
+	import type { RatingPoint } from '$lib/types/types';
 
 	interface Props {
 		ratingHistory: RatingPoint[];

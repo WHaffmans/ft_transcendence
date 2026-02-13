@@ -76,3 +76,22 @@ export interface WSMessage {
   type: string;
   [key: string]: any;
 }
+
+export interface RatingPoint {
+    date: string;
+    rating: number;
+}
+
+export interface LastMatchPlayer {
+    id: number;
+    name: string;
+    rating: number;
+    delta: number | null;
+    rank: number;
+    isCurrentUser: boolean;
+}
+
+export interface LastMatchData {
+    players: LastMatchPlayer[];
+    date: string;
+}

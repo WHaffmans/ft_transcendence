@@ -1,4 +1,5 @@
 import type { ServerLoad } from '@sveltejs/kit';
+import type { RatingPoint, LastMatchData, LastMatchPlayer } from '$lib/types/types';
 
 interface PivotData {
     rating_mu: number;
@@ -19,24 +20,7 @@ interface Match {
     users: MatchUser[];
 }
 
-export interface RatingPoint {
-    date: string;
-    rating: number;
-}
-
-export interface LastMatchPlayer {
-    id: number;
-    name: string;
-    rating: number;
-    delta: number | null;
-    rank: number;
-    isCurrentUser: boolean;
-}
-
-export interface LastMatchData {
-    players: LastMatchPlayer[];
-    date: string;
-}
+export type { RatingPoint, LastMatchData, LastMatchPlayer };
 
 function computeRating(pivot: PivotData): number {
     return Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
