@@ -63,7 +63,7 @@
 		<div class="flex items-center gap-2">
 			<!-- Avatar -->
 			<img
-				src={displayAvatar || '/placeholders/avatars/placeholder.png'}
+				src={displayAvatar || '/placeholders/avatars/placeholder.webp'}
 				alt={displayName}
 				class="w-6 h-6 rounded-full object-cover"
 			/>

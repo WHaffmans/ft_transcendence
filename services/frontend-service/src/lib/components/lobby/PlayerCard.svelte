@@ -68,7 +68,7 @@
 	<!-- Player Info (centered) -->
 	<div class="flex flex-col items-center gap-2">
 		<img
-			src={player.avatar_url || '/placeholders/avatars/placeholder.png'}
+			src={player.avatar_url || '/placeholders/avatars/placeholder.webp'}
 			alt={player.name}
 			class="w-20 h-20 rounded-full object-cover"
 		/>

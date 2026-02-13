@@ -7,7 +7,7 @@
   <!-- Avatar -->
   <div class="shrink-0 size-11">
     <img
-      src={player.avatar_url || '/placeholders/avatars/placeholder.png'}
+      src={player.avatar_url || '/placeholders/avatars/placeholder.webp'}
       alt={player.name}
       class="object-cover w-full h-full rounded-full"
     />
