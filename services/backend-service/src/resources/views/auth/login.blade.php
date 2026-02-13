@@ -290,7 +290,7 @@
                     </path>
                 </svg>
             </div>
-            <h1>Welcome back</h1>
+            <h1>Welcome</h1>
             <p>Sign in to your account to continue</p>
         </div>
 

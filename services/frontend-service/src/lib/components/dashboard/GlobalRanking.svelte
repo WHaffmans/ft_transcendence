@@ -1,10 +1,11 @@
 <script lang="ts">
 	import GlobalRankEntry from './GlobalRankEntry.svelte';
 	import Footer from '$lib/components/Footer.svelte'
+	import type { User } from '$lib/types/types';
 
 	interface Props {
-		leaderboard: any[];
-		currentUser: any;
+		leaderboard: User[];
+		currentUser: User | null;
 		userPosition: number;
 	}
 
@@ -19,12 +20,12 @@
 	</div>
 
 	<!-- Column Headers -->
-	<div class="flex items-center justify-between px-6 text-[10px] font-medium text-[#666] mt-3 mb-2">
+	<div class="flex items-center justify-between px-7 text-[10px] font-medium text-[#666] mt-3 mb-2">
 		<div class="flex items-center gap-13">
 			<span>#</span>
 			<span>PLAYER</span>
 		</div>
-		<span>RANK</span>
+		<span>RATING</span>
 	</div>
 
 	<!-- Top 5 Players -->

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
+
+@source "../node_modules/flowbite-svelte/dist";
+@source "../node_modules/@flowbite-svelte-plugins/chart/dist";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -63,6 +68,19 @@
 @layer components {
   .shadow-button {
     @apply transition-all duration-150 shadow-glow hover:shadow-glow-strong hover:-translate-y-1 active:translate-y-0 active:shadow-glow;
+  }
+
+  .btn-primary {
+    @apply flex items-center justify-center rounded-lg bg-white font-bold text-black shadow-lg transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-30;
+  }
+
+  .btn-danger {
+    @apply flex items-center justify-center rounded-lg bg-[#f36] font-bold text-black transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-30;
+    box-shadow: 0px 4px 15px 0px rgba(255, 51, 102, 0.25);
+
+    &:hover {
+      box-shadow: 0px 6px 20px 0px rgba(255, 51, 102, 0.35);
+    }
   }
 }
 

@@ -3,8 +3,9 @@
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
   import { apiStore } from "$lib/stores/api";
+  import { modalStore } from "$lib/components/modal/modal";
 
-  let { data, children } = $props();
+  let { children } = $props();
 
 	const handleLogout = () => {
 		console.log('Logging out...');
@@ -18,7 +19,7 @@
 	};
 
   const handleOpenSettings = () => {
-    // goto('/dashboard/settings');
+    modalStore.open('profileSettings');
   };
 </script>
 
@@ -26,8 +27,6 @@
   <!-- App navigation -->
   <nav>
     <Navbar
-      username={data.user?.name ?? "Guest"}
-      avatar={data.user?.avatar_url ?? ""}
       onLogout={handleLogout}
       onOpenSettings={handleOpenSettings}
     />

@@ -6,19 +6,11 @@
 <div class="grid grid-cols-[auto_1fr_auto] items-center w-full min-w-0 px-4 py-2">
   <!-- Avatar -->
   <div class="shrink-0 size-11">
-    {#if player.avatar_url}
-      <img
-        src={player.avatar_url || "/default_avatar.png"}
-        alt={player.name}
-        class="object-cover w-full h-full rounded-full"
-      />
-    {:else}
-      <div
-        class="flex items-center justify-center w-full h-full text-lg font-bold text-white bg-gray-600 rounded-full"
-      >
-        {player.name.charAt(0).toUpperCase()}
-      </div>
-    {/if}
+    <img
+      src={player.avatar_url || '/placeholders/avatars/placeholder.webp'}
+      alt={player.name}
+      class="object-cover w-full h-full rounded-full"
+    />
   </div>
 
   <!-- Username -->

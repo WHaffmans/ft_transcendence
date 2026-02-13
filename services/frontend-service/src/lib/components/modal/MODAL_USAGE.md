@@ -4,16 +4,12 @@ The global modal system allows any component in the app to trigger modals withou
 
 ## Architecture
 
-The modal system supports two types of modals:
+Each modal is a **component-based modal** with its own `.svelte` component registered in the root layout.
 
-1. **Component-based modals** (recommended for complex content)
-   - Privacy Policy and Terms of Service use this pattern
-   - Each has its own `.svelte` component that handles rendering
-   - Content is loaded from `.md` files and parsed with `marked`
-
-2. **Simple text modals** (for basic content)
-   - Defined in `modalContent.ts`
-   - Just text content, no custom components
+Current modals:
+- **Privacy Policy** (`'privacy'`) — renders markdown content
+- **Terms of Service** (`'terms'`) — renders markdown content
+- **Profile Settings** (`'profileSettings'`) — settings UI
 
 ## How to Use
 
@@ -24,14 +20,12 @@ import { modalStore } from '$lib/components/modal/modal';
 
 ### Open a modal
 ```typescript
-// Component-based modals
 modalStore.open('privacy');
 modalStore.open('terms');
+modalStore.open('profileSettings');
 
-// Future modals (with optional data)
-modalStore.open('profile', { userId: 123 });
-modalStore.open('settings', { tab: 'notifications' });
-modalStore.open('friends');
+// With optional data
+modalStore.open('profileSettings', { tab: 'account' });
 ```
 
 ### Close a modal
@@ -39,11 +33,11 @@ modalStore.open('friends');
 modalStore.close();
 ```
 
-## Adding New Component-Based Modals
+## Adding a New Modal
 
 1. **Add the modal type** to `modal.ts`:
 ```typescript
-export type ModalType = 'privacy' | 'terms' | 'your-new-modal' | null;
+export type ModalType = 'privacy' | 'terms' | 'profileSettings' | 'your-new-modal' | null;
 ```
 
 2. **Add title** to `modalConfig.ts`:
@@ -68,27 +62,11 @@ export const modalConfig = {
 
 4. **Register in +layout.svelte**:
 ```svelte
-{#if $modalStore.type === 'your-new-modal'}
+{:else if $modalStore.type === 'your-new-modal'}
   <Modal title={modalConfig['your-new-modal'].title} ...>
     <YourNewModal />
   </Modal>
-{/if}
 ```
-
-## Adding Simple Text Modals
-
-1. Add entry to `modalContent.ts`:
-```typescript
-export const modalContent = {
-  'simple-modal': {
-    content: 'Your simple text content here.'
-  }
-};
-```
-
-2. Add title to `modalConfig.ts`
-
-The fallback in `+layout.svelte` will handle rendering automatically.
 
 ## Example: Opening modal from a button
 ```svelte
