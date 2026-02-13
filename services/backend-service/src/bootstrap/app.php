@@ -17,21 +17,24 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         then: function () {
-            Route::middleware('auth.internal')
-                ->prefix('internal')
-                ->name('internal.')
-                ->group(base_path('routes/internal.php'));
+            // Explicit route model binding for UUID-based Game model
+            Route::bind('game', function (string $value) {
+                return \App\Models\Game::where('id', $value)->firstOrFail();
+            });
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web([
             CreateFreshApiToken::class,
         ]);
-        $middleware->trustProxies('*', Request::HEADER_FORWARDED | Request::HEADER_X_FORWARDED_TRAEFIK);
+        $middleware->trustProxies('*', Request::HEADER_X_FORWARDED_TRAEFIK);
         $middleware->encryptCookies([
             'access_token',
             'refresh_token',
         ]);
+        
+        // API routes already don't have CSRF protection
+        // Internal routes are now in api.php with InternalAuthMiddleware
     })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([

@@ -1,6 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
 
-const backendBaseUrl = 'http://backend-service:4000';
+const isProduction = process.env.NODE_ENV === 'production';
+const backendBaseUrl = isProduction 
+	? 'https://backend-service:4443'
+	: 'http://backend-service:4000';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
