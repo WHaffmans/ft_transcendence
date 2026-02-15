@@ -87,7 +87,16 @@ class GameController extends Controller
 
     public function leaveGame(LeaveGameRequest $request, Game $game)
     {
-        $game->users()->detach($request->input('user_id'));
+        $userId = $request->input('user_id');
+        $game->load('users');
+
+        if ($game->users->count() === 1 && $game->users->contains($userId)) {
+            $game->delete();
+
+            return response()->json(null, 204);
+        }
+
+        $game->users()->detach($userId);
 
         return response()->json($game->load('users'));
     }
