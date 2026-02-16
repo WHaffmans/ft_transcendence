@@ -16,12 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__ . '/../routes/api.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
-        then: function () {
-            // Explicit route model binding for UUID-based Game model
-            Route::bind('game', function (string $value) {
-                return \App\Models\Game::where('id', $value)->firstOrFail();
-            });
-        }
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web([

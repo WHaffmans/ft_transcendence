@@ -4,11 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\InternalAuthMiddleware;
 
-// Explicit route model binding for UUID-based Game model
-Route::bind('game', function (string $value) {
-    return \App\Models\Game::where('id', $value)->firstOrFail();
-});
-
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
     Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
