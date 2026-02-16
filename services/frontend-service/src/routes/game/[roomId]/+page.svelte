@@ -1,155 +1,55 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws";
-  import type { Game } from "$lib/types/types";
 
-  // ---------------------
-  // types
-  // ---------------------
-  type ColorRGBA = {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
-  };
+  import PlayersPanel from "$lib/components/game/PlayersPanel.svelte";
+  import GameCanvas from "$lib/components/game/GameCanvas.svelte";
+  import FinishOverlay from "$lib/components/game/FinishOverlay.svelte";
+  import StartOverlay from "$lib/components/game/StartOverlay.svelte";
 
-  let gameRecord: Game | null = null;
-  let loadedMetaForRoom: string | null = null;
-  const DEFAULT_AVATAR = "/assets/avatars/default.png";
+  import { createCanvasRenderer } from "$lib/game/renderCanvas";
+  import { createGameMetaLoader } from "$lib/game/gameMeta";
+  import { createFinishRedirect } from "$lib/game/finishRedirect";
 
-  // ---------------------
-  // derived UI state
-  // ---------------------
+
+  /* ============================================================================
+   * DOM refs + Handles
+   * ========================================================================== */
+  let canvas: HTMLCanvasElement | null = null;
+  let stopRender: null | (() => void) = null;
+  let stopFinishWatch: null | (() => void) = null;
+
+
+  /* ============================================================================
+   * Derived UI state
+   * ========================================================================== */
   $: snapshot = $wsStore.latestState;
   $: phase = snapshot?.phase ?? null;
+  $: showStartOverlay = phase === "lobby" || phase === "ready";
   $: showFinishedOverlay = phase === "finished";
 
-  $: overlayText =
-    phase === "lobby"
-      ? "Waiting for all players to join..."
-      : phase === "ready"
-        ? "Ready to start! Press "
-        : null;
+  // Meta loader
+  const metaLoader = createGameMetaLoader(wsStore, {
+    defaultAvatar: "/assets/avatars/default.png",
+  });
+  $: metaLoader.ensureLoaded($wsStore.roomId);
 
-  $: showOverlay = overlayText !== null;
+  // Finish overlay
+  const finish = createFinishRedirect({
+    seconds: 10,
+    isFinished: () => showFinishedOverlay,
+    onDone: () => goto("/dashboard"),
+  });
+  const countdown = finish.countdown;
 
-  $: {
-    const lobbyId = $wsStore.roomId;
-    if (lobbyId && loadedMetaForRoom !== lobbyId) {
-      loadedMetaForRoom = lobbyId;
-      loadGameRecord(lobbyId);
-    }
-  }
-    
-  // ---------------------
-  // canvas
-  // ---------------------
-  let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D;
-
-  const GAME_W = 806;
-  const GAME_H = 806;
-
-  function resizeCanvas() {
-    if (!canvas || !ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-
-    canvas.style.width = `${GAME_W}px`;
-    canvas.style.height = `${GAME_H}px`;
-    canvas.width = Math.floor(GAME_W * dpr);
-    canvas.height = Math.floor(GAME_H * dpr);
-
-    // draw in CSS pixels
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  function goDashboard() {
+    goto("/dashboard");
   }
 
-  function rgbaToColor(c: ColorRGBA): string {
-    return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a / 255})`;
-  }
-
-  // ---------------------
-  // draw
-  // ---------------------
-  function draw(snapshot: any) {
-    if (!ctx) return;
-
-    const W = GAME_W;
-    const H = GAME_H;
-
-    ctx.clearRect(0, 0, W, H);
-
-    if (!snapshot) return;
-
-    // segments
-    for (const s of snapshot.segments ?? []) {
-      if (s.isGap) continue;
-
-      const x0 = s.x1;
-      const y0 = s.y1;
-      const x1 = s.x2;
-      const y1 = s.y2;
-
-      if ([x0, y0, x1, y1].some((v) => typeof v !== "number")) continue;
-
-      ctx.strokeStyle = rgbaToColor(s.color);
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.stroke();
-    }
-
-    // players
-    const r = 4;
-    const ring = 3;
-    const ringAlpha = 0.18;
-
-
-    for (const p of snapshot.players ?? []) {
-      const base = rgbaToColor(p.color);
-    
-      // Outer dot
-      if (p.alive) {
-        ctx.fillStyle = rgbaToCss(p.color, ringAlpha);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r + ring, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Inner dot
-      ctx.fillStyle = p.alive ? base : "rgba(10,10,10,0.5)";
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Dead X
-      if (!p.alive) {
-        ctx.strokeStyle = base;
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.moveTo(p.x - r, p.y - r);
-        ctx.lineTo(p.x + r, p.y + r);
-        ctx.moveTo(p.x - r, p.y + r);
-        ctx.lineTo(p.x + r, p.y - r);
-        ctx.stroke();
-      }
-    }
-  }
-
-  let raf = 0;
-  function loop() {
-    draw(snapshot);
-    console.log(`Latest state: ${snapshot}`);
-    raf = requestAnimationFrame(loop);
-  }
-
-  // ---------------------
-  // input
-  // ---------------------
+  /* ============================================================================
+   * Inputs
+   * ========================================================================== */
   function onKeyDown(ev: KeyboardEvent) {
     if (ev.code === "Space") {
       ev.preventDefault();
@@ -177,14 +77,15 @@
     }
   }
 
-  // ---------------------
-  // lifecycle
-  // ---------------------
+  /* ============================================================================
+   * Lifecycle
+   * ========================================================================== */
   onMount(() => {
-    ctx = canvas.getContext("2d")!;
-    resizeCanvas();
+    if (!canvas) return;
 
-    window.addEventListener("resize", resizeCanvas);
+    const renderer = createCanvasRenderer(canvas, { w: 806, h: 806 });
+    stopRender = renderer.start(() => snapshot);
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
@@ -193,26 +94,28 @@
 
     if (roomId && playerId) {
       wsStore.updatePlayerScene(roomId, playerId, "game");
-      loadGameRecord(roomId);
     }
 
-    loop();
+    stopFinishWatch = finish.start();
   });
 
+
   onDestroy(() => {
-    cancelAnimationFrame(raf);
-    window.removeEventListener("resize", resizeCanvas);
+    stopRender?.();
+    stopRender = null;
+
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
 
-    // Leave room when exiting the game page
     wsStore.leaveRoom?.();
+    stopFinishWatch?.();
+    stopFinishWatch = null;
   });
 
 
-  // ---------------------
-  // List Players
-  // ---------------------
+  /* ============================================================================
+   * List Players
+   * ========================================================================== */
   $: youId = $wsStore.playerId ? String($wsStore.playerId) : null;
   $: players = snapshot?.players ?? [];
   $: metaById = $wsStore.playerMetaById ?? {};
@@ -225,10 +128,6 @@
     console.log("winner", { winnerId, winnerName, winnerAvatar, meta: metaById[String(winnerId ?? "")] });
   }
 
-  function playerLabel(playerId: string) {
-    return youId && String(playerId) === youId ? "YOU" : null;
-  }
-
   function displayName(playerId: string) {
     return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
   }
@@ -236,147 +135,37 @@
   function avatarUrl(playerId: string) {
     return metaById[String(playerId)]?.avatar_url ?? null;
   }
-
-  function normalizeAvatarUrl(url: string | null) {
-    if (!url) return null;
-    if (/^(https?:|data:|blob:)/.test(url)) return url;
-    return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
-  }
-
-  function rgbaToCss(c: ColorRGBA, alphaMul = 1) {
-    const a = Math.max(0, Math.min(1, (c.a / 255) * alphaMul));
-    return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
-  }
-
-  async function loadGameRecord(lobbyId: string) {
-    try {
-      const res = await fetch(`/api/games/${lobbyId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const game = (await res.json()) as Game;
-      gameRecord = game;
-
-      for (const u of game.users ?? []) {
-        wsStore.setPlayerMeta(String(u.id), {
-          name: u.name,
-          avatar_url: u.avatar_url ?? DEFAULT_AVATAR,
-        });
-      }
-    } catch (err) {
-      console.error("loadGameRecord failed:", err);
-    }
-  }
-
 </script>
 
 
-
+<!-- Page -->
 <div class="page">
   <div class="layout">
-    <!-- Left: game -->
-    <div class="glass rounded-2xl relative">
-      <canvas class="gameCanvas" bind:this={canvas}></canvas>
-    </div>
+    <!-- Left: Game -->
+    <GameCanvas bind:canvas />
 
     <!-- Right: Players -->
-    <aside class="right">
-      <div class="glass h-ranking rounded-2xl w-full flex flex-col">
-        <!-- Header -->
-        <div class="flex items-center justify-between px-6 pt-6">
-          <p class="text-xs font-bold text-[#888] uppercase">Server</p>
-
-          <span class="wsPill" data-status={$wsStore.status}>
-            {$wsStore.status}
-          </span>
-        </div>
-
-        <div class="px-6">
-          <div class="h-px w-full bg-white/10 mt-2.5"></div>
-        </div>
-
-        <!-- Content -->
-        <div class="flex-1 flex flex-col px-6 py-6">
-          {#if players.length === 0}
-            <div class="text-xs text-white/40">No players yet...</div>
-          {:else}
-            <div class="playerList">
-              {#each players as p (p.id)}
-                <div class="playerRow" data-alive={p.alive}>
-                  <span
-                    class="dot"
-                    style="background:{rgbaToCss(p.color)}; box-shadow: 0 0 0 3px {rgbaToCss(p.color, 0.18)}"
-                    aria-hidden="true"
-                  />
-
-                  <div class="playerMain">
-                    <div class="playerTop">
-                      <span class="playerId">{displayName(p.id)}</span>
-
-                      {#if playerLabel(p.id)}
-                        <span class="tag">YOU</span>
-                      {/if}
-
-                      {#if !p.alive}
-                        <span class="tag dead">OUT</span>
-                      {/if}
-                    </div>
-
-                    <div class="playerSub">
-                      <span>x: {Math.round(p.x)}, y: {Math.round(p.y)}</span>
-                      <span class="sep">•</span>
-                      <span>angle: {Math.round((p.angle * 180) / Math.PI)}°</span>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      </div>
-    </aside>
+    <PlayersPanel
+      status={$wsStore.status}
+      {players}
+      {youId}
+      {metaById}
+    />
   </div>
 </div>
 
-<!-- Start game overlay -->
-{#if showOverlay}
-<div class="overlay">
-  <div class="overlayCard">
-    {#if phase === "ready"}
-    {overlayText} <span class="keycap">SPACE</span>
-    {:else}
-    {overlayText}
-    {/if}
-  </div>
-</div>
-{/if}
+<!-- Start overlay -->
+<StartOverlay show={showStartOverlay} {phase} />
 
-<!-- Finish game overlay -->
-{#if showFinishedOverlay}
-  <div class="overlay overlay--finished">
-    <div class="overlayCard overlayCard--finished">
-      <div class="avatarWrap" aria-hidden="true">
-        {#if winnerAvatar}
-          <img class="avatar" src={normalizeAvatarUrl(winnerAvatar)} alt="" />
-        {:else}
-          <div class="avatar avatar--fallback"></div>
-        {/if}
-      </div>
+<!-- Finish overlay -->
+<FinishOverlay
+  show={showFinishedOverlay}
+  {winnerName}
+  {winnerAvatar}
+  countdown={$countdown}
+  onGoDashboard={goDashboard}
+/>
 
-      <div class="finishTitle">Winner!</div>
-
-      <div class="finishWinner">
-        Winner:
-        <span class="winnerName">{winnerName}</span>
-      </div>
-
-      <div class="finishHint">Game will reset in ... seconds</div>
-    </div>
-  </div>
-{/if}
 
 <style>
   .page {
@@ -388,265 +177,8 @@
     box-sizing: border-box;
   }
 
-  .overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(2px);
-    z-index: 1000;
-  }
-
-  .overlayCard {
-    background: rgba(0, 0, 0, 0.55);
-    color: white;
-    padding: 14px 18px;
-    border-radius: 12px;
-    font: 14px system-ui;
-    letter-spacing: 0.2px;
-  }
-
-  .layout {
-    display: flex;
-    gap: 24px;
-    height: 806px;
-    align-items: stretch;
-  }
-
-  .gameCanvas {
-    width: 806px;
-    height: 806px;
-    display: block;
-
-    border-radius: 12px;
-    outline: 2px solid rgba(255, 255, 255, 0.15);
-    outline-offset: 0;
-
-    background-image:
-      url("/assets/lobby-grid-pattern.png"),
-      linear-gradient(
-        90deg,
-        rgba(26, 26, 26, 0.6) 0%,
-        rgba(26, 26, 26, 0.6) 100%
-      );
-    background-size: 10px 10px, auto;
-    background-position: calc(50% + 10px) calc(50% + 10px), center;
-    background-repeat: repeat, no-repeat;
-  }
-
-  .right {
-    width: 360px;
-    height: 100%;
-    display: flex;
-  }
-
-  .right > .glass {
-    height: 100%;
-  }
-
-  .keycap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 4px 40px;
-    margin-left: 6px;
-
-    background: rgba(91, 91, 91, 0.65);
-    border-radius: 2px;
-
-    font: 12px system-ui;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-  }
-
-  .wsPill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-
-    font: 11px system-ui;
-    letter-spacing: 0.2px;
-
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.75);
-  }
-
-  .wsPill::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.35);
-  }
-
-  .wsPill[data-status="open"] {
-    border-color: rgba(0, 255, 136, 0.35);
-    color: rgba(255, 255, 255, 0.9);
-  }
-  .wsPill[data-status="open"]::before {
-    background: rgba(0, 255, 136, 0.8);
-  }
-
-  .wsPill[data-status="closed"],
-  .wsPill[data-status="error"] {
-    border-color: rgba(255, 80, 80, 0.35);
-  }
-
-  .wsPill[data-status="closed"]::before,
-  .wsPill[data-status="error"]::before {
-    background: rgba(255, 80, 80, 0.8);
-  }
-
-  /* ======== PLAYERS =========== */
-  .playerList {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow: auto;
-    padding-right: 4px;
-  }
-
-  .playerRow {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-
-    padding: 10px 10px;
-    border-radius: 14px;
-
-    background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .playerRow[data-alive="false"] {
-    opacity: 0.65;
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    margin-top: 3px;
-    flex: 0 0 auto;
-  }
-
-  .playerMain {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .playerTop {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .playerId {
-    font: 12px system-ui;
-    font-weight: 650;
-    color: rgba(255, 255, 255, 0.9);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .tag {
-    font: 10px system-ui;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-
-    padding: 2px 6px;
-    border-radius: 999px;
-
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .tag.dead {
-    background: rgba(255, 80, 80, 0.12);
-    border-color: rgba(255, 80, 80, 0.25);
-    color: rgba(255, 180, 180, 0.95);
-  }
-
-  .playerSub {
-    font: 11px system-ui;
-    color: rgba(255, 255, 255, 0.55);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .sep {
-    opacity: 0.45;
-  }
-
-  /* ======== FINISH OVERLAY =========== */
-  .overlayCard--finished {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 10px;
-  }
-
-  /* Avatar */
-  .avatarWrap {
-    width: 74px;
-    height: 74px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-    overflow: hidden;
-    margin-bottom: 2px;
-  }
-
-  .avatar {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 999px;
-  }
-
-  .avatar--fallback {
-    width: 100%;
-    height: 100%;
-    border-radius: 999px;
-    background: radial-gradient(
-      circle at 30% 30%,
-      rgba(0, 255, 136, 0.25),
-      rgba(255, 255, 255, 0.05) 55%,
-      rgba(0, 0, 0, 0.25)
-    );
-  }
-
-  /* <!-- TODO: Handle Small Screens --> */
   @media (max-width: 1240px) {
-    .layout {
-      flex-direction: column;
-      align-items: center;
-    }
-    .right {
-      width: 806px;
-      height: auto;
-      min-height: 200px;
-    }
+    /* <!-- TODO: Handle Small Screens --> */
   }
+
 </style>
