@@ -4,7 +4,7 @@ export function openOAuthPopup(
   width: number,
   height: number
 ) {
-  return new Promise((resolve) => {
+  return new Promise<{success: boolean, error?: string, errorDescription?: string}>((resolve) => {
     const popup = window.open(url, name, `width=${width},height=${height}`);
 
     if (!popup) {
@@ -20,12 +20,12 @@ export function openOAuthPopup(
       if (event.data.type === "OAUTH_SUCCESS") {
         window.removeEventListener("message", messageListener);
         popup.close();
-        resolve(true);
+        resolve({success: true});
       } else if (event.data.type === "OAUTH_ERROR") {
         console.error("OAuth error from popup:", event.data.error);
         window.removeEventListener("message", messageListener);
         popup.close();
-        resolve(false);
+        resolve({success: false, error: event.data.error, errorDescription: event.data.errorDescription});
       }
     };
 
@@ -34,7 +34,7 @@ export function openOAuthPopup(
       if (popup.closed) {
         clearInterval(checkClosed);
         window.removeEventListener("message", messageListener);
-        resolve(false);
+        resolve({success: false, error: "popup_closed", errorDescription: "The popup was closed before completing the OAuth process."});
       }
     }, 1000);
   });
