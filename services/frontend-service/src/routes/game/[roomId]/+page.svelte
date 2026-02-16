@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { wsStore } from "$lib/stores/ws";
+  import type { Game } from "$lib/types/types";
 
   // ---------------------
   // types
@@ -12,11 +13,16 @@
     a: number;
   };
 
+  let gameRecord: Game | null = null;
+  let loadedMetaForRoom: string | null = null;
+  const DEFAULT_AVATAR = "/assets/avatars/default.png";
+
   // ---------------------
   // derived UI state
   // ---------------------
   $: snapshot = $wsStore.latestState;
   $: phase = snapshot?.phase ?? null;
+  $: showFinishedOverlay = phase === "finished";
 
   $: overlayText =
     phase === "lobby"
@@ -27,6 +33,14 @@
 
   $: showOverlay = overlayText !== null;
 
+  $: {
+    const lobbyId = $wsStore.roomId;
+    if (lobbyId && loadedMetaForRoom !== lobbyId) {
+      loadedMetaForRoom = lobbyId;
+      loadGameRecord(lobbyId);
+    }
+  }
+    
   // ---------------------
   // canvas
   // ---------------------
@@ -179,6 +193,7 @@
 
     if (roomId && playerId) {
       wsStore.updatePlayerScene(roomId, playerId, "game");
+      loadGameRecord(roomId);
     }
 
     loop();
@@ -202,6 +217,14 @@
   $: players = snapshot?.players ?? [];
   $: metaById = $wsStore.playerMetaById ?? {};
 
+  $: winnerId = $wsStore.winnerId ?? null;
+  $: winnerName = winnerId ? displayName(String(winnerId)) : "No winner";
+  $: winnerAvatar = winnerId ? avatarUrl(String(winnerId)) : null;
+
+  $: if (showFinishedOverlay) {
+    console.log("winner", { winnerId, winnerName, winnerAvatar, meta: metaById[String(winnerId ?? "")] });
+  }
+
   function playerLabel(playerId: string) {
     return youId && String(playerId) === youId ? "YOU" : null;
   }
@@ -210,11 +233,47 @@
     return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
   }
 
+  function avatarUrl(playerId: string) {
+    return metaById[String(playerId)]?.avatar_url ?? null;
+  }
+
+  function normalizeAvatarUrl(url: string | null) {
+    if (!url) return null;
+    if (/^(https?:|data:|blob:)/.test(url)) return url;
+    return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+
   function rgbaToCss(c: ColorRGBA, alphaMul = 1) {
     const a = Math.max(0, Math.min(1, (c.a / 255) * alphaMul));
     return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
   }
+
+  async function loadGameRecord(lobbyId: string) {
+    try {
+      const res = await fetch(`/api/games/${lobbyId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const game = (await res.json()) as Game;
+      gameRecord = game;
+
+      for (const u of game.users ?? []) {
+        wsStore.setPlayerMeta(String(u.id), {
+          name: u.name,
+          avatar_url: u.avatar_url ?? DEFAULT_AVATAR,
+        });
+      }
+    } catch (err) {
+      console.error("loadGameRecord failed:", err);
+    }
+  }
+
 </script>
+
+
 
 <div class="page">
   <div class="layout">
@@ -282,14 +341,39 @@
   </div>
 </div>
 
+<!-- Start game overlay -->
 {#if showOverlay}
-  <div class="overlay">
-    <div class="overlayCard">
-      {#if phase === "ready"}
-        {overlayText} <span class="keycap">SPACE</span>
-      {:else}
-        {overlayText}
-      {/if}
+<div class="overlay">
+  <div class="overlayCard">
+    {#if phase === "ready"}
+    {overlayText} <span class="keycap">SPACE</span>
+    {:else}
+    {overlayText}
+    {/if}
+  </div>
+</div>
+{/if}
+
+<!-- Finish game overlay -->
+{#if showFinishedOverlay}
+  <div class="overlay overlay--finished">
+    <div class="overlayCard overlayCard--finished">
+      <div class="avatarWrap" aria-hidden="true">
+        {#if winnerAvatar}
+          <img class="avatar" src={normalizeAvatarUrl(winnerAvatar)} alt="" />
+        {:else}
+          <div class="avatar avatar--fallback"></div>
+        {/if}
+      </div>
+
+      <div class="finishTitle">Winner!</div>
+
+      <div class="finishWinner">
+        Winner:
+        <span class="winnerName">{winnerName}</span>
+      </div>
+
+      <div class="finishHint">Game will reset in ... seconds</div>
     </div>
   </div>
 {/if}
@@ -508,6 +592,49 @@
 
   .sep {
     opacity: 0.45;
+  }
+
+  /* ======== FINISH OVERLAY =========== */
+  .overlayCard--finished {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  /* Avatar */
+  .avatarWrap {
+    width: 74px;
+    height: 74px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+
+  .avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 999px;
+  }
+
+  .avatar--fallback {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(0, 255, 136, 0.25),
+      rgba(255, 255, 255, 0.05) 55%,
+      rgba(0, 0, 0, 0.25)
+    );
   }
 
   /* <!-- TODO: Handle Small Screens --> */

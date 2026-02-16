@@ -26,6 +26,7 @@ type WSStoreState = {
 	roomId: string | null;
 	playerId: string | null;
 	playerMetaById: Record<string, PlayerMeta>;
+	winnerId: string | null;
 	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
@@ -50,6 +51,7 @@ function createWebSocketStore() {
 		roomId: null,
 		playerId: null,
 		playerMetaById: {},
+		winnerId: null as string | null,
 		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
@@ -108,6 +110,13 @@ function createWebSocketStore() {
 				...s,
 				messages: [...s.messages, msg].slice(-200),
 				latestState: msg.type === "state" ? msg.snapshot : s.latestState,
+
+				winnerId:
+					msg.type === "game_finished"
+					? (msg.winnerId ? String(msg.winnerId) : null)
+					: msg.type === "game_started"
+						? null
+						: s.winnerId,
 			}));
 		};
 
@@ -150,6 +159,7 @@ function createWebSocketStore() {
 			roomId: null,
 			playerId: null,
 			playerMetaById: {},
+			winnerId: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
@@ -214,6 +224,7 @@ function createWebSocketStore() {
 			playerId: null,
 			latestState: null,
 			playerMetaById: {},
+			winnerId: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		}));
