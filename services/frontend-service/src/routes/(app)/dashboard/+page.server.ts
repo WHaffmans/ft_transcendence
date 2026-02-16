@@ -1,3 +1,4 @@
+import { redirect } from '@sveltejs/kit';
 import type { ServerLoad } from '@sveltejs/kit';
 import type { RatingPoint, LastMatchData, LastMatchPlayer, User } from '$lib/types/types';
 
@@ -96,13 +97,7 @@ export const load = (async ({ fetch, parent }) => {
     const { user } = await parent();
 
     if (!user) {
-        return {
-            leaderboard: [],
-            lastMatch: null,
-            ratingHistory: [],
-            userPosition: 0,
-            totalPlayers: 0
-        };
+        throw redirect(302, '/');
     }
 
     const [leaderboardRes, matchesRes, allUsersRes] = await Promise.all([
