@@ -177,6 +177,13 @@
     box-sizing: border-box;
   }
 
+  .layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: nowrap;
+  }
+
   @media (max-width: 1240px) {
     /* <!-- TODO: Handle Small Screens --> */
   }

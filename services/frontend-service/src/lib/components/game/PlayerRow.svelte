@@ -50,7 +50,7 @@
     align-items: flex-start;
 
     padding: 10px 10px;
-    border-radius: 14px;
+    border-radius: 12px;
 
     background: rgba(0, 0, 0, 0.18);
     border: 1px solid rgba(255, 255, 255, 0.08);

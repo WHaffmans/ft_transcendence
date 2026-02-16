@@ -30,7 +30,6 @@
       <div class="finishTitle">Winner!</div>
 
       <div class="finishWinner">
-        Winner:
         <span class="winnerName">{winnerName}</span>
       </div>
 
@@ -70,6 +69,18 @@
     width: 420px;
     max-width: 92vw;
     padding: 28px 32px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .winnerName {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
   }
 
   .avatarWrap {
