@@ -5,8 +5,12 @@
 	import { wsStore } from "$lib/stores/ws";
 	import { userStore } from "$lib/stores/user";
 	import type { Game, User } from "$lib/types/types";
+	import type { GamePhase } from "@ft/game-ws-protocol";
+	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 
+	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
+	
 	let { data } = $props();
 
 
@@ -34,7 +38,7 @@
 	const userDirectory = $derived(() => {
 		const map = new Map<string, User>();
 		for (const u of gameRecord?.users ?? []) map.set(String(u.id), u);
-		return map;
+		return (map);
 	});
 
 
@@ -57,8 +61,8 @@
 		const users = gameRecord?.users ?? [];
 		for (const u of users) {
 			wsStore.setPlayerMeta(String(u.id), {
-			name: u.name,
-			avatar_url: u.avatar_url,
+				name: u.name,
+				avatar_url: u.avatar_url,
 			});
 		}
 	});
@@ -80,7 +84,10 @@
 		};
 
 		wsStore.createOrJoinRoom(lobbyId, seed, player);
-		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
+		const phase = liveRoomState()?.phase ?? null;
+		if (phase === null || phase === "lobby") {
+			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
+  		}
 	}
 
 
@@ -127,6 +134,84 @@
 		lastRosterKey = key;
 		loadGameRecord(lobbyId);
 	});
+
+	/**
+	 * Determine when to leave lobby 
+	 */
+	let didRedirect = false;
+	$effect(() => {
+		if (didRedirect) return;
+
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		willRedirect();
+	});
+
+	onMount(async () => {
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		if (lastLoadedLobbyId !== lobbyId) {
+			lastLoadedLobbyId = lobbyId;
+			await loadGameRecord(lobbyId);
+		}
+		willRedirect();
+	});
+
+
+	/* ====================================================================== */
+	/*                                HELPERS                                 */
+	/* ====================================================================== */
+
+	function willRedirect() {
+		if (didRedirect) return;
+
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		// Refresh REST record
+		loadGameRecord(lobbyId);
+
+		const livePhase = liveRoomState()?.phase ?? null;
+		const backendStatus: GameStatus | null = (gameRecord?.status as GameStatus | undefined) ?? null;
+
+		console.log("lobby.willRedirect", {
+			live: liveRoomState?.(),
+			livePhase: livePhase,
+			backendStatus: backendStatus,
+		});
+
+		if (!livePhase && !backendStatus) return;
+
+		const target = redirectTo({ livePhase, backendStatus });
+		if (target) {
+			didRedirect = true;
+			goto(target, { replaceState: true });
+		}
+	}
+
+	function redirectTo(opts: {
+		livePhase: GamePhase | null;
+		backendStatus: GameStatus | null;
+	}) {
+		const { livePhase, backendStatus } = opts;
+
+		// Prefer live status
+		if (livePhase) {
+			if (livePhase === "lobby") return null;
+			return (`/dashboard`);
+		}
+
+		// Fallback to API
+		if (backendStatus) {
+			if (backendStatus === "pending" || backendStatus === "ready") return null;
+			return (`/dashboard`);
+		}
+		return (null);
+	}
+
+
 </script>
 
 

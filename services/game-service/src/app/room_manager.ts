@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/12 09:45:50 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/15 14:44:11 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,7 +279,7 @@ export class RoomManager {
 	public closeRoom(roomId: string, reason = "closed") {
 		const room = this.getRoomOrThrow(roomId);
 
-		if (room.timer) clearInterval(room.timer);
+		this.stopRoomTimer(room);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
@@ -779,6 +779,7 @@ export class RoomManager {
 
 		logInfo("room.finished", {
 			roomId,
+			roomPhase: room.phase,
 			winnerId,
 			finishOrder: room.finishOrder,
 		});
@@ -788,6 +789,7 @@ export class RoomManager {
 			roomId,
 			winnerId,
 		} satisfies ServerMsg;
+		this.broadcastState(roomId);
 		this.broadcast(roomId, msg);
 
 		// Persist game with new ratings
