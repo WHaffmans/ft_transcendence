@@ -45,4 +45,6 @@ COPY --from=builder /app/services/game-service/dist ./services/game-service/dist
 
 WORKDIR /app/services/game-service
 
+EXPOSE 3443
+
 CMD ["node", "dist/index.js"]

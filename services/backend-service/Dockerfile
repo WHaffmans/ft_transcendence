@@ -74,7 +74,7 @@ COPY conf/php-fpm.conf /etc/php84/php-fpm.d/www.conf
 
 # NGINX config
 COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY conf/default.conf /etc/nginx/http.d/default.conf
+COPY conf/default.https.conf /etc/nginx/http.d/default.conf
 
 # Supervisor config
 COPY conf/supervisord.conf /etc/supervisord.conf
@@ -102,7 +102,7 @@ RUN mkdir -p /var/log/php84 \
     && chown -R www-data:www-data /var/log/php84
 
 
-EXPOSE 80
+EXPOSE 4443
 
 ENTRYPOINT [ "/usr/local/bin/docker-entrypoint-prod.sh" ]
 

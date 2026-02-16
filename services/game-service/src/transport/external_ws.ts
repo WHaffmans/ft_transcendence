@@ -76,14 +76,22 @@ function assertNever(x: never): never {
 // ---------------------
 
 export function startPublicWsServer(
-	opts: { port: number; path?: string },
+	opts: { port: number; path?: string; server?: any },
 	rooms: RoomManager
 ) {
-	const wss: WebSocketServer = new WebSocketServer({
-		host: "0.0.0.0",
-		port: opts.port,
+	const wsOptions: any = {
 		path: opts.path ?? "/ws",
-	});
+	};
+
+	// If an HTTPS server is provided, attach to it; otherwise create standalone WebSocket server
+	if (opts.server) {
+		wsOptions.server = opts.server;
+	} else {
+		wsOptions.host = "0.0.0.0";
+		wsOptions.port = opts.port;
+	}
+
+	const wss: WebSocketServer = new WebSocketServer(wsOptions);
 
 	wss.on("connection", (ws) => {
 		console.log("public WS: client connected");

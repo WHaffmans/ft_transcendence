@@ -51,5 +51,7 @@ COPY --from=pruner /app/out/full/services/frontend-service/production-server.js 
 
 WORKDIR /app/services/frontend-service
 
+EXPOSE 3000
+
 CMD ["node", "production-server.js"]
 

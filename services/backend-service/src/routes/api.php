@@ -2,13 +2,23 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\InternalAuthMiddleware;
+
+// Internal API routes (no CSRF, uses X-Internal-Api-Key)
+Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
+    Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
+    Route::post('/games/{game}/ready', [App\Http\Controllers\GameController::class, 'readyGame']);
+    Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
+    Route::post('/games/{game}/leave', [App\Http\Controllers\GameController::class, 'leaveGame']);
+    Route::get('/test', function () {
+        return response()->json(['message' => 'Internal route accessed via api.php']);
+    });
+});
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
-    Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
-    Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
-    Route::post('/games/{game}/leave', [App\Http\Controllers\GameController::class, 'leaveGame']);
+    // Keep these for external API usage (if needed)
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
     Route::apiResource('games', App\Http\Controllers\GameController::class);
     Route::get('/verify', function (Request $request) {

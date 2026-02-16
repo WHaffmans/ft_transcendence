@@ -1,0 +1,34 @@
+api:
+  insecure: true
+  dashboard: true
+
+ping: {}
+
+entryPoints:
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        domains:
+          - main: localhost
+            sans:
+              - "*.localhost"
+              - "127.0.0.1"
+  metrics:
+    address: ":8082"
+
+providers:
+  file:
+    directory: /etc/traefik/conf
+    watch: true
+
+tls:
+  certificates:
+    - certFile: /certs/prod/traefik-cert.pem
+      keyFile: /certs/prod/traefik-key.pem
+
+# Trust self-signed certificates from backend services
+http:
+  serversTransports:
+    insecure:
+      insecureSkipVerify: true

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\FinishGameRequest;
 use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class GameController extends Controller
@@ -87,13 +88,50 @@ class GameController extends Controller
 
     public function leaveGame(LeaveGameRequest $request, Game $game)
     {
-        $game->users()->detach($request->input('user_id'));
+        if (! $game->users->contains($request->user()->id)) {
+            return response()->json(['message' => 'User is not part of this game.'], 400);
+        }
+
+        if ($game->status !== 'pending') {
+            return response()->json(['message' => 'Cannot leave a game that has already started.'], 400);
+        }
+
+        $userId = $request->input('user_id');
+        $game->load('users');
+
+        if ($game->users->count() === 1 && $game->users->contains($userId)) {
+            $game->delete();
+
+            return response()->json(null, 204);
+        }
+
+        $game->users()->detach($userId);
+
+        return response()->json($game->load('users'));
+    }
+
+    public function readyGame(Request $request, Game $game)
+    {
+        if ($game->status !== 'pending') {
+            return response()->json(['message' => 'Game is not in pending state.'], 400);
+        }
+
+        if ($game->users->count() < 2) {
+            return response()->json(['message' => 'Not enough players to start the game.'], 400);
+        }
+
+        $game->status = 'ready';
+        $game->save();
 
         return response()->json($game->load('users'));
     }
 
     public function startGame(Request $request, Game $game)
     {
+        if ($game->status !== 'ready') {
+            return response()->json(['message' => 'Game must be in ready state to start.'], 400);
+        }
+
         $game->status = 'active';
         $game->save();
 
@@ -102,6 +140,10 @@ class GameController extends Controller
 
     public function finishGame(FinishGameRequest $request, Game $game)
     {
+        if ($game->status !== 'active') {
+            return response()->json(['message' => 'Game must be active to finish.'], 400);
+        }
+
         $game->status = 'completed';
         $game->save();
 
@@ -112,6 +154,11 @@ class GameController extends Controller
                 'rating_mu' => $result['rating_mu'],
                 'rating_sigma' => $result['rating_sigma'],
             ]);
+            $user = User::find($result['user_id']);
+            if ($user) { $user->update([ 
+                'rating_mu' => $result['rating_mu'],
+                'rating_sigma' => $result['rating_sigma'],
+                 ]); }
         }
 
         return response()->json($game->load('users'));

@@ -13,6 +13,11 @@ class Game extends Model
 
     public $table = 'games';
 
+    // Explicitly set primary key configuration
+    protected $primaryKey = 'id';
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
         'status',
     ];

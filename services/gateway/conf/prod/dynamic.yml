@@ -1,0 +1,75 @@
+http:
+  routers:
+    frontend-service:
+      rule: "PathPrefix(`/`)"
+      service: frontend-service
+      priority: 1
+      entryPoints:
+        - websecure
+      tls: {}
+
+    auth-service:
+      rule: "PathPrefix(`/auth`)"
+      service: backend-service
+      priority: 10
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - backend-service-strip
+
+    svelte-kit-api:
+      rule: "PathPrefix(`/api`)"
+      service: frontend-service
+      priority: 10
+      entryPoints:
+        - websecure
+      tls: {}
+
+    game-ws:
+      rule: "PathPrefix(`/ws`)"
+      service: game-service
+      priority: 50
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - ws-headers
+
+  services:
+    frontend-service:
+      loadBalancer:
+        serversTransport: insecure@file
+        servers:
+          - url: "https://frontend-service:3000"
+
+    backend-service:
+      loadBalancer:
+        serversTransport: insecure@file
+        servers:
+          - url: "https://backend-service:4443"
+
+    game-service:
+      loadBalancer:
+        serversTransport: insecure@file
+        servers:
+          - url: "https://game-service:3443"
+
+  middlewares:
+    backend-service-strip:
+      stripPrefix:
+        prefixes:
+          - "/auth"
+
+    ws-headers:
+      headers:
+        customRequestHeaders:
+          Connection: "Upgrade"
+          Upgrade: "websocket"
+
+    auth-forward:
+      forwardAuth:
+        address: "https://backend-service:4443/api/verify"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-User-Id"

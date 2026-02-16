@@ -102,7 +102,13 @@ class OAuthController extends Controller
             $cookies[] = cookie('refresh_token', $refreshToken, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        return redirect("http://" . config('app.frontend_url', '/') . '/callback') // todo: need better way to handle http/https
+        $frontendUrl = config('app.frontend_url', '/');
+        // Ensure frontend_url has a protocol
+        if (!str_starts_with($frontendUrl, 'http://') && !str_starts_with($frontendUrl, 'https://')) {
+            $frontendUrl = 'http://' . $frontendUrl;
+        }
+        
+        return redirect($frontendUrl . '/callback')
             ->withCookies($cookies);
     }
 
