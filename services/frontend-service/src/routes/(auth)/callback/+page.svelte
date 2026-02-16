@@ -9,13 +9,14 @@
   onMount(async () => {
     const urlParams = $page.url.searchParams;
     const errorParam = urlParams.get("error");
-
+    const errorDescription = urlParams.get("error_description");
     if (window.opener && window.opener !== window) {
       if (errorParam) {
         window.opener.postMessage(
           {
             type: "OAUTH_ERROR",
             error: errorParam,
+            errorDescription: errorDescription,
           },
           window.location.origin,
         );

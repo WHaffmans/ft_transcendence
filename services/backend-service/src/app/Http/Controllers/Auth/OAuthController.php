@@ -40,8 +40,15 @@ class OAuthController extends Controller
 
     public function callback(Request $request)
     {
+        $frontendUrl = config('app.frontend_url', '/');
+        // Ensure frontend_url has a protocol
+        if (!str_starts_with($frontendUrl, 'http://') && !str_starts_with($frontendUrl, 'https://')) {
+            $frontendUrl = 'http://' . $frontendUrl;
+        }
+
+
         if ($request->filled('error')) {
-            return redirect(config('app.frontend_url', '/') . '?error=' . urlencode((string) $request->input('error')));
+            return redirect($frontendUrl . '/callback?error=' . urlencode((string) $request->input('error')) . '&error_description=' . urlencode((string) $request->input('error_description')));
         }
 
         $clientId = config('services.oauth.client_id');
@@ -78,7 +85,7 @@ class OAuthController extends Controller
         $internalRequest = Request::create('/oauth/token', 'POST', $requestData);
         $response = app()->handle($internalRequest);
         if ($response->getStatusCode() !== Response::HTTP_OK) {
-            return redirect(config('app.frontend_url', '/') . '?error=token_exchange_failed');
+            return redirect($frontendUrl . '/callback?error=token_exchange_failed');
         }
 
         $tokenData = json_decode($response->getContent(), true);
@@ -86,7 +93,7 @@ class OAuthController extends Controller
         $refreshToken = $tokenData['refresh_token'] ?? null;
 
         if (!$accessToken) {
-            return redirect(config('app.frontend_url', '/') . '?error=token_missing');
+            return redirect($frontendUrl . '/callback?error=token_missing');
         }
 
         $accessMinutes = max(1, (int) floor(((int) ($tokenData['expires_in'] ?? 900)) / 60));
@@ -102,12 +109,6 @@ class OAuthController extends Controller
             $cookies[] = cookie('refresh_token', $refreshToken, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        $frontendUrl = config('app.frontend_url', '/');
-        // Ensure frontend_url has a protocol
-        if (!str_starts_with($frontendUrl, 'http://') && !str_starts_with($frontendUrl, 'https://')) {
-            $frontendUrl = 'http://' . $frontendUrl;
-        }
-        
         return redirect($frontendUrl . '/callback')
             ->withCookies($cookies);
     }

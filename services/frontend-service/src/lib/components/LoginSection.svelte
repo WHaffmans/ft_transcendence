@@ -7,12 +7,12 @@
   const subtitle = "The Kurve Web Edition";
 
   const handleLogin = async () => {
-    const success = await apiStore.login();
-    if (success) {
+    const result = await apiStore.login();
+    if (result?.success) {
       toast.success("Welcome!");
       goto("/dashboard", { invalidateAll: true });
     } else {
-      toast.error("Login failed");
+      toast.error(`Login failed: ${result?.errorDescription || result?.error}`);
     }
   };
 </script>
