@@ -7,30 +7,12 @@
   import { wsStore } from "$lib/stores/ws";
 
   interface Props {
-    // onStartGame?: () => void;
     game: Game;
-    // onLeaveGame?: () => void;
     isHost?: boolean;
   }
 
   let userId = $userStore?.id;
   let { game, isHost: _isHost = false }: Props = $props();
-  // Explicitly mark isHost as intentionally unused (possible future feature)
-
-  // TODO: Implement host check logic
-  // const isHost = $derived(lobby.players[0]?.id === $apiStore.user?.id);
-
-  // const handleStartGame = () => {
-  // 	if (onStartGame) {
-  // 		onStartGame();
-  // 	}
-  // };
-
-//   const handleLeaveGame = () => {
-//     if (onLeaveGame) {
-//       onLeaveGame();
-//     }
-//   };
 
   function leaveRoom() {
     if (!game) {
@@ -68,19 +50,21 @@
   <!-- Content - Centered Buttons -->
   <div class="flex-1 flex items-center justify-center">
     <div class="flex flex-col gap-6 items-center w-85">
-      <!-- IF we want to make a version that allows for a specific host the
-			we can uncomment the code below -->
-      <!-- Start Game Button - Only visible for host -->
-      <!-- {#if isHost} -->
-      <!-- <ActionButton text="START GAME" variant="primary" onclick={handleStartGame} /> -->
-      <!-- {/if} -->
+
+      <!-- Warning only on small screens -->
+      <div class="xl:hidden w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
+        Screen too small to start a match.
+        <span class="text-white/60">Please widen your window (≥ 1280px).</span>
+      </div>
 
       <!-- Start Game Button -->
-      <ActionButton
-        text="START GAME"
-        variant="primary"
-        onclick={() => goto(`/game/${game!.id}?playerId=${userId}`)}
-      />
+      <div class="hidden xl:flex w-full justify-center">
+        <ActionButton
+          text="START GAME"
+          variant="primary"
+          onclick={() => goto(`/game/${game!.id}?playerId=${userId}`)}
+        />
+      </div>
 
       <!-- Leave Game Button -->
       <ActionButton
