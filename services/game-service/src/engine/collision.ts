@@ -174,6 +174,7 @@ export function checkCollisionThisTick(
 
 	// The swept path for this tick
 	const move: Segment = {
+		i: 0,
 		x1: prevX,
 		y1: prevY,
 		x2: x,
