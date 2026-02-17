@@ -1,4 +1,5 @@
 .env
+.mode
 
 # TLS certificates for local development
 certs/
