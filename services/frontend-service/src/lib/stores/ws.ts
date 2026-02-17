@@ -15,6 +15,7 @@ import {
 /*                                  TYPES                                     */
 /* ========================================================================== */
 
+const MAX_WS_MESSAGES = 50;
 type Player = z.infer<typeof PlayerSchema>;
 type PlayerMeta = { name: string; avatar_url?: string };
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
@@ -23,6 +24,15 @@ type WSStoreState = {
 	status: "disconnected" | "connecting" | "open" | "error";
 	messages: ServerMsg[];
 	latestState: StateMsg["snapshot"] | null;
+	segments: Array<{
+		i: number;
+		x1: number; y1: number;
+		x2: number; y2: number;
+		ownerId: string;
+		color: any;
+		isGap: boolean;
+	}>;
+	lastSegI: number | null;
 	roomId: string | null;
 	playerId: string | null;
 	playerMetaById: Record<string, PlayerMeta>;
@@ -48,6 +58,8 @@ function createWebSocketStore() {
 		status: "disconnected",
 		messages: [],
 		latestState: null,
+		segments: [],
+		lastSegI: null,
 		roomId: null,
 		playerId: null,
 		playerMetaById: {},
@@ -106,18 +118,47 @@ function createWebSocketStore() {
 			}
 
 			const msg = parsed.data;
-			update((s) => ({
-				...s,
-				messages: [...s.messages, msg].slice(-200),
-				latestState: msg.type === "state" ? msg.snapshot : s.latestState,
+			update((s) => {
+				const isState = msg.type === "state";
+				const snapshot = isState ? msg.snapshot : null;
 
-				winnerId:
-					msg.type === "game_finished"
-					? (msg.winnerId ? String(msg.winnerId) : null)
-					: msg.type === "game_started"
-						? null
-						: s.winnerId,
-			}));
+				// Merge segments only when state snapshots
+				let segments = s.segments;
+				let lastSegI = s.lastSegI;
+
+				if (snapshot?.segments) {
+					const incoming = snapshot.segments.map((seg) => ({
+						i: seg.i,
+						x1: seg.x1,
+						y1: seg.y1,
+						x2: seg.x2,
+						y2: seg.y2,
+						ownerId: String(seg.ownerId),
+						color: seg.color,
+						isGap: !!seg.isGap,
+					}));
+
+					const merged = mergeSegments(s.segments, s.lastSegI, incoming);
+					segments = merged.segments;
+					lastSegI = merged.lastSegI;
+				}
+
+				return {
+					...s,
+					messages: [...s.messages, msg].slice(-MAX_WS_MESSAGES),
+					latestState: isState ? msg.snapshot : s.latestState,
+
+					segments,
+					lastSegI,
+
+					winnerId:
+						msg.type === "game_finished"
+						? (msg.winnerId ? String(msg.winnerId) : null)
+						: msg.type === "game_started"
+							? null
+							: s.winnerId,
+			    };
+  			});
 		};
 
 		ws.onerror = (e) => {
@@ -156,6 +197,8 @@ function createWebSocketStore() {
 			status: "disconnected",
 			messages: [],
 			latestState: null,
+			segments: [],
+			lastSegI: null,
 			roomId: null,
 			playerId: null,
 			playerMetaById: {},
@@ -163,6 +206,48 @@ function createWebSocketStore() {
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
+	}
+
+	function mergeSegments(
+		prev: WSStoreState["segments"],
+		prevLastSegI: number | null,
+		incoming: WSStoreState["segments"]
+	) {
+		// No segments yet
+		if (prevLastSegI == null || prev.length === 0) {
+			const last = incoming.length ? incoming[incoming.length - 1].i : null;
+			return { segments: incoming, lastSegI: last };
+		}
+
+		// Incomming window is behind
+		const incomingFirstI = incoming.length ? incoming[0].i : null;
+		if (incomingFirstI == null)
+			return { segments: incoming, lastSegI: prevLastSegI };
+
+		// There is a gap
+		if (prevLastSegI < incomingFirstI - 1) {
+			const last = incoming[incoming.length - 1].i;
+			return { segments: incoming, lastSegI: last };
+		}
+
+		// Append new segments
+		const byI = new Map<number, number>();
+		for (let idx = 0; idx < prev.length; idx++)
+			byI.set(prev[idx].i, idx);
+
+		const next = prev.slice();
+
+		for (const seg of incoming) {
+			const existingIdx = byI.get(seg.i);
+			if (existingIdx != null) {
+				next[existingIdx] = seg;
+			} else if (seg.i > prevLastSegI) {
+				next.push(seg);
+			}
+		}
+
+		const last = next.length ? next[next.length - 1].i : prevLastSegI;
+		return { segments: next, lastSegI: last };
 	}
 
 
@@ -223,6 +308,8 @@ function createWebSocketStore() {
 			roomId: null,
 			playerId: null,
 			latestState: null,
+			segments: [],
+			lastSegI: null,
 			playerMetaById: {},
 			winnerId: null,
 			pendingCreateOrJoin: null,

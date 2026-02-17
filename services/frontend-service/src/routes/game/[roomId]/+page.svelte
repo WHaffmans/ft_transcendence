@@ -84,7 +84,10 @@
     if (!canvas) return;
 
     const renderer = createCanvasRenderer(canvas, { w: 806, h: 806 });
-    stopRender = renderer.start(() => snapshot);
+    stopRender = renderer.start(
+      () => snapshot,
+      () => $wsStore.segments,
+    );
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
