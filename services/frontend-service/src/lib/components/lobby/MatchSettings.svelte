@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
   import Footer from "$lib/components/Footer.svelte";
@@ -9,34 +10,76 @@
   interface Props {
     game: Game;
     isHost?: boolean;
+    playerCount: number;
   }
 
   let userId = $userStore?.id;
-  let { game, isHost: _isHost = false }: Props = $props();
+  let { game, isHost: _isHost = false, playerCount }: Props = $props();
+  let isTooSmall = $state(false);
+
+  onMount(() => {
+    const mq = window.matchMedia("(max-width: 1279px)");
+
+    const update = () => {
+      isTooSmall = mq.matches;
+    };
+
+    update();
+
+    const add = (mq as MediaQueryList & { addListener?: (cb: () => void) => void }).addListener;
+    const remove = (mq as MediaQueryList & { removeListener?: (cb: () => void) => void }).removeListener;
+
+    if (mq.addEventListener) mq.addEventListener("change", update);
+    else add?.call(mq, update);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", update);
+      else remove?.call(mq, update);
+    };
+  });
+
+  // Protect start game
+  const warnings = $derived(() => {
+    const w: string[] = [];
+
+    if (isTooSmall) {
+      w.push("Screen too small to start a match. Please widen your window (≥ 1280px).");
+    }
+
+    if (playerCount <= 1) {
+      w.push("Need at least 2 players to start.");
+    }
+
+    if (playerCount > 4) {
+      w.push("Too many players. Maximum is 4.");
+    }
+
+    return (w);
+  });
+
+  const canStart = $derived(() => warnings().length === 0);
+
 
   function leaveRoom() {
-    if (!game) {
-      console.error("Game data not loaded yet.");
-      return;
-    }
+    if (!game) return;
+
     fetch(`/api/games/${game.id}/leave`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({
-        user_id: userId,
-      }),
+      body: JSON.stringify({ user_id: userId }),
     })
       .then(() => {
         wsStore.leaveRoom();
         wsStore.disconnect();
         goto("/");
       })
-      .catch((err) => {
-        console.error("Error informing backend of leaving the game:", err);
-      });
+      .catch((err) => console.error("Error informing backend of leaving the game:", err));
+  }
+
+  function startGame() {
+    if (!canStart()) return;
+    goto(`/game/${game!.id}?playerId=${userId}`);
   }
 </script>
 
@@ -47,26 +90,33 @@
     <div class="h-px w-full bg-white/10"></div>
   </div>
 
-  <!-- Content - Centered Buttons -->
+  <!-- Content -->
   <div class="flex-1 flex items-center justify-center">
     <div class="flex flex-col gap-6 items-center w-85">
 
-      <!-- Warning only on small screens -->
-      <div class="xl:hidden w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
-        Screen too small to start a match.
-        <span class="text-white/60">Please widen your window (≥ 1280px).</span>
-      </div>
+      <!-- Start Warning -->
+      {#if warnings().length > 0}
+        <div
+          class="w-full rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3 text-sm text-yellow-400"
+        >
+          <ul class="list-disc pl-5 space-y-1">
+            {#each warnings() as msg}
+              <li> ⚠️ {msg}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
 
-      <!-- Start Game Button -->
-      <div class="hidden xl:flex w-full justify-center">
-        <ActionButton
-          text="START GAME"
-          variant="primary"
-          onclick={() => goto(`/game/${game!.id}?playerId=${userId}`)}
-        />
-      </div>
+      {#if warnings().length === 0}
+        <div class="w-full flex justify-center">
+          <ActionButton
+            text="START GAME"
+            variant="primary"
+            onclick={startGame}
+          />
+        </div>
+      {/if}
 
-      <!-- Leave Game Button -->
       <ActionButton
         text="LEAVE GAME"
         variant="destructive"
