@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/16 12:41:28 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/16 13:55:00 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/17 08:58:15 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,12 +69,12 @@ export function createCanvasRenderer(
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function draw(snapshot: Snapshot | null | undefined) {
+  function draw(players: Player[] | null, segments: Segment[] | null) {
     ctx.clearRect(0, 0, w, h);
-    if (!snapshot) return;
+    if (!players || ! segments) return;
 
     // segments
-    for (const s of snapshot.segments ?? []) {
+    for (const s of segments ?? []) {
       if (s.isGap) continue;
 
       const { x1, y1, x2, y2 } = s;
@@ -95,7 +95,7 @@ export function createCanvasRenderer(
     const ring = 3;
     const ringAlpha = 0.18;
 
-    for (const p of snapshot.players ?? []) {
+    for (const p of players ?? []) {
       const base = rgbaToColor(p.color);
 
       // Outer ring
@@ -129,14 +129,21 @@ export function createCanvasRenderer(
 
   let raf = 0;
 
-  function start(getSnapshot: () => Snapshot | null | undefined) {
+  function start(
+    getSnapshot: () => Snapshot | null | undefined,
+    getSegments: () => Segment[] | null | undefined,
+  ) {
     resize();
 
     const onResize = () => resize();
     window.addEventListener("resize", onResize);
 
     const loop = () => {
-      draw(getSnapshot());
+      const snap = getSnapshot();
+      const players = snap?.players ?? null;
+      const segments = getSegments() ?? null;
+
+      draw(players, segments);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

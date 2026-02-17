@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/15 14:44:11 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/17 09:07:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -602,6 +602,11 @@ export class RoomManager {
 	 * Make snapshot with correct types
 	 */
 	private makeSnapshot(room: Room) {
+
+		const segs = room.state.segments;
+		const start = Math.max(0, segs.length - room.config.segmentSendCount);
+
+
 		return {
 			phase: room.phase,
 			tick: room.state.tick,
@@ -622,7 +627,8 @@ export class RoomManager {
 				color: p.color,
 			})),
 
-			segments: room.state.segments.map((s) => ({
+			segments: segs.slice(start).map((s) => ({
+				i: s.i,
 				x1: s.x1,
 				y1: s.y1,
 				x2: s.x2,

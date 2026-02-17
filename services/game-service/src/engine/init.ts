@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/10 10:22:45 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/17 08:23:10 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ export type PlayerState = {
 };
 
 export type Segment = {
+	i: number,
 	x1: number; y1: number;		// start point (previous head position)
 	x2: number; y2: number;		// end point   (new head position)
 	ownerId: string;			// which player created it

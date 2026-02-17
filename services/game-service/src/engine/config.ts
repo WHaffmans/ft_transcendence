@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/12 14:28:49 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/17 08:04:39 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ export type GameConfig = {
 	speed: number;			// units per tick
 	turnRate: number;		// radians per tick
 	playerRadius: number;
+	segmentSendCount: number;	// number of segments sent in a snapshot
 
 	// Trail / gaps
 	gapChance: number;		// probability per tick to START a gap (0..1)
@@ -42,6 +43,7 @@ export const DEFAULT_CONFIG: GameConfig = {
 	speed: 4.0,
 	turnRate: 0.2,
 	playerRadius: 4,
+	segmentSendCount: 15,
 
 	gapChance: 0.03,
 	gapMinTicks: 2,

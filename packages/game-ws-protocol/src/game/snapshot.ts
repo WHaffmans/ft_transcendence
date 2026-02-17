@@ -24,6 +24,7 @@ export const PlayerStateSchema = z.object({
 });
 
 export const SegmentSchema = z.object({
+	i: z.number(),
 	x1: z.number(),
 	y1: z.number(),
 	x2: z.number(),

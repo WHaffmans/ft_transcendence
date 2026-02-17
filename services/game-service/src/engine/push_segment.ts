@@ -42,7 +42,7 @@ export function pushOrExtendSegment(
 
 		return {
 			kind: "extended",
-			index: lastIndex,
+			index: last.i,
 			x1: oldX2,
 			y1: oldY2,
 			x2: x,
@@ -50,13 +50,12 @@ export function pushOrExtendSegment(
 		};
 	}
 
-	segments.push({ x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color, isGap });
-
-	const newIndex = segments.length - 1;
+	const i = segments.length;
+	segments.push({ i, x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color, isGap });
 
   	return {
 		kind: "extended",
-		index: newIndex,
+		index: i,
 		x1: prevX,
 		y1: prevY,
 		x2: x,
