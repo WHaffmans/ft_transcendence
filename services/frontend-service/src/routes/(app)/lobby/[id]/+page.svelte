@@ -236,8 +236,9 @@
 		<!-- Right Section - Match Settings -->
 		<div class="w-full lg:w-ranking shrink-0">
 			<MatchSettings
-				isHost={String($userStore?.id) === String(hostIdLive())}
-				game={gameRecord!}
+			isHost={String($userStore?.id) === String(hostIdLive())}
+			game={gameRecord!}
+			playerCount={playersInRoom().length}
 			/>
 		</div>
 	</div>

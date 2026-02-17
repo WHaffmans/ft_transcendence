@@ -187,8 +187,4 @@
     flex-wrap: nowrap;
   }
 
-  @media (max-width: 1240px) {
-    /* <!-- TODO: Handle Small Screens --> */
-  }
-
 </style>

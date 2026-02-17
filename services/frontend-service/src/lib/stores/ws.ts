@@ -51,7 +51,6 @@ function makeWsUrl() {
 /* ========================================================================== */
 /*                                  STORE                                     */
 /* ========================================================================== */
-// TODO: Use stack for messages
 
 function createWebSocketStore() {
 	const store = writable<WSStoreState>({
