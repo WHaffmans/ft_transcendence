@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignUuid('game_id')->constrained('games')->onDelete('cascade');
             $table->double('rating_mu')->nullable();
             $table->double('rating_sigma')->nullable();
-            $table->double('diff');
+            $table->double('diff')->nullable();
             $table->integer('rank')->nullable();
             $table->unique(['user_id', 'game_id']);
             $table->index(['user_id', 'game_id']);
