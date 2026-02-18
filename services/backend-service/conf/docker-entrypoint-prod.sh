@@ -11,6 +11,8 @@ echo "Starting Backend Service..."
 
 php artisan migrate --force --seed
 
+php artisan storage:link
+
 php artisan optimize
 
 # Use provided keys in dev, otherwise generate

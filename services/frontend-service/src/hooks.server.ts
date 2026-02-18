@@ -8,7 +8,7 @@ const backendBaseUrl = isProduction
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
 
-	if (pathname.startsWith('/api') || pathname.startsWith('/auth')) {
+	if (pathname.startsWith('/api') || pathname.startsWith('/auth') || pathname.startsWith('/storage')) {
 		const targetUrl = `${backendBaseUrl}${pathname}${event.url.search}`;
 		console.log(`[proxy] ${event.request.method} ${targetUrl}`);
 		const headers = new Headers(event.request.headers);
