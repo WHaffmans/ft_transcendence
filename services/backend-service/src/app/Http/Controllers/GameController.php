@@ -7,6 +7,7 @@ use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GameController extends Controller
 {
@@ -88,13 +89,12 @@ class GameController extends Controller
 
     public function leaveGame(LeaveGameRequest $request, Game $game)
     {
-        if (! $game->users->contains($request->user()->id)) {
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+        ]);
+        if (! $game->users->contains($request->input('user_id'))) {
             return response()->json(['message' => 'User is not part of this game.'], 400);
         }
-
-        // if ($game->status !== 'pending') {
-        //     return response()->json(['message' => 'Cannot leave a game that has already started.'], 400);
-        // }
 
         $userId = $request->input('user_id');
         $game->load('users');
