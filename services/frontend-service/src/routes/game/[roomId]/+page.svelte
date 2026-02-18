@@ -30,8 +30,9 @@
   $: showFinishedOverlay = phase === "finished";
 
   // Meta loader
+  // TODO: Default avatar
   const metaLoader = createGameMetaLoader(wsStore, {
-    defaultAvatar: "/assets/avatars/default.png",
+    defaultAvatar: "/placeholders/avatars/avatar_placeholder.webp",
   });
   $: metaLoader.ensureLoaded($wsStore.roomId);
 
