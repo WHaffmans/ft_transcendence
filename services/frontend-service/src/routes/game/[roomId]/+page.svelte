@@ -113,7 +113,43 @@
     wsStore.leaveRoom?.();
     stopFinishWatch?.();
     stopFinishWatch = null;
+
+    stopLocal();
+    if (!didLeave) {
+      didLeave = true;
+      wsStore.leaveRoom?.();
+    }
   });
+
+  let didLeave = false;
+  function stopLocal() {
+    stopRender?.();
+    stopRender = null;
+
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+
+    stopFinishWatch?.();
+    stopFinishWatch = null;
+  }
+
+  async function leaveAndGoDashboard() {
+    if (didLeave) return;
+    didLeave = true;
+
+    stopLocal();
+
+    try {
+      wsStore.leaveRoom?.();
+      const roomId = $wsStore.roomId;
+      const playerId = $wsStore.playerId;
+      if (roomId && playerId) wsStore.updatePlayerScene(roomId, playerId, "lobby");
+    } catch (err) {
+      console.warn("leave failed", err);
+    } finally {
+      goto("/dashboard", { replaceState: true });
+    }
+  }
 
 
   /* ============================================================================
@@ -153,6 +189,7 @@
       {players}
       {youId}
       {metaById}
+      onLeave={leaveAndGoDashboard}
     />
   </div>
 </div>
