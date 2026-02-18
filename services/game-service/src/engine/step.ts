@@ -87,6 +87,7 @@ export function step(
 			p.y,
 			effectiveRadius,
 			p.tailSegIndex,
+			p.tailOwnerSeq,
 			5,
 		);
 
@@ -110,7 +111,7 @@ export function step(
 			p.gapTicksLeft -= 1;
 		}
 
-		const delta = pushOrExtendSegment(next.segments, p.id, prevX, prevY, p.x, p.y, turn, isGap, p.color);
+		const delta = pushOrExtendSegment(next.segments, p, prevX, prevY, p.x, p.y, turn, isGap, p.color);
 
 		// Add to spacial hash
 		if (!isGap) {

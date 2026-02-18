@@ -30,6 +30,7 @@ export type PlayerState = {
 	alive: boolean;
 	gapTicksLeft: number;		// Leave whole in trail
 	tailSegIndex: number;
+	tailOwnerSeq: number;		// NEW: monotonic sequence number for tail segments
 	color: ColorRGBA;
 };
 
@@ -38,6 +39,7 @@ export type Segment = {
 	x1: number; y1: number;		// start point (previous head position)
 	x2: number; y2: number;		// end point   (new head position)
 	ownerId: string;			// which player created it
+	ownerSeq: number;   // NEW: per-player monotonic sequence
 	color: ColorRGBA;
 	isGap: boolean,
 };

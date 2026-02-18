@@ -169,6 +169,7 @@ export function checkCollisionThisTick(
 	y: number,
 	radius: number,
 	selfTailSegIndex: number,
+	selfTailOwnerSeq: number,
 	selfIgnoreCount = 2,
 ): boolean {
 
@@ -180,6 +181,7 @@ export function checkCollisionThisTick(
 		x2: x,
 		y2: y,
 		ownerId,
+		ownerSeq: -1,
 		color: { r: 0, g: 0, b: 0, a: 0 },
 		isGap: true,
 	};
@@ -210,13 +212,15 @@ export function checkCollisionThisTick(
 		if (!s) continue;
 
 		if (s.ownerId === ownerId && selfTailSegIndex >= 0) {
+			if (s.ownerSeq >= selfTailOwnerSeq - (selfIgnoreCount - 1)) continue;
 			if (idx >= selfIgnoreLo && idx <= selfIgnoreHi)
 				continue;
 		}
 
 		const d2 = distSegToSegSq(move, s);
-		if (d2 <= r2)
+		if (d2 <= r2) {
 			return (true);
+		}
 	}
 
 	return (false);

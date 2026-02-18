@@ -86,6 +86,7 @@ export function spawnPlayers(config: GameConfig, rng: Rng, playerIds: string[]):
 			alive: true,
 			gapTicksLeft: 0,
 			tailSegIndex: 0,
+			tailOwnerSeq: 0,
 			color: playerColor(i, ids.length),
 		};
 	});
