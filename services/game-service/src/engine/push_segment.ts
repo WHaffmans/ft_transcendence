@@ -1,5 +1,5 @@
 
-import type { Segment } from "./init.js";
+import type { PlayerState, Segment } from "./init.js";
 import type { TurnInput } from "./step.js";
 import type { ColorRGBA } from "./init.js";
 
@@ -9,7 +9,7 @@ type SegmentDelta =
 
 export function pushOrExtendSegment(
 	segments: Segment[],
-	ownerId: string,
+	p: PlayerState,
 	prevX: number,
 	prevY: number,
 	x: number,
@@ -28,8 +28,8 @@ export function pushOrExtendSegment(
 		!isTurning &&
 		!isGap &&
 		last != null &&
-		last.ownerId === ownerId &&
-		last.isGap === isGap &&						// Don't extend across boundry
+		last.ownerId === p.id &&
+		last.isGap === isGap &&						// Don't extend across boundru
 		Math.abs(last.x2 - prevX) <= posEpsilon &&
 		Math.abs(last.y2 - prevY) <= posEpsilon;
 
@@ -50,8 +50,11 @@ export function pushOrExtendSegment(
 		};
 	}
 
+	// get player-specific monotonic sequence number for this new segment
+	p.tailOwnerSeq += 1;
+	
 	const i = segments.length;
-	segments.push({ i, x1: prevX, y1: prevY, x2: x, y2: y, ownerId, color, isGap });
+	segments.push({ i, x1: prevX, y1: prevY, x2: x, y2: y, ownerId: p.id, ownerSeq: p.tailOwnerSeq, color, isGap });
 
   	return {
 		kind: "extended",
