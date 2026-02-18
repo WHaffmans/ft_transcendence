@@ -171,7 +171,7 @@
 		if (!lobbyId) return;
 
 		// Refresh REST record
-		loadGameRecord(lobbyId);
+		// loadGameRecord(lobbyId);
 
 		const livePhase = liveRoomState()?.phase ?? null;
 		const backendStatus: GameStatus | null = (gameRecord?.status as GameStatus | undefined) ?? null;

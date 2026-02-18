@@ -356,6 +356,7 @@ export class RoomManager {
 			newHost: room.hostId,
 		});
 
+		if (! this.rooms.has(roomId)) return;
 		this.broadcastState(roomId);
 	}
 
@@ -374,6 +375,7 @@ export class RoomManager {
 			newHost: room.hostId,
 		});
 
+		if (! this.rooms.has(roomId)) return;
 		this.broadcastState(roomId);
 
 		if (room.phase === "running" && room.players.length === 1) {
