@@ -91,8 +91,8 @@
   </div>
 
   <!-- Content -->
-  <div class="flex-1 flex items-center justify-center">
-    <div class="flex flex-col gap-6 items-center w-85">
+  <div class="flex-1 flex items-center justify-center px-6">
+    <div class="flex flex-col gap-6 items-center w-full max-w-[28rem]">
 
       <!-- Start Warning -->
       {#if warnings().length > 0}

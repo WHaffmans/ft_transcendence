@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 09:38:54 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/18 10:12:25 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -342,7 +342,7 @@ export class RoomManager {
 	/**
 	 * Remove a player from the room when in Lobby
 	 */
-	public async willLeaveLobby(roomId: string, playerId: string) {
+	private async willLeaveLobby(roomId: string, playerId: string) {
 		const room = this.getRoomOrThrow(roomId);
 
 		if (room.sceneById[playerId] !== "lobby") return;

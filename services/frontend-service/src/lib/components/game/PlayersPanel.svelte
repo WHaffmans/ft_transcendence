@@ -17,6 +17,8 @@
   export let youId: string | null = null;
   export let metaById: Record<string, { name?: string; avatar_url?: string }> = {};
 
+  export let onLeave: (() => void | Promise<void>) | null = null;
+
   function displayName(playerId: string) {
     return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
   }
@@ -68,6 +70,19 @@
       {/if}
     </div>
   </div>
+
+  <!-- Leave button -->
+  <div class="leaveFooter">
+    <button
+      type="button"
+      class="leaveBtn"
+      aria-label="Leave game"
+      title="Leave game"
+      on:click={() => onLeave?.()}
+    >
+      <img class="leaveIcon" src="/assets/exit_icon.png" alt="" />
+    </button>
+  </div>
 </aside>
 
 <style>
@@ -75,10 +90,15 @@
     width: 360px;
     height: 100%;
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    box-sizing: border-box;
   }
 
   .right > .glass {
-    height: 100%;
+    flex: 1;
+    height: auto;
   }
 
   .wsPill {
@@ -128,5 +148,25 @@
     gap: 10px;
     overflow: auto;
     padding-right: 4px;
+  }
+
+  .leaveBtn {
+    width: 44px;
+    height: 44px;
+    padding: 2px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 80, 80, 0.14);
+    border: 1px solid rgba(255, 80, 80, 0.35);
+    opacity: 0.9;
+  }
+
+  .leaveFooter {
+    display: flex;
+    justify-content: flex-end;
   }
 </style>
