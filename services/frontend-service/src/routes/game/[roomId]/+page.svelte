@@ -32,7 +32,7 @@
   // Meta loader
   // TODO: Default avatar
   const metaLoader = createGameMetaLoader(wsStore, {
-    defaultAvatar: "static/assets/placeholders/avatars/avatar_placeholder.webp",
+    defaultAvatar: "/placeholders/avatars/avatar_placeholder.webp",
   });
   $: metaLoader.ensureLoaded($wsStore.roomId);
 
