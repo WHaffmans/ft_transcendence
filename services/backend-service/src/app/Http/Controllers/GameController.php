@@ -7,6 +7,7 @@ use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class GameController extends Controller
@@ -92,6 +93,11 @@ class GameController extends Controller
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
         ]);
+        
+        if ($game->status !== "pending") {
+            return response()->json(null, status: 200);
+        }
+
         if (! $game->users->contains($request->input('user_id'))) {
             return response()->json(['message' => 'User is not part of this game.'], 400);
         }
