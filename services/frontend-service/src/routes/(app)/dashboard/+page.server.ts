@@ -114,6 +114,7 @@ export const load = (async ({ fetch, parent }) => {
         lastMatch,
         ratingHistory,
         userPosition,
-        totalPlayers
+        totalPlayers,
+        completedGameIds: completedGames.map((g) => g.id)
     };
 }) satisfies ServerLoad;

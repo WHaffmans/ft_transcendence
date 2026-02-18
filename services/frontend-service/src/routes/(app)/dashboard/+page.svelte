@@ -74,7 +74,11 @@
       <StatCard title="Last Match">
         {#snippet children()}
           {#if data.lastMatch}
-            <LastMatch match={data.lastMatch} />
+            <LastMatch
+              initialMatch={data.lastMatch}
+              gameIds={data.completedGameIds ?? []}
+              userId={data.user?.id ?? 0}
+            />
           {:else}
             <div class="flex items-center justify-center flex-1">
               <p class="text-[#888] text-base">No matches yet</p>
