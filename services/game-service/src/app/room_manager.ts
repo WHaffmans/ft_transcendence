@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/17 09:07:53 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/18 09:38:54 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@ import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter.js";
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
+
+const MIN_PLAYERS = 1;
+const MAX_PLAYERS = 4;
 
 type Room = {
 	phase: GamePhase;
@@ -207,6 +210,18 @@ export class RoomManager {
 
 		const existing = this.getPlayer(room, player.playerId);
 		const wasAlreadyInRoom = !!existing;
+
+		const joinCheck = this.canJoin(room, player.playerId);
+		if (!joinCheck.ok) {
+				logInfo("room.join_rejected", {
+				roomId,
+				playerId: player.playerId,
+				reason: joinCheck.reason,
+				playerCount: room.players.length,
+				max: MAX_PLAYERS,
+			});
+			throw new Error(`Cannot join room ${roomId}: ${joinCheck.reason}`);
+		}
 
 		if (!wasAlreadyInRoom) {
 			room.players.push(player);
@@ -415,6 +430,32 @@ export class RoomManager {
 			return;
   		p.alive = newAlive;
 	}
+
+
+	/* ====================================================================== */
+	/*                              LIMITES                                   */
+	/* ====================================================================== */
+
+	private canJoin(room: Room, playerId: string) {
+		const alreadyMember = room.players.some(p => p.playerId === playerId);
+		if (alreadyMember)
+			return { ok: true as const };
+
+		if (room.players.length >= MAX_PLAYERS)
+			return { ok: false as const, reason: "room_full" as const };
+		return { ok: true as const };
+	}
+
+	private canStart(room: Room) {
+		const n = room.players.length;
+		if (n < MIN_PLAYERS)
+			return { ok: false as const, reason: "not_enough_players" as const };
+
+		if (n > MAX_PLAYERS)
+			return { ok: false as const, reason: "too_many_players" as const };
+		return { ok: true as const };
+	}
+
 	
 
 
@@ -516,6 +557,9 @@ export class RoomManager {
 			return;
 		}
 
+		if (room.players.length < MIN_PLAYERS) return;
+		if (room.players.length > MAX_PLAYERS) return;
+
 		room.phase = "ready";
 
 		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
@@ -537,6 +581,18 @@ export class RoomManager {
 				roomId,
 				want: "running",
 				have: room.phase,
+			});
+			return;
+		}
+
+		const startCheck = this.canStart(room);
+		if (!startCheck.ok) {
+				logInfo("room.start_rejected", {
+				roomId,
+				reason: startCheck.reason,
+				playerCount: room.players.length,
+				min: MIN_PLAYERS,
+				max: MAX_PLAYERS,
 			});
 			return;
 		}
