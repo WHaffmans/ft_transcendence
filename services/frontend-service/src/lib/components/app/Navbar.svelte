@@ -52,7 +52,7 @@
 
       <!-- Avatar -->
       <img
-        src={avatar || '/placeholders/avatars/placeholder.webp'}
+        src={avatar || '/placeholders/avatars/avatar_placeholder.webp'}
         alt={username}
         class="object-cover rounded-full h-9 w-9"
       />
