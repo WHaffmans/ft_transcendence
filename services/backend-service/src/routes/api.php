@@ -32,8 +32,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('/user', function (Request $request) {
-        $user = $request->user();
-        return $user->load('games');
+        return app(\App\Http\Controllers\UserController::class)->show($request->user());
     });
 
 });
