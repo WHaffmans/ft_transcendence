@@ -36,7 +36,6 @@ Route::middleware('auth:api')->group(function () {
         return $user->load('games');
     });
 
-    Route::get('/user/matches', [App\Http\Controllers\UserController::class, 'getMatches']);
 });
 
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);

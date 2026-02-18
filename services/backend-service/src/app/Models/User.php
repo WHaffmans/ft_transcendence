@@ -62,6 +62,7 @@ class User extends Authenticatable implements OAuthenticatable
     {
         return $this->belongsToMany(Game::class, 'user_game')
             ->withPivot('rating_mu', 'rating_sigma', 'rating', 'rank', 'diff')
+            ->orderByPivot('updated_at', 'desc')
             ->as('user_game')
             ->withTimestamps();
     }
