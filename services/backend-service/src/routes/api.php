@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\InternalAuthMiddleware;
+use App\Http\Controllers\AvatarController;
 
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
@@ -32,13 +33,12 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('/user', function (Request $request) {
-        $user = $request->user();
-        return $user->load('games');
+        return app(\App\Http\Controllers\UserController::class)->show($request->user());
     });
 
-    Route::get('/user/matches', [App\Http\Controllers\UserController::class, 'getMatches']);
 });
 
+Route::post('users/{user}/avatar', [AvatarController::class, 'upload'])->middleware('auth:api');
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);
 
 Route::get('leaderboard', function (Request $request) {

@@ -29,7 +29,11 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user = $user->load('games');
+
+        $limit = request()->query('limit', 20);
+        $user = $user->load(['games' => function ($query) use ($limit) {
+            $query->limit($limit); // Limit to 10 games
+        }]);
 
         return response()->json($user);
     }
@@ -55,26 +59,5 @@ class UserController extends Controller
         return response()->json(null, 204);
     }
 
-    /**
-     * Get the authenticated user's match history.
-     */
-    public function getMatches(Request $request)
-    {
-        $limit = $request->query('limit', 10);
-        
-        $user = $request->user();
-        
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
-        }
-        
-        $games = $user->games()
-            ->where('status', 'completed')
-            ->with('users')
-            ->orderBy('updated_at', 'desc')
-            ->limit($limit)
-            ->get();
-        
-        return response()->json($games);
-    }
+
 }

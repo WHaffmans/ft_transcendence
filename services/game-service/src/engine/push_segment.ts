@@ -29,7 +29,7 @@ export function pushOrExtendSegment(
 		!isGap &&
 		last != null &&
 		last.ownerId === ownerId &&
-		last.isGap === isGap &&						// Don't extend across boundru
+		last.isGap === isGap &&						// Don't extend across boundry
 		Math.abs(last.x2 - prevX) <= posEpsilon &&
 		Math.abs(last.y2 - prevY) <= posEpsilon;
 

@@ -5,7 +5,16 @@ import type { RatingPoint, LastMatchData, LastMatchPlayer, User } from '$lib/typ
 interface PivotData {
     rating_mu: number;
     rating_sigma: number;
+    rating: number | string;
     rank: number;
+    diff: number | string | null;
+}
+
+interface UserGame {
+    id: string;
+    status: string;
+    updated_at: string;
+    user_game: PivotData;
 }
 
 interface MatchUser {
@@ -23,69 +32,37 @@ interface Match {
 
 export type { RatingPoint, LastMatchData, LastMatchPlayer };
 
-function computeRating(pivot: PivotData): number {
-    return Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
-}
-
-function buildRatingHistory(matches: Match[], userId: number): RatingPoint[] {
-    return matches
+function buildRatingHistory(games: UserGame[]): RatingPoint[] {
+    return games
         .slice()
         .reverse()
-        .reduce<RatingPoint[]>((history, match) => {
-            const pivot = match.users.find((u) => u.id === userId)?.user_game;
-            if (!pivot?.rating_mu || !pivot?.rating_sigma) return history;
+        .reduce<RatingPoint[]>((history, game) => {
+            if (game.user_game?.rating == null) return history;
 
-            const rating = computeRating(pivot);
-            const date = new Date(match.updated_at).toLocaleDateString('en-US', {
+            const date = new Date(game.updated_at).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
             });
 
-            history.push({ date, rating });
+            history.push({ date, rating: Number(game.user_game.rating) });
             return history;
         }, []);
 }
 
-function buildLastMatchData(matches: Match[], userId: number): LastMatchData | null {
-    if (matches.length === 0) return null;
-
-    const lastMatch = matches[0];
-    const previousMatch = matches[1] ?? null;
-
-    const players: LastMatchPlayer[] = lastMatch.users.map((user) => {
-        const postRating = computeRating(user.user_game);
-        let delta: number | null = null;
-
-        if (user.id === userId && previousMatch) {
-            const prevPivot = previousMatch.users.find((u) => u.id === userId)?.user_game;
-            if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
-                delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
-            }
-        } else if (user.id !== userId) {
-            // Search earlier matches for this opponent's prior appearance
-            for (let i = 1; i < matches.length; i++) {
-                const prevPivot = matches[i].users.find((u) => u.id === user.id)?.user_game;
-                if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
-                    delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
-                    break;
-                }
-            }
-        }
-
-        return {
-            id: user.id,
-            name: user.name,
-            rating: postRating,
-            delta,
-            rank: user.user_game.rank,
-            isCurrentUser: user.id === userId
-        };
-    });
+function buildLastMatchData(match: Match, userId: number): LastMatchData {
+    const players: LastMatchPlayer[] = match.users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        rating: Number(user.user_game.rating),
+        delta: user.user_game.diff != null ? Number(user.user_game.diff) : null,
+        rank: user.user_game.rank,
+        isCurrentUser: user.id === userId
+    }));
 
     // Sort by rank (lower = better finish)
     players.sort((a, b) => a.rank - b.rank);
 
-    const date = new Date(lastMatch.updated_at).toLocaleDateString('en-US', {
+    const date = new Date(match.updated_at).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
     });
@@ -100,27 +77,44 @@ export const load = (async ({ fetch, parent }) => {
         throw redirect(302, '/');
     }
 
-    const [leaderboardRes, matchesRes, allUsersRes] = await Promise.all([
+    // user.games[] comes from the layout (limited to 20, sorted desc)
+    const userGames: UserGame[] = user.games ?? [];
+    const completedGames = userGames.filter((g: UserGame) => g.status === 'completed');
+
+    // Fetch leaderboard, all users (for position), and last match details in parallel
+    const lastGameId = completedGames[0]?.id;
+    const fetches: Promise<Response>[] = [
         fetch('/api/leaderboard'),
-        fetch('/api/user/matches?limit=20'),
         fetch('/api/users')
-    ]);
+    ];
+    if (lastGameId) {
+        fetches.push(fetch(`/api/games/${lastGameId}`));
+    }
+
+    const [leaderboardRes, allUsersRes, lastGameRes] = await Promise.all(fetches);
 
     const leaderboard = leaderboardRes.ok ? await leaderboardRes.json().catch(() => []) : [];
-    const matches: Match[] = matchesRes.ok ? await matchesRes.json().catch(() => []) : [];
     const allUsers = allUsersRes.ok ? await allUsersRes.json().catch(() => []) : [];
 
     const sortedUsers = allUsers.sort((a: User, b: User) => (b.rating ?? 0) - (a.rating ?? 0));
     const userPosition = sortedUsers.findIndex((u: User) => u.id === user.id) + 1;
     const totalPlayers = allUsers.length;
-    const ratingHistory = buildRatingHistory(matches, user.id);
-    const lastMatch = buildLastMatchData(matches, user.id);
+    const ratingHistory = buildRatingHistory(completedGames);
+
+    let lastMatch: LastMatchData | null = null;
+    if (lastGameRes?.ok) {
+        const lastGame: Match = await lastGameRes.json().catch(() => null);
+        if (lastGame) {
+            lastMatch = buildLastMatchData(lastGame, user.id);
+        }
+    }
 
     return {
         leaderboard,
         lastMatch,
         ratingHistory,
         userPosition,
-        totalPlayers
+        totalPlayers,
+        completedGameIds: completedGames.map((g) => g.id)
     };
 }) satisfies ServerLoad;

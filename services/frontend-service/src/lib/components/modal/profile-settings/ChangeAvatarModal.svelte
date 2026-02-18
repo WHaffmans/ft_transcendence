@@ -11,14 +11,20 @@
 	let { currentAvatar, onBack }: Props = $props();
 
 	let saving = $state(false);
+
 	let draftOverride: string | null = $state(null);
 	let draftAvatarUrl = $derived(draftOverride ?? currentAvatar);
 	let avatarLoadError = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();
+	let selectedFile: File | null = $state(null);
 
-	let hasChanged = $derived(
-		draftAvatarUrl !== '' && draftAvatarUrl !== currentAvatar && !avatarLoadError
-	);
+
+	function hasChanged() {
+		return (
+			(draftAvatarUrl !== '' && draftAvatarUrl !== currentAvatar && !avatarLoadError)
+			|| !!selectedFile
+		);
+	}
 
 	// Reset error state when URL changes
 	$effect(() => {
@@ -35,13 +41,9 @@
 		if (!file || !file.type.startsWith('image/')) {
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				setDraft(reader.result);
-			}
-		};
-		reader.readAsDataURL(file);
+		selectedFile = file;
+		// Show preview using a temporary object URL
+		setDraft(URL.createObjectURL(file));
 	}
 
 	async function keep() {
@@ -50,12 +52,28 @@
 		}
 		saving = true;
 		try {
-			const res = await fetch(`/api/users/${$userStore.id}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				credentials: 'include',
-				body: JSON.stringify({ avatar_url: draftAvatarUrl })
-			});
+			let res;
+			// If draftAvatarUrl looks like a URL, PATCH as before
+			if (draftAvatarUrl && /^https?:\/\//.test(draftAvatarUrl)) {
+				res = await fetch(`/api/users/${$userStore.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					credentials: 'include',
+					body: JSON.stringify({ avatar_url: draftAvatarUrl })
+				});
+			} else if (selectedFile) {
+				// File upload
+				const formData = new FormData();
+				formData.append('avatar', selectedFile);
+				res = await fetch(`/api/users/${$userStore.id}/avatar`, {
+					method: 'POST',
+					credentials: 'include',
+					body: formData
+				});
+			} else {
+				// Invalid state
+				throw new Error('No avatar selected');
+			}
 			if (!res.ok) {
 				throw new Error(`HTTP ${res.status}`);
 			}
@@ -122,7 +140,7 @@
 			<button
 				type="button"
 				class="w-2/5 text-xs btn-primary h-11"
-				disabled={!hasChanged || saving}
+				disabled={!hasChanged() || saving}
 				onclick={keep}
 			>
 				{saving ? 'SAVING…' : 'KEEP'}
@@ -130,7 +148,7 @@
 			<button
 				type="button"
 				class="w-2/5 text-xs btn-primary h-11"
-				disabled={!hasChanged || saving}
+				disabled={!hasChanged() || saving}
 				onclick={undo}
 			>
 				UNDO

@@ -41,10 +41,16 @@ class GameFactory extends Factory
 					$ratingMu = $this->faker->randomFloat(2, 20, 35);
 					$ratingSigma = $this->faker->randomFloat(2, 5, 8.5);
 
+					// Compute diff: new rating minus previous rating
+					$newRating = $ratingMu - 3 * $ratingSigma;
+					$oldRating = $user->rating_mu - 3 * $user->rating_sigma;
+					$diff = round($newRating - $oldRating, 2);
+
 					$game->users()->updateExistingPivot($user->id, [
 						'rank' => $ranks[$index],
 						'rating_mu' => $ratingMu,
 						'rating_sigma' => $ratingSigma,
+						'diff' => $diff,
 					]);
 
 					$user->update([

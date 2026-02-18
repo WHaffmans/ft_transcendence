@@ -4,9 +4,15 @@
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
   import RatingChart from "$lib/components/dashboard/RatingChart.svelte";
   import LastMatch from "$lib/components/dashboard/LastMatch.svelte";
-  import { goto } from "$app/navigation";
+  import { afterNavigate, goto, invalidateAll } from "$app/navigation";
 
   let { data } = $props();
+
+  afterNavigate(({ from }) => {
+    if (from && from.url.pathname !== '/dashboard') {
+      invalidateAll();
+    }
+  });
 
   function handleFindMatch() {
     if (!data.user) {
@@ -71,10 +77,14 @@
         {/snippet}
       </StatCard>
 
-      <StatCard title="Last Match">
+      <StatCard title="Match History">
         {#snippet children()}
           {#if data.lastMatch}
-            <LastMatch match={data.lastMatch} />
+            <LastMatch
+              initialMatch={data.lastMatch}
+              gameIds={data.completedGameIds ?? []}
+              userId={data.user?.id ?? 0}
+            />
           {:else}
             <div class="flex items-center justify-center flex-1">
               <p class="text-[#888] text-base">No matches yet</p>

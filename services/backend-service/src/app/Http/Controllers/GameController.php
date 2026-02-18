@@ -155,16 +155,25 @@ class GameController extends Controller
 
         $results = $request->input('users', []);
         foreach ($results as $result) {
-            $game->users()->updateExistingPivot($result['user_id'], [
-                'rank' => $result['rank'],
-                'rating_mu' => $result['rating_mu'],
-                'rating_sigma' => $result['rating_sigma'],
-            ]);
             $user = User::find($result['user_id']);
-            if ($user) { $user->update([ 
-                'rating_mu' => $result['rating_mu'],
-                'rating_sigma' => $result['rating_sigma'],
-                 ]); }
+            if ($user) {
+                // Calculate rating difference: (new_rating - old_rating)
+                $old_rating = $user->rating_mu - (3 * $user->rating_sigma);
+                $new_rating = $result['rating_mu'] - (3 * $result['rating_sigma']);
+                $diff = $new_rating - $old_rating;
+
+                $game->users()->updateExistingPivot($result['user_id'], [
+                    'rank' => $result['rank'],
+                    'rating_mu' => $result['rating_mu'],
+                    'rating_sigma' => $result['rating_sigma'],
+                    'diff' => $diff,
+                ]);
+
+                $user->update([
+                    'rating_mu' => $result['rating_mu'],
+                    'rating_sigma' => $result['rating_sigma'],
+                ]);
+            }
         }
 
         return response()->json($game->load('users'));

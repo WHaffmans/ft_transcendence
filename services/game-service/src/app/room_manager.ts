@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 10:12:25 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/18 14:57:46 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -896,20 +896,26 @@ export class RoomManager {
 	}
 
 
+	/**
+	* Create payload for BE `finish`
+	* Finish order is reversed.
+	*/
 	private toFinishPayload(
 		roomPlayers: { playerId: string; rating_mu: number; rating_sigma: number }[],
 		finishOrder: string[],
 	) {
-		const n = finishOrder.length;
 		const rankById = new Map<string, number>();
+		const n = finishOrder.length;
 
+		// finishOrder is death-order: [firstDead, ..., winner]
+		// ranking wants: winner=1, ..., firstDead=n
 		for (const [i, id] of finishOrder.entries()) {
-			rankById.set(id, i + 1);
+			rankById.set(id, n - i);
 		}
 
 		// Fallback
 		for (const p of roomPlayers) {
-			if (!rankById.has(p.playerId)) rankById.set(p.playerId, 2);
+			if (!rankById.has(p.playerId)) rankById.set(p.playerId, n);
 		}
 
 		return {
@@ -921,6 +927,5 @@ export class RoomManager {
 			})),
 		};
 	}
-
 
 };
