@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
 	import type { LastMatchData, LastMatchPlayer } from '$lib/types/types';
 
 	interface Props {
@@ -25,6 +26,7 @@
 
 	let hasPrev = $derived(currentIndex < gameIds.length - 1);
 	let hasNext = $derived(currentIndex > 0);
+	let direction = $state<'left' | 'right'>('left');
 
 	function buildMatchData(game: any): LastMatchData {
 		const players: LastMatchPlayer[] = game.users.map((user: any) => ({
@@ -45,8 +47,9 @@
 		return { players, date };
 	}
 
-	async function navigate(direction: 'prev' | 'next') {
-		const newIndex = direction === 'prev' ? currentIndex + 1 : currentIndex - 1;
+	async function navigate(dir: 'prev' | 'next') {
+		const newIndex = dir === 'prev' ? currentIndex + 1 : currentIndex - 1;
+		direction = dir === 'prev' ? 'left' : 'right';
 		if (newIndex < 0 || newIndex >= gameIds.length) return;
 
 		const gameId = gameIds[newIndex];
@@ -86,7 +89,12 @@
 	</div>
 
 	<!-- Player rows -->
-	<div class="flex flex-col gap-2 flex-1" class:opacity-50={loading}>
+	{#key currentIndex}
+	<div
+		class="flex flex-col gap-2 flex-1"
+		class:opacity-50={loading}
+		in:fly={{ x: direction === 'left' ? -80 : 80, duration: 200 }}
+	>
 		{#each currentMatch.players as player (player.id)}
 			<div
 				class="flex items-center justify-between rounded-lg px-3 py-2 {player.isCurrentUser
@@ -125,6 +133,7 @@
 			</div>
 		{/each}
 	</div>
+	{/key}
 
 	<!-- Navigation arrows -->
 	{#if gameIds.length > 1}

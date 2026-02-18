@@ -71,7 +71,7 @@
         {/snippet}
       </StatCard>
 
-      <StatCard title="Last Match">
+      <StatCard title="Match History">
         {#snippet children()}
           {#if data.lastMatch}
             <LastMatch
