@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/17 08:23:10 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/18 09:24:47 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@ import { GameConfig } from "./config.js";
 import { makeRng } from "./rng.js";
 import { randomInt } from "node:crypto";
 import { SpatialHash, createSpatialHash } from "./spatial_hash.js";
+import { spawnPlayers } from "./spawn_players.js";
 
 export type ColorRGBA = {
 	r: number,
@@ -52,59 +53,17 @@ export type GameState = {
 	deathIdByIndex: Map<number, string>;	// (index, playerId)
 };
 
-function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
-	const c = v * s;
-	const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-	const m = v - c;
-
-	let r = 0, g = 0, b = 0;
-
-	if (h < 60)      [r, g, b] = [c, x, 0];
-	else if (h < 120)[r, g, b] = [x, c, 0];
-	else if (h < 180)[r, g, b] = [0, c, x];
-	else if (h < 240)[r, g, b] = [0, x, c];
-	else if (h < 300)[r, g, b] = [x, 0, c];
-	else             [r, g, b] = [c, 0, x];
-
-	return {
-		r: Math.round((r + m) * 255),
-		g: Math.round((g + m) * 255),
-		b: Math.round((b + m) * 255),
-		a: 255
-	};
-}
-
-
-function playerColor(index: number, total: number): ColorRGBA {
-	const hue = (index * 360) / total; // evenly spaced
-	const saturation = 0.85;           // vivid
-	const value = 0.9;                 // not dark
-
-	return hsvToRgba(hue, saturation, value);
-}
-
 
 export function initGame(config: GameConfig, seed: number, playerIds: string[]): GameState {
-	const actualSeed = seed ? 0 : randomInt(0, 100);
+	const actualSeed = seed ? seed : randomInt(0, 1_000_000_000);
 	const rng = makeRng(actualSeed);
 
-	// Determine spawn
-	const players = playerIds.map((id, i) => ({
-		id,
-		x: 200 + i * 200,
-		y: 200 + i * 100,
-		angle: 0,
-		alive: true,
-		gapTicksLeft: 0,
-		tailSegIndex: 0,
-		color: playerColor(i, playerIds.length),
-	}));
-
+	const players = spawnPlayers(config, rng, playerIds);
 	const cellSize = config.playerRadius * 4;
 
 	return {
 		tick: 0,
-		seed,
+		seed: actualSeed,
 		rngState: rng.state,
 		players,
 		segments: [],
