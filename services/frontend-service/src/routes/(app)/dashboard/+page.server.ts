@@ -5,7 +5,9 @@ import type { RatingPoint, LastMatchData, LastMatchPlayer, User } from '$lib/typ
 interface PivotData {
     rating_mu: number;
     rating_sigma: number;
+    rating: number | string;
     rank: number;
+    diff: number | string | null;
 }
 
 interface MatchUser {
@@ -23,25 +25,20 @@ interface Match {
 
 export type { RatingPoint, LastMatchData, LastMatchPlayer };
 
-function computeRating(pivot: PivotData): number {
-    return Math.round((pivot.rating_mu - 3 * pivot.rating_sigma) * 100) / 100;
-}
-
 function buildRatingHistory(matches: Match[], userId: number): RatingPoint[] {
     return matches
         .slice()
         .reverse()
         .reduce<RatingPoint[]>((history, match) => {
             const pivot = match.users.find((u) => u.id === userId)?.user_game;
-            if (!pivot?.rating_mu || !pivot?.rating_sigma) return history;
+            if (pivot?.rating == null) return history;
 
-            const rating = computeRating(pivot);
             const date = new Date(match.updated_at).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
             });
 
-            history.push({ date, rating });
+            history.push({ date, rating: Number(pivot.rating) });
             return history;
         }, []);
 }
@@ -50,37 +47,15 @@ function buildLastMatchData(matches: Match[], userId: number): LastMatchData | n
     if (matches.length === 0) return null;
 
     const lastMatch = matches[0];
-    const previousMatch = matches[1] ?? null;
 
-    const players: LastMatchPlayer[] = lastMatch.users.map((user) => {
-        const postRating = computeRating(user.user_game);
-        let delta: number | null = null;
-
-        if (user.id === userId && previousMatch) {
-            const prevPivot = previousMatch.users.find((u) => u.id === userId)?.user_game;
-            if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
-                delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
-            }
-        } else if (user.id !== userId) {
-            // Search earlier matches for this opponent's prior appearance
-            for (let i = 1; i < matches.length; i++) {
-                const prevPivot = matches[i].users.find((u) => u.id === user.id)?.user_game;
-                if (prevPivot?.rating_mu && prevPivot?.rating_sigma) {
-                    delta = Math.round((postRating - computeRating(prevPivot)) * 100) / 100;
-                    break;
-                }
-            }
-        }
-
-        return {
-            id: user.id,
-            name: user.name,
-            rating: postRating,
-            delta,
-            rank: user.user_game.rank,
-            isCurrentUser: user.id === userId
-        };
-    });
+    const players: LastMatchPlayer[] = lastMatch.users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        rating: Number(user.user_game.rating),
+        delta: user.user_game.diff != null ? Number(user.user_game.diff) : null,
+        rank: user.user_game.rank,
+        isCurrentUser: user.id === userId
+    }));
 
     // Sort by rank (lower = better finish)
     players.sort((a, b) => a.rank - b.rank);
