@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/18 10:10:00 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 10:40:00 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/18 16:25:33 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,7 +169,7 @@ export function checkCollisionThisTick(
 	y: number,
 	radius: number,
 	selfTailSegIndex: number,
-	selfIgnoreCount = 2,
+	selfIgnoreCount = 100,
 ): boolean {
 
 	// The swept path for this tick

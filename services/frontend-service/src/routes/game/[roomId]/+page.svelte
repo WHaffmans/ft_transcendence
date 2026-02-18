@@ -40,12 +40,12 @@
   const finish = createFinishRedirect({
     seconds: 10,
     isFinished: () => showFinishedOverlay,
-    onDone: () => goto("/dashboard"),
+    onDone: () =>   goto("/dashboard", { invalidateAll: true });,
   });
   const countdown = finish.countdown;
 
   function goDashboard() {
-    goto("/dashboard");
+    goto("/dashboard", { invalidateAll: true });
   }
 
   /* ============================================================================
