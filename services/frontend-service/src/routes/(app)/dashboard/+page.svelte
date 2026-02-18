@@ -4,9 +4,15 @@
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
   import RatingChart from "$lib/components/dashboard/RatingChart.svelte";
   import LastMatch from "$lib/components/dashboard/LastMatch.svelte";
-  import { goto } from "$app/navigation";
+  import { afterNavigate, goto, invalidateAll } from "$app/navigation";
 
   let { data } = $props();
+
+  afterNavigate(({ from }) => {
+    if (from && from.url.pathname !== '/dashboard') {
+      invalidateAll();
+    }
+  });
 
   function handleFindMatch() {
     if (!data.user) {
