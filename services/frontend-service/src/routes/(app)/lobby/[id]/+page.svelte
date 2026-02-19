@@ -136,6 +136,25 @@
 	});
 
 	/**
+	 * Detect when the current player is kicked (no longer in playerIds)
+	 */
+	$effect(() => {
+		if (didRedirect) return;
+
+		const ids = roomPlayerIdsLive();
+		if (ids.length === 0) return; // no state yet
+
+		const userId = String($userStore?.id ?? "");
+		if (!userId) return;
+
+		if (!ids.includes(userId)) {
+			didRedirect = true;
+			wsStore.disconnect();
+			goto("/dashboard", { replaceState: true });
+		}
+	});
+
+	/**
 	 * Determine when to leave lobby 
 	 */
 	let didRedirect = false;

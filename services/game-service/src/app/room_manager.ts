@@ -173,7 +173,6 @@ export class RoomManager {
 		};
 
 		this.rooms.set(roomId, room);
-		this.startLobbyJoinTimer(room, LOBBY_LIFETIME_MS);
 
 		logInfo("room.created", {
 			roomId,
@@ -252,6 +251,7 @@ export class RoomManager {
 			this.resetGame(room);
 		}
 
+		this.evaluateLobbyTimer(roomId);
 		this.broadcastState(roomId);
 	}
 
@@ -296,8 +296,45 @@ export class RoomManager {
 	}
 
 
+	/* ====================================================================== */
+	/*                            LOBBY TIMER                                 */
+	/* ====================================================================== */
+
 	/**
-	 * Ensure lobby does not get stuck
+	 * Evaluate whether the lobby countdown should start, stop, or keep running.
+	 * Start: ≥ 2 players AND ≥ 1 non-host player has scene "game" (ready).
+	 * Stop/reset: conditions no longer met.
+	 */
+	private evaluateLobbyTimer(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room || room.phase !== "lobby") return;
+
+		const playerIds = this.getPlayerIds(room);
+		const readyNonHost = playerIds.filter(
+			(id) => id !== room.hostId && room.sceneById[id] === "game"
+		);
+
+		const shouldRun = room.players.length >= 2 && readyNonHost.length >= 1;
+		const isRunning = !!room.lobbyTimerTimeout;
+
+		if (shouldRun && !isRunning) {
+			this.startLobbyJoinTimer(room, LOBBY_LIFETIME_MS);
+		} else if (!shouldRun && isRunning) {
+			this.stopLobbyJoinTimer(room);
+			// Broadcast null timer so frontend clears the countdown
+			this.broadcast(roomId, {
+				type: "lobby_timer",
+				roomId,
+				secondsLeft: 0,
+				deadlineAtMs: 0,
+			});
+		}
+	}
+
+	/**
+	 * Start the lobby countdown timer.
+	 * On tick: broadcasts remaining seconds.
+	 * On expiry: kicks non-ready non-host players, then force-starts if ≥ 2 remain.
 	 */
 	private startLobbyJoinTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
 		if (room.lobbyTimerTimeout || room.lobbyTimerInterval) return;
@@ -345,45 +382,83 @@ export class RoomManager {
 				return;
 			}
 
-			const toKick = this.getPlayerIds(live).filter(
-				(id) => live.sceneById[id] !== "game"
-			);
-
-			logInfo("room.lobby_join_timeout", {
-				roomId,
-				toKick,
-				sceneById: live.sceneById,
-			});
-
-			(async () => {
-				for (const playerId of toKick) {
-					const still = this.rooms.get(roomId);
-					if (!still) return;
-
-					if (still.sceneById[playerId] !== "game") {
-						await this.dropPlayer(roomId, playerId);
-					}
-				}
-
-				const after = this.rooms.get(roomId);
-				if (!after) return;
-
-				this.resetGame(after);
-				this.broadcastState(roomId);
-				this.stopLobbyJoinTimer(after);
-
-			})().catch((err) => {
-				logError("room.lobby_join_timeout_failed", { roomId, err });
-				const still = this.rooms.get(roomId);
-				if (still)
-					this.stopLobbyJoinTimer(still);
-			});
+			this.stopLobbyJoinTimer(live);
+			this.onLobbyTimerExpired(roomId);
 		}, ms);
 
-		logInfo("room.lobby_join_timer_started", {
+		logInfo("room.lobby_timer_started", {
 			roomId,
 			ms,
 			deadlineAt: room.lobbyJoinDeadlineAtMs,
+		});
+	}
+
+	/**
+	 * Called when the lobby timer reaches zero.
+	 * Kicks non-ready non-host players, then force-starts the game
+	 * if ≥ 2 players remain. Otherwise closes the room.
+	 */
+	private onLobbyTimerExpired(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		// Identify who to kick: not ready AND not the host
+		const toKick = this.getPlayerIds(room).filter(
+			(id) => id !== room.hostId && room.sceneById[id] !== "game"
+		);
+
+		logInfo("room.lobby_timer_expired", {
+			roomId,
+			toKick,
+			sceneById: room.sceneById,
+			playerCount: room.players.length,
+		});
+
+		(async () => {
+			// Broadcast `left` and drop each non-ready non-host player
+			for (const playerId of toKick) {
+				const still = this.rooms.get(roomId);
+				if (!still) return;
+
+				if (still.sceneById[playerId] !== "game" && playerId !== still.hostId) {
+					this.broadcast(roomId, {
+						type: "left",
+						roomId,
+						playerId,
+					});
+					await this.dropPlayer(roomId, playerId);
+				}
+			}
+
+			const after = this.rooms.get(roomId);
+			if (!after) return;
+
+			// Not enough players to start → close the room
+			if (after.players.length < 2) {
+				logInfo("room.lobby_timer_not_enough_players", {
+					roomId,
+					playerCount: after.players.length,
+				});
+				this.closeRoom(roomId, "Not enough players after timer expired");
+				return;
+			}
+
+			// Force-start: set all remaining scenes to "game", then transition to "ready".
+			// The client-side countdown will handle the ready → running transition.
+			for (const id of this.getPlayerIds(after)) {
+				after.sceneById[id] = "game";
+			}
+
+			this.resetGame(after);
+
+			// lobby → ready (clients show 3-2-1 countdown, host fires start_game at the end)
+			after.phase = "ready";
+			logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
+
+			this.broadcastState(roomId);
+
+		})().catch((err) => {
+			logError("room.lobby_timer_expired_failed", { roomId, err });
 		});
 	}
 
@@ -471,6 +546,7 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
+		this.evaluateLobbyTimer(roomId);
 		this.broadcastState(roomId);
 	}
 
@@ -651,6 +727,7 @@ export class RoomManager {
 			to: scene,
 		});
 
+		this.evaluateLobbyTimer(roomId);
 		this.willUpdateRoomPhase(roomId);
   		this.broadcastState(roomId);
 	}

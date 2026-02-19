@@ -170,7 +170,7 @@
               </p>
             </div>
             <p class="mt-1 text-sm text-white/60">
-              Players who have not readied up will be removed when this reaches 0.
+              Game will auto-start when this reaches 0. Non-ready players will be removed.
             </p>
           </div>
         {/if}

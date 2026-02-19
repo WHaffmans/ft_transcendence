@@ -153,11 +153,15 @@ function createWebSocketStore() {
 				let lobbyTimer = s.lobbyTimer;
 
 				if (msg.type === "lobby_timer") {
-					lobbyTimer = {
-						secondsLeft: msg.secondsLeft,
-						deadlineAtMs: msg.deadlineAtMs,
-						lastServerTsMs: Date.now(),
-					};
+					if (msg.secondsLeft <= 0 && msg.deadlineAtMs === 0) {
+						lobbyTimer = null;
+					} else {
+						lobbyTimer = {
+							secondsLeft: msg.secondsLeft,
+							deadlineAtMs: msg.deadlineAtMs,
+							lastServerTsMs: Date.now(),
+						};
+					}
 				} else if (msg.type === "game_started" || msg.type === "game_finished") {
 					lobbyTimer = null;
 				}
