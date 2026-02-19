@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/16 12:41:28 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/19 12:42:46 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 13:18:29 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -184,11 +184,11 @@ export function createCanvasRenderer(
 
     const maxRadiusMultiplier = 5; 
     const r = baseRadius + phase * (baseRadius * maxRadiusMultiplier);
-    const alpha = (1 - phase) * 0.5;
+    const alpha = (1 - phase) * 1;
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.lineWidth = Math.max(2, baseRadius * 0.2);
+    ctx.lineWidth = Math.max(2, baseRadius * 0.8);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.strokeStyle = rgbaCss(color);
