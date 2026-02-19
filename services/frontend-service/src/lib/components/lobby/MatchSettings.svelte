@@ -101,10 +101,9 @@
 
   function startGame() {
     if (!canStart()) return;
-    // Mark host as "game" scene so server transitions lobby → ready,
-    // then immediately fire start_game so ready → running.
+    // Mark host as "game" scene so server transitions lobby → ready.
+    // The game page countdown will handle firing start_game.
     wsStore.updatePlayerScene(lobbyId, playerId, "game");
-    wsStore.startGame();
   }
 
   /* ====================================================================== */

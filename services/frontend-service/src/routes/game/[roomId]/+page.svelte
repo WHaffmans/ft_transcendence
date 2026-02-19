@@ -28,6 +28,7 @@
   $: phase = snapshot?.phase ?? null;
   $: showStartOverlay = phase === "lobby" || phase === "ready";
   $: showFinishedOverlay = phase === "finished";
+  $: isHost = !!snapshot?.hostId && !!youId && String(snapshot.hostId) === String(youId);
 
   // Meta loader
   // TODO: Default avatar
@@ -51,13 +52,15 @@
   /* ============================================================================
    * Inputs
    * ========================================================================== */
+  function handleCountdownEnd() {
+    if (isHost && $wsStore.status === "open" && $wsStore.roomId) {
+      wsStore.startGame();
+    }
+  }
+
   function onKeyDown(ev: KeyboardEvent) {
     if (ev.code === "Space") {
       ev.preventDefault();
-
-      if ($wsStore.status === "open" && $wsStore.roomId && phase === "ready") {
-        wsStore.startGame?.();
-      }
       return;
     }
 
@@ -182,7 +185,9 @@
 <div class="page">
   <div class="layout">
     <!-- Left: Game -->
-    <GameCanvas bind:canvas />
+    <div class="canvasWrap" class:blurred={showStartOverlay}>
+      <GameCanvas bind:canvas />
+    </div>
 
     <!-- Right: Players -->
     <PlayersPanel
@@ -196,7 +201,14 @@
 </div>
 
 <!-- Start overlay -->
-<StartOverlay show={showStartOverlay} {phase} />
+<StartOverlay
+  show={showStartOverlay}
+  {phase}
+  {players}
+  {youId}
+  {metaById}
+  onCountdownEnd={handleCountdownEnd}
+/>
 
 <!-- Finish overlay -->
 <FinishOverlay
@@ -223,6 +235,15 @@
     align-items: flex-start;
     gap: 18px;
     flex-wrap: nowrap;
+  }
+
+  .canvasWrap {
+    transition: filter 0.5s ease;
+  }
+
+  .canvasWrap.blurred {
+    filter: blur(6px);
+    pointer-events: none;
   }
 
 </style>

@@ -200,8 +200,9 @@
 
 		// Prefer live phase from WS
 		if (livePhase) {
-			if (livePhase === "lobby" || livePhase === "ready") return null;
-			if (livePhase === "running") return `/game/${data.lobbyId}?playerId=${userId}`;
+			if (livePhase === "lobby") return null;
+			if (livePhase === "ready" || livePhase === "running")
+				return `/game/${data.lobbyId}?playerId=${userId}`;
 			return "/dashboard";
 		}
 
