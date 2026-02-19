@@ -220,6 +220,11 @@
     <!-- Left: Game -->
     <div class="canvasWrap" class:blurred={showStartOverlay()}>
       <GameCanvas bind:canvas />
+      <StartOverlay
+        show={showStartOverlay()}
+        phase={phase()}
+        onCountdownEnd={handleCountdownEnd}
+      />
     </div>
 
     <!-- Right: Players -->
@@ -232,13 +237,6 @@
     />
   </div>
 </div>
-
-<!-- Start overlay -->
-<StartOverlay
-  show={showStartOverlay()}
-  phase={phase()}
-  onCountdownEnd={handleCountdownEnd}
-/>
 
 <!-- Finish overlay -->
 <FinishOverlay
@@ -268,6 +266,7 @@
   }
 
   .canvasWrap {
+    position: relative;
     transition: filter 0.5s ease;
   }
 

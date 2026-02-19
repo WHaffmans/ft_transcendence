@@ -62,7 +62,7 @@
 
 <style>
   .overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
@@ -70,6 +70,7 @@
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
     z-index: 1000;
+    border-radius: inherit;
   }
 
   .overlayCard {
