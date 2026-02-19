@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 14:57:46 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 08:50:33 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
 const MIN_PLAYERS = 1;
 const MAX_PLAYERS = 4;
+const LOBBY_LIFETIME_MS = 60_000;
 
 type Room = {
 	phase: GamePhase;
@@ -47,6 +48,11 @@ type Room = {
 
 	// Handle ticks
 	timer?: NodeJS.Timeout | null;
+
+	// Lobby lifetime
+	lobbyTimerTimeout?: NodeJS.Timeout | null;  // setTimeout (kick)
+	lobbyTimerInterval?: NodeJS.Timeout | null; // setInterval (broadcast)
+	lobbyJoinDeadlineAtMs?: number | null;
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
@@ -167,6 +173,7 @@ export class RoomManager {
 		};
 
 		this.rooms.set(roomId, room);
+		this.startLobbyJoinTimer(room, LOBBY_LIFETIME_MS);
 
 		logInfo("room.created", {
 			roomId,
@@ -288,6 +295,112 @@ export class RoomManager {
 		return (room);
 	}
 
+
+	/**
+	 * Ensure lobby does not get stuck
+	 */
+	private startLobbyJoinTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
+		if (room.lobbyTimerTimeout || room.lobbyTimerInterval) return;
+
+		const roomId = room.roomId;
+		room.lobbyJoinDeadlineAtMs = Date.now() + ms;
+
+		const broadcastTick = () => {
+			const live = this.rooms.get(roomId);
+			if (!live) return;
+
+			if (live.phase !== "lobby") {
+				this.stopLobbyJoinTimer(live);
+				return;
+			}
+
+			const deadlineAtMs = live.lobbyJoinDeadlineAtMs ?? 0;
+			const msLeft = deadlineAtMs - Date.now();
+			const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
+
+			this.broadcast(roomId, {
+				type: "lobby_timer",
+				roomId,
+				secondsLeft,
+				deadlineAtMs,
+			});
+
+			if (secondsLeft <= 0) {
+				if (live.lobbyTimerInterval) {
+					clearInterval(live.lobbyTimerInterval);
+					live.lobbyTimerInterval = null;
+				}
+			}
+		};
+
+		broadcastTick();
+		room.lobbyTimerInterval = setInterval(broadcastTick, 1000);
+
+		room.lobbyTimerTimeout = setTimeout(() => {
+			const live = this.rooms.get(roomId);
+			if (!live) return;
+
+			if (live.phase !== "lobby") {
+				this.stopLobbyJoinTimer(live);
+				return;
+			}
+
+			const toKick = this.getPlayerIds(live).filter(
+				(id) => live.sceneById[id] !== "game"
+			);
+
+			logInfo("room.lobby_join_timeout", {
+				roomId,
+				toKick,
+				sceneById: live.sceneById,
+			});
+
+			(async () => {
+				for (const playerId of toKick) {
+					const still = this.rooms.get(roomId);
+					if (!still) return;
+
+					if (still.sceneById[playerId] !== "game") {
+						await this.dropPlayer(roomId, playerId);
+					}
+				}
+
+				const after = this.rooms.get(roomId);
+				if (!after) return;
+
+				this.resetGame(after);
+				this.broadcastState(roomId);
+				this.stopLobbyJoinTimer(after);
+
+			})().catch((err) => {
+				logError("room.lobby_join_timeout_failed", { roomId, err });
+				const still = this.rooms.get(roomId);
+				if (still)
+					this.stopLobbyJoinTimer(still);
+			});
+		}, ms);
+
+		logInfo("room.lobby_join_timer_started", {
+			roomId,
+			ms,
+			deadlineAt: room.lobbyJoinDeadlineAtMs,
+		});
+	}
+
+	private stopLobbyJoinTimer(room: Room) {
+		if (room.lobbyTimerInterval) {
+			clearInterval(room.lobbyTimerInterval);
+			room.lobbyTimerInterval = null;
+		}
+		if (room.lobbyTimerTimeout) {
+			clearTimeout(room.lobbyTimerTimeout);
+			room.lobbyTimerTimeout = null;
+		}
+		room.lobbyJoinDeadlineAtMs = null;
+
+		logInfo("room.lobby_join_timer_stopped", { roomId: room.roomId });
+	}
+
 	/**
 	 * Close current room
 	 */
@@ -295,6 +408,7 @@ export class RoomManager {
 		const room = this.getRoomOrThrow(roomId);
 
 		this.stopRoomTimer(room);
+		this.stopLobbyJoinTimer(room);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
@@ -536,6 +650,9 @@ export class RoomManager {
 			from: prev,
 			to: scene,
 		});
+
+		this.willUpdateRoomPhase(roomId);
+  		this.broadcastState(roomId);
 	}
 
 	/**
@@ -563,6 +680,7 @@ export class RoomManager {
 		if (room.players.length > MAX_PLAYERS) return;
 
 		room.phase = "ready";
+		this.stopLobbyJoinTimer(room);
 
 		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
 
@@ -655,6 +773,26 @@ export class RoomManager {
 			snapshot: this.makeSnapshot(room),
 		} satisfies ServerMsg);
 	}
+
+
+	/**
+	 * Notify clients of remaining lobby time
+	 */
+	private broadcastLobbyTimer(room: Room) {
+		const deadlineAtMs = room.lobbyJoinDeadlineAtMs;
+		if (!deadlineAtMs) return;
+
+		const msLeft = deadlineAtMs - Date.now();
+		const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
+
+		this.broadcast(room.roomId, {
+			type: "lobby_timer",
+			roomId: room.roomId,
+			secondsLeft,
+			deadlineAtMs,
+		});
+	}
+
 
 	/**
 	 * Make snapshot with correct types

@@ -43,6 +43,13 @@ export const GameFinishedMsgSchema = z.object({
 	winnerId: PlayerId.nullable(),
 });
 
+const LobbyTimerMsgSchema = z.object({
+	type: z.literal("lobby_timer"),
+	roomId: z.string(),
+	secondsLeft: z.number().int().min(0),
+	deadlineAtMs: z.number().int().nonnegative(),
+});
+
 export const StateMsgSchema = z.object({
 	type: z.literal("state"),
 	snapshot: GameStateSnapshotSchema,
@@ -59,6 +66,7 @@ export const ServerMsgSchema = z.discriminatedUnion("type", [
 	RoomClosedMsgSchema,
 	GameStartedMsgSchema,
 	GameFinishedMsgSchema,
+	LobbyTimerMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,
 ]);

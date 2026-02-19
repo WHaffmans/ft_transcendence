@@ -17,6 +17,8 @@
     hostId: string | null;
   }
 
+  type Notice = { title: string; body: string };
+
   let {
     game,
     isHost,
@@ -29,6 +31,10 @@
 
   let userId = $userStore?.id;
   let isTooSmall = $state(false);
+
+  // Timer
+  const lobbyTimer = $derived(() => $wsStore.lobbyTimer);
+  const lobbySecondsLeft = $derived(() => lobbyTimer()?.secondsLeft ?? null);
 
   onMount(() => {
     const mq = window.matchMedia("(max-width: 1279px)");
@@ -75,29 +81,43 @@
     );
   });
 
-  const warnings = $derived(() => {
-    const w: string[] = [];
+  // Warnings
+  const warningNotices = $derived((): Notice[] => {
+    const out: Notice[] = [];
 
     if (isTooSmall) {
-      w.push("Screen too small to start a match. Please widen your window (≥ 1280 px).");
+      out.push({
+        title: "Screen too small",
+        body: "Please widen your window (≥ 1280 px) to start a match.",
+      });
     }
 
     if (playerCount <= 1) {
-      w.push("Need at least 2 players to start.");
+      out.push({
+        title: "Not enough players",
+        body: "Need at least 2 players to start.",
+      });
     }
 
     if (playerCount > 4) {
-      w.push("Too many players. Maximum is 4.");
+      out.push({
+        title: "Too many players",
+        body: "Maximum is 4.",
+      });
     }
 
     if (isHost && !allOthersReady()) {
-      w.push("Waiting for all players to ready up.");
+      out.push({
+        title: "Players not ready",
+        body: "Waiting for all players to ready up.",
+      });
     }
 
-    return w;
+    return out;
   });
 
-  const canStart = $derived(() => warnings().length === 0);
+  const hasWarnings = $derived(() => warningNotices().length > 0);
+  const canStart = $derived(() => !hasWarnings());
 
   function startGame() {
     if (!canStart()) return;
@@ -131,62 +151,81 @@
 <div class="glass h-ranking rounded-2xl w-full flex flex-col">
   <!-- Header -->
   <div class="flex flex-col gap-2.5 px-6 pt-6">
-    <p class="text-xs font-bold text-[#888] uppercase">Match Settings</p>
+    <p class="text-xs font-bold text-[#888] uppercase">Lobby Info</p>
     <div class="h-px w-full bg-white/10"></div>
   </div>
 
   <!-- Content -->
-  <div class="flex-1 flex items-center justify-center px-6">
-    <div class="flex flex-col gap-6 items-center w-full max-w-[28rem]">
+  <div class="flex-1 px-6 py-6">
+    <div class="h-full w-full max-w-[28rem] mx-auto flex flex-col">
 
-      <!-- Warnings -->
-      {#if warnings().length > 0}
-        <div
-          class="w-full rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3 text-sm text-yellow-400"
-        >
-          <ul class="list-disc pl-5 space-y-1">
-            {#each warnings() as msg}
-              <li>⚠️ {msg}</li>
+      <!-- Timer + Warnings -->
+      <div class="w-full space-y-2">
+        {#if lobbySecondsLeft() !== null}
+          <div class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-bold text-[#888] uppercase">Lobby timer</p>
+              <p class="text-sm font-semibold text-white">
+                {lobbySecondsLeft()}s
+              </p>
+            </div>
+            <p class="mt-1 text-sm text-white/60">
+              Players who have not readied up will be removed when this reaches 0.
+            </p>
+          </div>
+        {/if}
+
+        {#if hasWarnings()}
+          <div class="w-full space-y-2">
+            {#each warningNotices() as w}
+              <div class="rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3">
+                <p class="text-xs font-bold text-yellow-300 uppercase">{w.title}</p>
+                <p class="mt-1 text-sm text-yellow-200/90">{w.body}</p>
+              </div>
             {/each}
-          </ul>
-        </div>
-      {/if}
+          </div>
+        {/if}
+      </div>
 
-      <!-- Host: START GAME button (disabled until all ready) -->
-      {#if isHost}
-        <div class="w-full flex justify-center">
+      <!-- Buttons -->
+      <div class="mt-auto flex flex-col gap-4 items-center">
+        <!-- Host: START GAME (disabled until all ready) -->
+        {#if isHost}
           <ActionButton
             text="START GAME"
             variant="primary"
             disabled={!canStart()}
             onclick={startGame}
+            class="w-full max-w-[16rem]"
           />
-        </div>
 
-      <!-- Non-host: READY toggle -->
-      {:else}
-        <div class="w-full flex justify-center">
+        <!-- Non-host: READY toggle -->
+        {:else}
           {#if isReady}
             <ActionButton
               text="CANCEL READY"
               variant="destructive"
               onclick={toggleReady}
+              class="w-full max-w-[16rem]"
             />
           {:else}
             <ActionButton
               text="READY UP"
               variant="primary"
               onclick={toggleReady}
+              class="w-full max-w-[16rem]"
             />
           {/if}
-        </div>
-      {/if}
+        {/if}
 
-      <ActionButton
-        text="LEAVE GAME"
-        variant="destructive"
-        onclick={leaveRoom}
-      />
+        <ActionButton
+          text="LEAVE GAME"
+          variant="destructive"
+          onclick={leaveRoom}
+          class="w-full max-w-[16rem]"
+        />
+      </div>
+
     </div>
   </div>
 
