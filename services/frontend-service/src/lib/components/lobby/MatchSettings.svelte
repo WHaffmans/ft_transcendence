@@ -9,12 +9,25 @@
 
   interface Props {
     game: Game;
-    isHost?: boolean;
+    isHost: boolean;
     playerCount: number;
+    lobbyId: string;
+    playerId: string;
+    sceneById: Record<string, string>;
+    hostId: string | null;
   }
 
+  let {
+    game,
+    isHost,
+    playerCount,
+    lobbyId,
+    playerId,
+    sceneById,
+    hostId,
+  }: Props = $props();
+
   let userId = $userStore?.id;
-  let { game, isHost: _isHost = false, playerCount }: Props = $props();
   let isTooSmall = $state(false);
 
   onMount(() => {
@@ -38,12 +51,35 @@
     };
   });
 
-  // Protect start game
+  /* ====================================================================== */
+  /*                          READY STATE (non-host)                        */
+  /* ====================================================================== */
+
+  const myScene = $derived(sceneById[playerId] ?? "lobby");
+  const isReady = $derived(myScene === "game");
+
+  function toggleReady() {
+    const nextScene = isReady ? "lobby" : "game";
+    wsStore.updatePlayerScene(lobbyId, playerId, nextScene);
+  }
+
+  /* ====================================================================== */
+  /*                         START GAME (host only)                         */
+  /* ====================================================================== */
+
+  /** True when every non-host player has scene === "game" */
+  const allOthersReady = $derived(() => {
+    if (!hostId) return false;
+    return Object.entries(sceneById).every(
+      ([id, scene]) => id === String(hostId) || scene === "game"
+    );
+  });
+
   const warnings = $derived(() => {
     const w: string[] = [];
 
     if (isTooSmall) {
-      w.push("Screen too small to start a match. Please widen your window (≥ 1280px).");
+      w.push("Screen too small to start a match. Please widen your window (≥ 1280 px).");
     }
 
     if (playerCount <= 1) {
@@ -54,11 +90,26 @@
       w.push("Too many players. Maximum is 4.");
     }
 
-    return (w);
+    if (isHost && !allOthersReady()) {
+      w.push("Waiting for all players to ready up.");
+    }
+
+    return w;
   });
 
   const canStart = $derived(() => warnings().length === 0);
 
+  function startGame() {
+    if (!canStart()) return;
+    // Mark host as "game" scene so server transitions lobby → ready,
+    // then immediately fire start_game so ready → running.
+    wsStore.updatePlayerScene(lobbyId, playerId, "game");
+    wsStore.startGame();
+  }
+
+  /* ====================================================================== */
+  /*                              LEAVE                                     */
+  /* ====================================================================== */
 
   function leaveRoom() {
     if (!game) return;
@@ -76,11 +127,6 @@
       })
       .catch((err) => console.error("Error informing backend of leaving the game:", err));
   }
-
-  function startGame() {
-    if (!canStart()) return;
-    goto(`/game/${game!.id}?playerId=${userId}`);
-  }
 </script>
 
 <div class="glass h-ranking rounded-2xl w-full flex flex-col">
@@ -94,26 +140,46 @@
   <div class="flex-1 flex items-center justify-center px-6">
     <div class="flex flex-col gap-6 items-center w-full max-w-[28rem]">
 
-      <!-- Start Warning -->
+      <!-- Warnings -->
       {#if warnings().length > 0}
         <div
           class="w-full rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3 text-sm text-yellow-400"
         >
           <ul class="list-disc pl-5 space-y-1">
             {#each warnings() as msg}
-              <li> ⚠️ {msg}</li>
+              <li>⚠️ {msg}</li>
             {/each}
           </ul>
         </div>
       {/if}
 
-      {#if warnings().length === 0}
+      <!-- Host: START GAME button (disabled until all ready) -->
+      {#if isHost}
         <div class="w-full flex justify-center">
           <ActionButton
             text="START GAME"
             variant="primary"
+            disabled={!canStart()}
             onclick={startGame}
           />
+        </div>
+
+      <!-- Non-host: READY toggle -->
+      {:else}
+        <div class="w-full flex justify-center">
+          {#if isReady}
+            <ActionButton
+              text="CANCEL READY"
+              variant="destructive"
+              onclick={toggleReady}
+            />
+          {:else}
+            <ActionButton
+              text="READY UP"
+              variant="primary"
+              onclick={toggleReady}
+            />
+          {/if}
         </div>
       {/if}
 

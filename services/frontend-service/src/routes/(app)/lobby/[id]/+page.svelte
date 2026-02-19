@@ -196,19 +196,21 @@
 		backendStatus: GameStatus | null;
 	}) {
 		const { livePhase, backendStatus } = opts;
+		const userId = String($userStore?.id ?? "");
 
-		// Prefer live status
+		// Prefer live phase from WS
 		if (livePhase) {
-			if (livePhase === "lobby") return null;
-			return (`/dashboard`);
+			if (livePhase === "lobby" || livePhase === "ready") return null;
+			if (livePhase === "running") return `/game/${data.lobbyId}?playerId=${userId}`;
+			return "/dashboard";
 		}
 
-		// Fallback to API
+		// Fallback to REST status
 		if (backendStatus) {
 			if (backendStatus === "pending" || backendStatus === "ready") return null;
-			return (`/dashboard`);
+			return "/dashboard";
 		}
-		return (null);
+		return null;
 	}
 
 
@@ -235,10 +237,14 @@
 
 		<!-- Right Section - Match Settings -->
 		<div class="w-full lg:w-ranking shrink-0">
-			<MatchSettings
-			isHost={String($userStore?.id) === String(hostIdLive())}
-			game={gameRecord!}
-			playerCount={playersInRoom().length}
+				<MatchSettings
+				isHost={String($userStore?.id) === String(hostIdLive())}
+				game={gameRecord!}
+				playerCount={playersInRoom().length}
+				lobbyId={data.lobbyId}
+				playerId={String($userStore?.id ?? '')}
+				sceneById={sceneByIdLive()}
+				hostId={hostIdLive()}
 			/>
 		</div>
 	</div>
