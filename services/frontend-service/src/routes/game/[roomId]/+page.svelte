@@ -225,6 +225,13 @@
         phase={phase()}
         onCountdownEnd={handleCountdownEnd}
       />
+      <FinishOverlay
+        show={showFinishedOverlay()}
+        winnerName={winnerName()}
+        winnerAvatar={winnerAvatar()}
+        countdown={$countdown}
+        onGoDashboard={goDashboard}
+      />
     </div>
 
     <!-- Right: Players -->
@@ -237,15 +244,6 @@
     />
   </div>
 </div>
-
-<!-- Finish overlay -->
-<FinishOverlay
-  show={showFinishedOverlay()}
-  winnerName={winnerName()}
-  winnerAvatar={winnerAvatar()}
-  countdown={$countdown}
-  onGoDashboard={goDashboard}
-/>
 
 
 <style>
