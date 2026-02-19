@@ -117,7 +117,7 @@
         {#if lobbySecondsLeft() !== null}
           <div class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3">
             <div class="flex items-center justify-between">
-              <p class="text-xs font-bold text-[#888] uppercase">Lobby timer</p>
+              <p class="text-xs font-bold text-[#888] uppercase">Lobby Life-Span</p>
               <p class="text-sm font-semibold text-white">
                 {lobbySecondsLeft()}s
               </p>

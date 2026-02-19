@@ -8,7 +8,7 @@
 <section class="flex flex-col w-full p-6 space-y-10 glass rounded-3xl max-w-100 max-h-125">
   <!-- Title -->
   <h2 class="text-sm font-bold text-[#666] text-center">
-    TOP PLAYERS
+    TOP 5 PLAYERS
   </h2>
 
   <!-- Leaderboard Entries -->

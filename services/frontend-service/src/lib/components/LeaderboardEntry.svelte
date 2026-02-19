@@ -14,7 +14,7 @@
   </div>
 
   <!-- Username -->
-  <p class="max-w-full px-4 mx-auto font-bold text-center text-white truncate">
+  <p class="min-w-0 px-4 font-bold text-left text-white truncate">
     {player.name}
   </p>
 
