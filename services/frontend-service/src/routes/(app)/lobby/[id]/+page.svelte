@@ -49,7 +49,6 @@
 	const liveRoomState = $derived(() => $wsStore.latestState);
 	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
 	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
-	const hostIdLive = $derived(() => liveRoomState()?.hostId ?? null);
 	const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
 
 	const playersInRoom = $derived(() =>
@@ -266,7 +265,6 @@
 				<PlayerCard
 					{player}
 					scene={sceneByIdLive()[String(player.id)] ?? "lobby"}
-					isHost={String(player.id) === String(hostIdLive())}
 				/>
 			{/each}
 		</LobbyGrid>
@@ -274,13 +272,11 @@
 		<!-- Right Section - Match Settings -->
 		<div class="w-full lg:w-ranking shrink-0">
 				<MatchSettings
-				isHost={String($userStore?.id) === String(hostIdLive())}
 				game={gameRecord!}
 				playerCount={playersInRoom().length}
 				lobbyId={data.lobbyId}
 				playerId={String($userStore?.id ?? '')}
 				sceneById={sceneByIdLive()}
-				hostId={hostIdLive()}
 			/>
 		</div>
 	</div>

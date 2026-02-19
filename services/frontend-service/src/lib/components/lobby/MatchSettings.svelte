@@ -9,24 +9,20 @@
 
   interface Props {
     game: Game;
-    isHost: boolean;
     playerCount: number;
     lobbyId: string;
     playerId: string;
     sceneById: Record<string, string>;
-    hostId: string | null;
   }
 
   type Notice = { title: string; body: string };
 
   let {
     game,
-    isHost,
     playerCount,
     lobbyId,
     playerId,
     sceneById,
-    hostId,
   }: Props = $props();
 
   let userId = $userStore?.id;
@@ -58,7 +54,7 @@
   });
 
   /* ====================================================================== */
-  /*                          READY STATE (non-host)                        */
+  /*                              READY STATE                               */
   /* ====================================================================== */
 
   const myScene = $derived(sceneById[playerId] ?? "lobby");
@@ -68,18 +64,6 @@
     const nextScene = isReady ? "lobby" : "game";
     wsStore.updatePlayerScene(lobbyId, playerId, nextScene);
   }
-
-  /* ====================================================================== */
-  /*                         START GAME (host only)                         */
-  /* ====================================================================== */
-
-  /** True when every non-host player has scene === "game" */
-  const allOthersReady = $derived(() => {
-    if (!hostId) return false;
-    return Object.entries(sceneById).every(
-      ([id, scene]) => id === String(hostId) || scene === "game"
-    );
-  });
 
   // Warnings
   const warningNotices = $derived((): Notice[] => {
@@ -106,33 +90,12 @@
       });
     }
 
-    if (isHost && !allOthersReady()) {
-      out.push({
-        title: "Players not ready",
-        body: "Waiting for all players to ready up.",
-      });
-    }
-
     return out;
   });
 
-  const hasWarnings = $derived(() => warningNotices().length > 0);
-  const canStart = $derived(() => !hasWarnings());
-
-  function startGame() {
-    if (!canStart()) return;
-    // Mark host as "game" scene so server transitions lobby → ready.
-    // The game page countdown will handle firing start_game.
-    wsStore.updatePlayerScene(lobbyId, playerId, "game");
-  }
-
   function handleEnter(e: KeyboardEvent) {
     if (e.key !== 'Enter') return;
-    if (isHost) {
-      startGame();
-    } else {
-      toggleReady();
-    }
+    toggleReady();
   }
 
   /* ====================================================================== */
@@ -186,7 +149,7 @@
           </div>
         {/if}
 
-        {#if hasWarnings()}
+        {#if warningNotices().length > 0}
           <div class="w-full space-y-2">
             {#each warningNotices() as w}
               <div class="rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3">
@@ -200,33 +163,21 @@
 
       <!-- Buttons -->
       <div class="mt-auto flex flex-col gap-4 items-center">
-        <!-- Host: START GAME (disabled until all ready) -->
-        {#if isHost}
+        <!-- READY toggle (all players) -->
+        {#if isReady}
           <ActionButton
-            text="START GAME"
-            variant="primary"
-            disabled={!canStart()}
-            onclick={startGame}
+            text="CANCEL READY"
+            variant="destructive"
+            onclick={toggleReady}
             class="w-full max-w-[16rem]"
           />
-
-        <!-- Non-host: READY toggle -->
         {:else}
-          {#if isReady}
-            <ActionButton
-              text="CANCEL READY"
-              variant="destructive"
-              onclick={toggleReady}
-              class="w-full max-w-[16rem]"
-            />
-          {:else}
-            <ActionButton
-              text="READY UP"
-              variant="primary"
-              onclick={toggleReady}
-              class="w-full max-w-[16rem]"
-            />
-          {/if}
+          <ActionButton
+            text="READY UP"
+            variant="primary"
+            onclick={toggleReady}
+            class="w-full max-w-[16rem]"
+          />
         {/if}
 
         <ActionButton

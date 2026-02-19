@@ -5,32 +5,24 @@
 	interface Props {
 		player: User;
 		scene: "lobby" | "game";
-		isHost: boolean;
 	}
 
-	let { player, scene, isHost }: Props = $props();
+	let { player, scene }: Props = $props();
 
 	const isYou = $derived(String(player.id) === String($userStore?.id));
 
-	type PlayerStatus = "host" | "ready" | "not-ready";
+	type PlayerStatus = "ready" | "not-ready";
 
 	const status = $derived<PlayerStatus>(
-		isHost ? "host" : scene === "game" ? "ready" : "not-ready"
+		scene === "game" ? "ready" : "not-ready"
 	);
 
 	const styling = $derived(() => {
 		switch (status) {
-			case "host":
+			case "ready":
 				return {
 					borderColor: "border-[rgba(0,255,136,0.5)]",
 					badgeBg: "bg-[#0f8]",
-					badgeText: "text-black text-xs",
-					statusLabel: "HOST",
-				};
-			case "ready":
-				return {
-					borderColor: "border-white/50",
-					badgeBg: "bg-white",
 					badgeText: "text-black text-xs",
 					statusLabel: "READY",
 				};

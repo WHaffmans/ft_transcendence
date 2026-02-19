@@ -302,7 +302,7 @@ export class RoomManager {
 
 	/**
 	 * Evaluate whether the lobby countdown should start, stop, or keep running.
-	 * Start: ≥ 2 players AND ≥ 1 non-host player has scene "game" (ready).
+	 * Start: ≥ 2 players AND ≥ 2 ready AND not everyone ready (auto-start handles that).
 	 * Stop/reset: conditions no longer met.
 	 */
 	private evaluateLobbyTimer(roomId: string) {
@@ -310,11 +310,12 @@ export class RoomManager {
 		if (!room || room.phase !== "lobby") return;
 
 		const playerIds = this.getPlayerIds(room);
-		const readyNonHost = playerIds.filter(
-			(id) => id !== room.hostId && room.sceneById[id] === "game"
+		const readyPlayers = playerIds.filter(
+			(id) => room.sceneById[id] === "game"
 		);
+		const allReady = readyPlayers.length === playerIds.length;
 
-		const shouldRun = room.players.length >= 2 && readyNonHost.length >= 1;
+		const shouldRun = room.players.length >= 2 && readyPlayers.length >= 2 && !allReady;
 		const isRunning = !!room.lobbyTimerTimeout;
 
 		if (shouldRun && !isRunning) {
@@ -334,7 +335,7 @@ export class RoomManager {
 	/**
 	 * Start the lobby countdown timer.
 	 * On tick: broadcasts remaining seconds.
-	 * On expiry: kicks non-ready non-host players, then force-starts if ≥ 2 remain.
+	 * On expiry: kicks non-ready players, then force-starts if ≥ 2 remain.
 	 */
 	private startLobbyJoinTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
 		if (room.lobbyTimerTimeout || room.lobbyTimerInterval) return;
@@ -395,16 +396,16 @@ export class RoomManager {
 
 	/**
 	 * Called when the lobby timer reaches zero.
-	 * Kicks non-ready non-host players, then force-starts the game
+	 * Kicks all non-ready players, then force-starts the game
 	 * if ≥ 2 players remain. Otherwise closes the room.
 	 */
 	private onLobbyTimerExpired(roomId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
-		// Identify who to kick: not ready AND not the host
+		// Identify who to kick: anyone not ready
 		const toKick = this.getPlayerIds(room).filter(
-			(id) => id !== room.hostId && room.sceneById[id] !== "game"
+			(id) => room.sceneById[id] !== "game"
 		);
 
 		logInfo("room.lobby_timer_expired", {
@@ -415,12 +416,12 @@ export class RoomManager {
 		});
 
 		(async () => {
-			// Broadcast `left` and drop each non-ready non-host player
+			// Broadcast `left` and drop each non-ready player
 			for (const playerId of toKick) {
 				const still = this.rooms.get(roomId);
 				if (!still) return;
 
-				if (still.sceneById[playerId] !== "game" && playerId !== still.hostId) {
+				if (still.sceneById[playerId] !== "game") {
 					this.broadcast(roomId, {
 						type: "left",
 						roomId,
