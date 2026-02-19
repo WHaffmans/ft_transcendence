@@ -546,6 +546,9 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
+
+		// Rebuild game state so it only contains the remaining players
+		this.resetGame(room);
 		this.evaluateLobbyTimer(roomId);
 		this.broadcastState(roomId);
 	}
