@@ -19,10 +19,16 @@ const MAX_WS_MESSAGES = 50;
 type Player = z.infer<typeof PlayerSchema>;
 type PlayerMeta = { name: string; avatar_url?: string };
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
+// type LobbyTimerMsg = Extract<ServerMsg, { type: "lobby_timer" }>;
 
 type WSStoreState = {
 	status: "disconnected" | "connecting" | "open" | "error";
 	messages: ServerMsg[];
+	lobbyTimer: {
+		secondsLeft: number;
+		deadlineAtMs: number;
+		lastServerTsMs: number;
+	} | null;
 	latestState: StateMsg["snapshot"] | null;
 	segments: Array<{
 		i: number;
@@ -56,6 +62,7 @@ function createWebSocketStore() {
 	const store = writable<WSStoreState>({
 		status: "disconnected",
 		messages: [],
+		lobbyTimer: null,
 		latestState: null,
 		segments: [],
 		lastSegI: null,
@@ -142,6 +149,20 @@ function createWebSocketStore() {
 					lastSegI = merged.lastSegI;
 				}
 
+				// Lobby timer
+				let lobbyTimer = s.lobbyTimer;
+
+				if (msg.type === "lobby_timer") {
+					lobbyTimer = {
+						secondsLeft: msg.secondsLeft,
+						deadlineAtMs: msg.deadlineAtMs,
+						lastServerTsMs: Date.now(),
+					};
+				} else if (msg.type === "game_started" || msg.type === "game_finished") {
+					lobbyTimer = null;
+				}
+
+
 				return {
 					...s,
 					messages: [...s.messages, msg].slice(-MAX_WS_MESSAGES),
@@ -149,6 +170,7 @@ function createWebSocketStore() {
 
 					segments,
 					lastSegI,
+					lobbyTimer,
 
 					winnerId:
 						msg.type === "game_finished"
@@ -195,6 +217,7 @@ function createWebSocketStore() {
 		set({
 			status: "disconnected",
 			messages: [],
+			lobbyTimer: null,
 			latestState: null,
 			segments: [],
 			lastSegI: null,
@@ -307,6 +330,7 @@ function createWebSocketStore() {
 			roomId: null,
 			playerId: null,
 			latestState: null,
+			lobbyTimer: null,
 			segments: [],
 			lastSegI: null,
 			playerMetaById: {},
