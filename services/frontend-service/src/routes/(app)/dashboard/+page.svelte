@@ -34,6 +34,8 @@
   }
 </script>
 
+<svelte:window onkeydown={(e) => { if (e.key === 'Enter') handleFindMatch(); }} />
+
 <svelte:head>
   <title>ACHTUNG – Dashboard</title>
 </svelte:head>

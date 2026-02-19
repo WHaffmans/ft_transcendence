@@ -126,6 +126,15 @@
     wsStore.updatePlayerScene(lobbyId, playerId, "game");
   }
 
+  function handleEnter(e: KeyboardEvent) {
+    if (e.key !== 'Enter') return;
+    if (isHost) {
+      startGame();
+    } else {
+      toggleReady();
+    }
+  }
+
   /* ====================================================================== */
   /*                              LEAVE                                     */
   /* ====================================================================== */
@@ -147,6 +156,8 @@
       .catch((err) => console.error("Error informing backend of leaving the game:", err));
   }
 </script>
+
+<svelte:window onkeydown={handleEnter} />
 
 <div class="glass h-ranking rounded-2xl w-full flex flex-col">
   <!-- Header -->
