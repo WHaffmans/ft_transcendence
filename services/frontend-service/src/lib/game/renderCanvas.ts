@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/16 12:41:28 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/17 08:58:15 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 12:42:46 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,8 @@ type Snapshot = {
 type Options = {
   w: number;
   h: number;
+  getPulsePlayerId?: () => string | null;
+  getPulseEnabled?: () => boolean;
   deadFill?: string;
 };
 
@@ -90,7 +92,21 @@ export function createCanvasRenderer(
       ctx.stroke();
     }
 
-    // players
+    // Pulse
+    const pulseEnabled = opts.getPulseEnabled?.() ?? false;
+    const pulseId = opts.getPulsePlayerId?.() ?? null;
+
+    const nowSec = performance.now() / 1000;
+
+    if (pulseEnabled && pulseId) {
+      const p = players.find((pp) => String(pp.id) === String(pulseId));
+      if (p) {
+        const baseRadius = 8;
+        drawPulse(ctx, p.x, p.y, baseRadius, nowSec, p.color);
+      }
+    }
+
+    // Players
     const r = 4;
     const ring = 3;
     const ringAlpha = 0.18;
@@ -153,6 +169,35 @@ export function createCanvasRenderer(
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
     };
+  }
+
+  function drawPulse(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    baseRadius: number,
+    t: number,
+    color: ColorRGBA,
+  ) {
+    const speed = 0.8;
+    const phase = (t * speed) % 1;
+
+    const maxRadiusMultiplier = 5; 
+    const r = baseRadius + phase * (baseRadius * maxRadiusMultiplier);
+    const alpha = (1 - phase) * 0.5;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = Math.max(2, baseRadius * 0.2);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = rgbaCss(color);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function rgbaCss(c: ColorRGBA) {
+   return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
   }
 
   return { start, resize, draw };

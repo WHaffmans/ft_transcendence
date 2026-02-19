@@ -92,7 +92,6 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 12px;
     box-sizing: border-box;
   }
 
@@ -153,15 +152,15 @@
   .leaveBtn {
     width: 44px;
     height: 44px;
-    padding: 2px;
+    padding: 8px;
     box-sizing: border-box;
-    border-radius: 16px;
+    border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
     background: rgba(255, 80, 80, 0.14);
-    border: 1px solid rgba(255, 80, 80, 0.35);
+    border: 2px solid rgba(255, 80, 80, 0.35);
     opacity: 0.9;
   }
 

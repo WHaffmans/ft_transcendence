@@ -71,8 +71,6 @@
 	let lastJoinedKey: string | null = null;
 
 	function joinLobbySession(lobbyId: string, user: User) {
-		const seed = gameRecord?.seed ?? 0;
-
 		wsStore.setPlayerMeta(String(user.id), {
 			name: user.name,
 			avatar_url: user.avatar_url,
@@ -84,7 +82,7 @@
 			rating_sigma: Number(user.rating_sigma ?? 8.333),
 		};
 
-		wsStore.createOrJoinRoom(lobbyId, seed, player);
+		wsStore.createOrJoinRoom(lobbyId, 0, player);
 		const phase = liveRoomState()?.phase ?? null;
 		if (phase === null || phase === "lobby") {
 			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
@@ -240,7 +238,7 @@
 
 <section class="relative overflow-hidden">
 	<!-- Main content -->
-	<div class="flex flex-col items-start justify-between gap-6 lg:flex-row">
+	<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:justify-start">
 		<!-- Left Section - Player Slots -->
 		<LobbyGrid>
 			{#each playersInRoom() as player (player.id)}

@@ -3,7 +3,7 @@
   export let phase: "lobby" | "ready" | "running" | "finished" | null = null;
 
   export let lobbyText = "Waiting for all players to join...";
-  export let readyText = "Ready to start! Press ";
+  export let readyText = "Ready, to start press ";
 
   $: text =
     phase === "lobby"

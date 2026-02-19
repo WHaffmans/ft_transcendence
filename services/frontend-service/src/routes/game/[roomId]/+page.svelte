@@ -172,7 +172,13 @@
   onMount(() => {
     if (!canvas) return;
 
-    const renderer = createCanvasRenderer(canvas, { w: 806, h: 806 });
+    const renderer = createCanvasRenderer(canvas, {
+      w: 806,
+      h: 806,
+      getPulseEnabled: () => showStartOverlay(),
+      getPulsePlayerId: () => ($wsStore.playerId ? String($wsStore.playerId) : null),
+    });
+
     stopRender = renderer.start(
       () => snapshot(),
       () => $wsStore.segments,
