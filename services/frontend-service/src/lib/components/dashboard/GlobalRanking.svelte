@@ -15,7 +15,7 @@
 <div class="relative flex flex-col w-full glass h-ranking lg:w-ranking rounded-2xl">
 	<!-- Header -->
 	<div class="flex flex-col gap-2.5 px-6 pt-6">
-		<p class="text-xs font-bold text-[#888] uppercase">Global Ranking</p>
+		<p class="text-xs font-bold text-[#888] uppercase">Global Top 5</p>
 		<div class="w-full h-px bg-white/10"></div>
 	</div>
 

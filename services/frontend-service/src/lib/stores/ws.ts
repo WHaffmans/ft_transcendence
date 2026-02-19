@@ -43,6 +43,7 @@ type WSStoreState = {
 	playerId: string | null;
 	playerMetaById: Record<string, PlayerMeta>;
 	winnerId: string | null;
+	lastRoomClosed: { roomId: string; reason: string } | null;
 	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
@@ -70,6 +71,7 @@ function createWebSocketStore() {
 		playerId: null,
 		playerMetaById: {},
 		winnerId: null as string | null,
+		lastRoomClosed: null,
 		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
@@ -166,6 +168,12 @@ function createWebSocketStore() {
 					lobbyTimer = null;
 				}
 
+				// Room closed
+				let lastRoomClosed = s.lastRoomClosed;
+				if (msg.type === "room_closed") {
+					lastRoomClosed = { roomId: msg.roomId, reason: msg.reason };
+				}	
+
 
 				return {
 					...s,
@@ -175,6 +183,7 @@ function createWebSocketStore() {
 					segments,
 					lastSegI,
 					lobbyTimer,
+					lastRoomClosed,
 
 					winnerId:
 						msg.type === "game_finished"
@@ -229,6 +238,7 @@ function createWebSocketStore() {
 			playerId: null,
 			playerMetaById: {},
 			winnerId: null,
+			lastRoomClosed: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
@@ -339,6 +349,7 @@ function createWebSocketStore() {
 			lastSegI: null,
 			playerMetaById: {},
 			winnerId: null,
+			lastRoomClosed: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		}));

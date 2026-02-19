@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/19 08:50:33 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 11:49:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -854,26 +854,6 @@ export class RoomManager {
 		} satisfies ServerMsg);
 	}
 
-
-	/**
-	 * Notify clients of remaining lobby time
-	 */
-	private broadcastLobbyTimer(room: Room) {
-		const deadlineAtMs = room.lobbyJoinDeadlineAtMs;
-		if (!deadlineAtMs) return;
-
-		const msLeft = deadlineAtMs - Date.now();
-		const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
-
-		this.broadcast(room.roomId, {
-			type: "lobby_timer",
-			roomId: room.roomId,
-			secondsLeft,
-			deadlineAtMs,
-		});
-	}
-
-
 	/**
 	 * Make snapshot with correct types
 	 */
@@ -986,7 +966,7 @@ export class RoomManager {
 		}, dtMs);
 	}
 
-	// TODO: use
+	// TODO: Use this helper
 	/**
 	 * Stops the room tick timer
 	 */

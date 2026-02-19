@@ -28,7 +28,7 @@
 
 <style>
   .playerRow {
-    height: 84px;
+    height: 74px;
     padding: 0 12px;
     display: flex;
     align-items: center;
@@ -43,8 +43,8 @@
   }
 
   .dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 999px;
     flex: 0 0 auto;
   }
@@ -52,7 +52,7 @@
   .playerName {
     flex: 1;
     min-width: 0;
-    font: 12px system-ui;
+    font: 16px system-ui;
     font-weight: 650;
     color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
