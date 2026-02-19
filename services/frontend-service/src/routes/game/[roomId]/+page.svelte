@@ -12,7 +12,6 @@
   import { createGameMetaLoader } from "$lib/game/gameMeta";
   import { createFinishRedirect } from "$lib/game/finishRedirect";
 
-
   /* ============================================================================
    * DOM refs + Handles
    * ========================================================================== */
@@ -20,109 +19,8 @@
   let stopRender: null | (() => void) = null;
   let stopFinishWatch: null | (() => void) = null;
 
+  let didLeave = $state(false);
 
-  /* ============================================================================
-   * Derived UI state
-   * ========================================================================== */
-  $: snapshot = $wsStore.latestState;
-  $: phase = snapshot?.phase ?? null;
-  $: showStartOverlay = phase === "lobby" || phase === "ready";
-  $: showFinishedOverlay = phase === "finished";
-
-  // Meta loader
-  // TODO: Default avatar
-  const metaLoader = createGameMetaLoader(wsStore, {
-    defaultAvatar: "/placeholders/avatars/avatar_placeholder.webp",
-  });
-  $: metaLoader.ensureLoaded($wsStore.roomId);
-
-  // Finish overlay
-  const finish = createFinishRedirect({
-    seconds: 10,
-    isFinished: () => showFinishedOverlay,
-    onDone: () => goto("/dashboard", { invalidateAll: true }),
-  });
-  const countdown = finish.countdown;
-
-  function goDashboard() {
-    goto("/dashboard", { invalidateAll: true });
-  }
-
-  /* ============================================================================
-   * Inputs
-   * ========================================================================== */
-  function onKeyDown(ev: KeyboardEvent) {
-    if (ev.code === "Space") {
-      ev.preventDefault();
-
-      if ($wsStore.status === "open" && $wsStore.roomId && phase === "ready") {
-        wsStore.startGame?.();
-      }
-      return;
-    }
-
-    if (phase !== "running") return;
-
-    if (ev.key === "ArrowLeft")
-      if ($wsStore.status === "open" && $wsStore.roomId)
-        wsStore.sendClient({ type: "input", turn: -1 });
-
-    if (ev.key === "ArrowRight")
-      if ($wsStore.status === "open" && $wsStore.roomId)
-        wsStore.sendClient({ type: "input", turn: 1 });
-  }
-
-  function onKeyUp(ev: KeyboardEvent) {
-    if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
-      wsStore.sendClient({ type: "input", turn: 0 });
-    }
-  }
-
-  /* ============================================================================
-   * Lifecycle
-   * ========================================================================== */
-  onMount(() => {
-    if (!canvas) return;
-
-    const renderer = createCanvasRenderer(canvas, { w: 806, h: 806 });
-    stopRender = renderer.start(
-      () => snapshot,
-      () => $wsStore.segments,
-    );
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-
-    const roomId = $wsStore.roomId;
-    const playerId = $wsStore.playerId;
-
-    if (roomId && playerId) {
-      wsStore.updatePlayerScene(roomId, playerId, "game");
-    }
-
-    stopFinishWatch = finish.start();
-  });
-
-
-  onDestroy(() => {
-    stopRender?.();
-    stopRender = null;
-
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
-
-    wsStore.leaveRoom?.();
-    stopFinishWatch?.();
-    stopFinishWatch = null;
-
-    stopLocal();
-    if (!didLeave) {
-      didLeave = true;
-      wsStore.leaveRoom?.();
-    }
-  });
-
-  let didLeave = false;
   function stopLocal() {
     stopRender?.();
     stopRender = null;
@@ -152,29 +50,153 @@
     }
   }
 
-
   /* ============================================================================
-   * List Players
+   * Derived UI state (RUNES)
    * ========================================================================== */
-  $: youId = $wsStore.playerId ? String($wsStore.playerId) : null;
-  $: players = snapshot?.players ?? [];
-  $: metaById = $wsStore.playerMetaById ?? {};
+  const snapshot = $derived(() => $wsStore.latestState);
+  const phase = $derived(() => snapshot()?.phase ?? null);
 
-  $: winnerId = $wsStore.winnerId ?? null;
-  $: winnerName = winnerId ? displayName(String(winnerId)) : "No winner";
-  $: winnerAvatar = winnerId ? avatarUrl(String(winnerId)) : null;
+  const showStartOverlay = $derived(() => {
+    const p = phase();
+    return p === "lobby" || p === "ready";
+  });
 
-  $: if (showFinishedOverlay) {
-    console.log("winner", { winnerId, winnerName, winnerAvatar, meta: metaById[String(winnerId ?? "")] });
-  }
+  const showFinishedOverlay = $derived(() => phase() === "finished");
+
+  // Player list/meta
+  const youId = $derived(() => ($wsStore.playerId ? String($wsStore.playerId) : null));
+  const players = $derived(() => snapshot()?.players ?? []);
+  const metaById = $derived(() => $wsStore.playerMetaById ?? {});
+
+  const winnerId = $derived(() => $wsStore.winnerId ?? null);
+  const winnerName = $derived(() => {
+    const id = winnerId();
+    return id ? displayName(String(id)) : "No winner";
+  });
+  const winnerAvatar = $derived(() => {
+    const id = winnerId();
+    return id ? avatarUrl(String(id)) : null;
+  });
+
+  $effect(() => {
+    if (showFinishedOverlay()) {
+      console.log("winner", {
+        winnerId: winnerId(),
+        winnerName: winnerName(),
+        winnerAvatar: winnerAvatar(),
+        meta: metaById()[String(winnerId() ?? "")],
+      });
+    }
+  });
 
   function displayName(playerId: string) {
-    return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
+    return metaById()[String(playerId)]?.name ?? `Player ${playerId}`;
   }
 
   function avatarUrl(playerId: string) {
-    return metaById[String(playerId)]?.avatar_url ?? null;
+    return metaById()[String(playerId)]?.avatar_url ?? null;
   }
+
+  // Meta loader
+  const metaLoader = createGameMetaLoader(wsStore, {
+    defaultAvatar: "/placeholders/avatars/avatar_placeholder.webp",
+  });
+
+  $effect(() => {
+    metaLoader.ensureLoaded($wsStore.roomId);
+  });
+
+  // Finish overlay redirect
+  const finish = createFinishRedirect({
+    seconds: 10,
+    isFinished: () => showFinishedOverlay(),
+    onDone: () => goto("/dashboard", { invalidateAll: true }),
+  });
+  const countdown = finish.countdown;
+
+  function goDashboard() {
+    goto("/dashboard", { invalidateAll: true });
+  }
+
+  /* ============================================================================
+   * Inputs
+   * ========================================================================== */
+  function onKeyDown(ev: KeyboardEvent) {
+    if (ev.code === "Space") {
+      ev.preventDefault();
+
+      if ($wsStore.status === "open" && $wsStore.roomId && phase() === "ready") {
+        wsStore.startGame?.();
+      }
+      return;
+    }
+
+    if (phase() !== "running") return;
+
+    if (ev.key === "ArrowLeft") {
+      if ($wsStore.status === "open" && $wsStore.roomId) {
+        wsStore.sendClient({ type: "input", turn: -1 });
+      }
+    }
+
+    if (ev.key === "ArrowRight") {
+      if ($wsStore.status === "open" && $wsStore.roomId) {
+        wsStore.sendClient({ type: "input", turn: 1 });
+      }
+    }
+  }
+
+  function onKeyUp(ev: KeyboardEvent) {
+    if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+      wsStore.sendClient({ type: "input", turn: 0 });
+    }
+  }
+
+  /* ============================================================================
+   * Room closed -> redirect
+   * ========================================================================== */
+  const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
+
+  $effect(() => {
+    const roomId = $wsStore.roomId;
+    const closed = lastRoomClosed();
+    if (!roomId || !closed) return;
+    if (String(closed.roomId) !== String(roomId)) return;
+
+    leaveAndGoDashboard();
+  });
+
+  /* ============================================================================
+   * Lifecycle
+   * ========================================================================== */
+  onMount(() => {
+    if (!canvas) return;
+
+    const renderer = createCanvasRenderer(canvas, { w: 806, h: 806 });
+    stopRender = renderer.start(
+      () => snapshot(),
+      () => $wsStore.segments,
+    );
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+
+    const roomId = $wsStore.roomId;
+    const playerId = $wsStore.playerId;
+    if (roomId && playerId) {
+      wsStore.updatePlayerScene(roomId, playerId, "game");
+    }
+
+    stopFinishWatch = finish.start();
+  });
+
+  onDestroy(() => {
+    stopLocal();
+    if (!didLeave) {
+      didLeave = true;
+      wsStore.leaveRoom?.();
+    }
+  });
 </script>
 
 
@@ -187,22 +209,22 @@
     <!-- Right: Players -->
     <PlayersPanel
       status={$wsStore.status}
-      {players}
-      {youId}
-      {metaById}
+      players={players()}
+      youId={youId()}
+      metaById={metaById()}
       onLeave={leaveAndGoDashboard}
     />
   </div>
 </div>
 
 <!-- Start overlay -->
-<StartOverlay show={showStartOverlay} {phase} />
+<StartOverlay show={showStartOverlay()} phase={phase()} />
 
 <!-- Finish overlay -->
 <FinishOverlay
-  show={showFinishedOverlay}
-  {winnerName}
-  {winnerAvatar}
+  show={showFinishedOverlay()}
+  winnerName={winnerName()}
+  winnerAvatar={winnerAvatar()}
   countdown={$countdown}
   onGoDashboard={goDashboard}
 />

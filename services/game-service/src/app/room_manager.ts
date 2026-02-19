@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/19 08:50:33 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 11:49:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -355,6 +355,7 @@ export class RoomManager {
 				sceneById: live.sceneById,
 			});
 
+			// Timer ended
 			(async () => {
 				for (const playerId of toKick) {
 					const still = this.rooms.get(roomId);
@@ -368,9 +369,27 @@ export class RoomManager {
 				const after = this.rooms.get(roomId);
 				if (!after) return;
 
+				// One player left in game -> close
+				const remaining = this.getPlayerIds(after);
+				if (remaining.length <= 1) {
+					this.stopLobbyJoinTimer(after);
+
+					const lastPlayerId = remaining[0];
+					if (lastPlayerId) {
+						logInfo("room.lobby_join_timeout.one_player_remaining", {
+							roomId,
+							lastPlayerId,
+							sceneById: live.sceneById,
+						});
+						await this.dropPlayer(roomId, lastPlayerId);
+					}
+					return;
+				}
+
 				this.resetGame(after);
 				this.broadcastState(roomId);
 				this.stopLobbyJoinTimer(after);
+				this.willUpdateRoomPhase(roomId);
 
 			})().catch((err) => {
 				logError("room.lobby_join_timeout_failed", { roomId, err });
@@ -774,26 +793,6 @@ export class RoomManager {
 		} satisfies ServerMsg);
 	}
 
-
-	/**
-	 * Notify clients of remaining lobby time
-	 */
-	private broadcastLobbyTimer(room: Room) {
-		const deadlineAtMs = room.lobbyJoinDeadlineAtMs;
-		if (!deadlineAtMs) return;
-
-		const msLeft = deadlineAtMs - Date.now();
-		const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
-
-		this.broadcast(room.roomId, {
-			type: "lobby_timer",
-			roomId: room.roomId,
-			secondsLeft,
-			deadlineAtMs,
-		});
-	}
-
-
 	/**
 	 * Make snapshot with correct types
 	 */
@@ -906,7 +905,7 @@ export class RoomManager {
 		}, dtMs);
 	}
 
-	// TODO: use
+	// TODO: Use this helper
 	/**
 	 * Stops the room tick timer
 	 */

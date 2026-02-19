@@ -50,6 +50,7 @@
 	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
 	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
 	const hostIdLive = $derived(() => liveRoomState()?.hostId ?? null);
+	const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
 
 	const playersInRoom = $derived(() =>
 		roomPlayerIdsLive()
@@ -136,6 +137,25 @@
 	});
 
 	/**
+	 * Room closed
+	*/
+	$effect(() => {
+		const lobbyId = data.lobbyId;
+		const closed = lastRoomClosed();
+
+		if (!lobbyId || !closed) return;
+		if (String(closed.roomId) !== String(lobbyId)) return;
+
+		if (didRedirect) return;
+		didRedirect = true;
+
+		wsStore.leaveRoom();
+
+		goto("/dashboard", { replaceState: true });
+	});
+
+
+	/**
 	 * Determine when to leave lobby 
 	 */
 	let didRedirect = false;
@@ -210,7 +230,6 @@
 		}
 		return (null);
 	}
-
 
 </script>
 
