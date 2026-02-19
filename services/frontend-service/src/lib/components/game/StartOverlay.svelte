@@ -68,7 +68,6 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
     z-index: 1000;
     border-radius: inherit;
   }

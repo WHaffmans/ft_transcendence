@@ -271,7 +271,6 @@
   }
 
   .canvasWrap.blurred {
-    filter: blur(6px);
     pointer-events: none;
   }
 
