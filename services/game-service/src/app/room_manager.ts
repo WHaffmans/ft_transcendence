@@ -28,7 +28,7 @@ import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const LOBBY_LIFETIME_MS = 60_000;
 
@@ -548,9 +548,18 @@ export class RoomManager {
 
 		if (! this.rooms.has(roomId)) return;
 
+		// If only 1 player remains, reset their ready state — can't be ready alone
+		if (room.players.length === 1) {
+			const lastId = String((room.players[0] as any).playerId);
+			if (room.sceneById[lastId] === "game") {
+				room.sceneById[lastId] = "lobby";
+			}
+		}
+
 		// Rebuild game state so it only contains the remaining players
 		this.resetGame(room);
 		this.evaluateLobbyTimer(roomId);
+		this.willUpdateRoomPhase(roomId);
 		this.broadcastState(roomId);
 	}
 
