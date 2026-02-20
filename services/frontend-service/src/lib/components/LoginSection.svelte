@@ -3,7 +3,7 @@
   import { apiStore } from "$lib/stores/api";
   import { toast } from "svelte-sonner";
 
-  const landingLogo = "/logo.png";
+  const landingLogo = "/logo.webp";
   const subtitle = "The Kurve Web Edition";
 
   const handleLogin = async () => {
