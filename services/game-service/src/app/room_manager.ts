@@ -534,8 +534,6 @@ export class RoomManager {
 	 */
 	private async willLeaveLobby(roomId: string, playerId: string) {
 		const room = this.getRoomOrThrow(roomId);
-
-		if (room.sceneById[playerId] !== "lobby") return;
 		
 		await this.dropPlayer(roomId, playerId);
 
@@ -602,13 +600,10 @@ export class RoomManager {
 			reason: meta
 		});
 
-		switch (room.sceneById[playerId]) {
-			case "lobby":
-				void this.willLeaveLobby(roomId, playerId);
-				break;
-			case "game":
-				void this.willLeaveGame(roomId, playerId);
-				break;
+		if (room.phase === "lobby") {
+			void this.willLeaveLobby(roomId, playerId);
+		} else {
+			void this.willLeaveGame(roomId, playerId);
 		}
 	}
 
