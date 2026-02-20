@@ -1,27 +1,60 @@
 <script lang="ts">
-  export let show: boolean;
-  export let phase: "lobby" | "ready" | "running" | "finished" | null = null;
+  interface Props {
+    show: boolean;
+    phase: "lobby" | "ready" | "running" | "finished" | null;
+    onCountdownEnd?: () => void;
+  }
 
-  export let lobbyText = "Waiting for all players to join...";
-  export let readyText = "Ready to start! Press ";
+  let {
+    show,
+    phase = null,
+    onCountdownEnd,
+  }: Props = $props();
 
-  $: text =
-    phase === "lobby"
-      ? lobbyText
-      : phase === "ready"
-        ? readyText
-        : null;
+  let countdown = $state(3);
+  let showGo = $state(false);
 
-  $: isReady = phase === "ready";
+  $effect(() => {
+    if (phase !== "ready" || !show) return;
+
+    countdown = 3;
+    showGo = false;
+
+    const t = setInterval(() => {
+      countdown -= 1;
+      if (countdown <= 0) {
+        clearInterval(t);
+        showGo = true;
+        onCountdownEnd?.();
+        setTimeout(() => { showGo = false; }, 600);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(t);
+    };
+  });
 </script>
 
-{#if show && text}
+{#if show}
   <div class="overlay">
     <div class="overlayCard">
-      {#if isReady}
-        {text} <span class="keycap">SPACE</span>
-      {:else}
-        {text}
+      {#if phase === "lobby"}
+        <p class="waitingText">Waiting for all players…</p>
+
+      {:else if phase === "ready"}
+        <!-- Countdown -->
+        <div class="countdownWrap">
+          {#if showGo}
+            {#key "go"}
+              <div class="countdownNumber go">GO!</div>
+            {/key}
+          {:else if countdown > 0}
+            {#key countdown}
+              <div class="countdownNumber">{countdown}</div>
+            {/key}
+          {/if}
+        </div>
       {/if}
     </div>
   </div>
@@ -29,40 +62,62 @@
 
 <style>
   .overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.45);
     z-index: 1000;
+    border-radius: inherit;
   }
 
   .overlayCard {
-    background: rgba(0, 0, 0, 0.55);
     color: white;
-    padding: 14px 18px;
-    border-radius: 12px;
+    padding: 32px 40px;
     font: 14px system-ui;
     letter-spacing: 0.2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
   }
 
-  .keycap {
-    display: inline-flex;
+  .waitingText {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.3px;
+  }
+
+  .countdownWrap {
+    min-height: 110px;
+    display: flex;
     align-items: center;
     justify-content: center;
+  }
 
-    padding: 4px 40px;
-    margin-left: 6px;
+  .countdownNumber {
+    font-size: 96px;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+    text-align: center;
+    animation: popIn 0.3s ease-out;
+  }
 
-    background: rgba(91, 91, 91, 0.65);
-    border-radius: 2px;
+  .countdownNumber.go {
+    font-size: 72px;
+    color: #0f8;
+  }
 
-    font: 12px system-ui;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  @keyframes popIn {
+    from {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>

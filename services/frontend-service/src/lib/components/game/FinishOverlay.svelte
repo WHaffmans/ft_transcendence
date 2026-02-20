@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
+
   export let show: boolean;
 
   export let winnerName: string = "No winner";
@@ -14,6 +16,24 @@
   }
 
   $: normalizedAvatar = normalizeAvatarUrl(winnerAvatar);
+
+  function onKeyDown(ev: KeyboardEvent) {
+    if (!show) return;
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      onGoDashboard();
+    }
+  }
+
+  $: {
+    if (show) window.addEventListener("keydown", onKeyDown);
+    else window.removeEventListener("keydown", onKeyDown);
+  }
+
+  onDestroy(() => {
+    window.removeEventListener("keydown", onKeyDown);
+  });
+
 </script>
 
 {#if show}
@@ -46,7 +66,7 @@
 
 <style>
   .overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
@@ -54,6 +74,7 @@
     background: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(2px);
     z-index: 1000;
+    border-radius: inherit;
   }
 
   .overlayCard {
@@ -113,7 +134,7 @@
 
   .finishBtn {
     margin-top: 6px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-radius: 12px;
 
     background: rgba(0, 255, 136, 0.18);

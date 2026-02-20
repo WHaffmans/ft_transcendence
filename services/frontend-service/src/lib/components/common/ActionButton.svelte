@@ -4,11 +4,12 @@
 	interface Props {
 		text: string;
 		variant?: Variant;
+		disabled?: boolean;
 		onclick?: () => void;
 		class?: string;
 	}
 
-	let { text, variant = 'primary', onclick, class: className = '' }: Props = $props();
+	let { text, variant = 'primary', disabled = false, onclick, class: className = '' }: Props = $props();
 
 	const variantStyles = $derived(() => {
 		if (variant === 'destructive') {
@@ -26,7 +27,9 @@
 
 <button
 	{onclick}
-	class="w-52.5 h-13.5 {variantStyles().bg} {variantStyles().text} font-bold text-xs rounded-lg transition-all hover:-translate-y-0.5 active:translate-y-0 {className}"
+	{disabled}
+	class="w-52.5 h-13.5 {variantStyles().bg} {variantStyles().text} font-bold text-xs rounded-lg transition-all
+		{disabled ? 'opacity-40 cursor-not-allowed' : 'hover:-translate-y-0.5 active:translate-y-0'} {className}"
 >
 	{text}
 </button>

@@ -6,8 +6,9 @@
 	import { userStore } from "$lib/stores/user";
 	import type { Game, User } from "$lib/types/types";
 	import type { GamePhase } from "@ft/game-ws-protocol";
-	import { onMount } from "svelte";
-	import { goto } from "$app/navigation";
+	import { onMount, onDestroy } from "svelte";
+	import { goto, beforeNavigate } from "$app/navigation";
+	import { toast } from "svelte-sonner";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
 	
@@ -49,7 +50,7 @@
 	const liveRoomState = $derived(() => $wsStore.latestState);
 	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
 	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
-	const hostIdLive = $derived(() => liveRoomState()?.hostId ?? null);
+	const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
 
 	const playersInRoom = $derived(() =>
 		roomPlayerIdsLive()
@@ -70,8 +71,6 @@
 	let lastJoinedKey: string | null = null;
 
 	function joinLobbySession(lobbyId: string, user: User) {
-		const seed = gameRecord?.seed ?? 0;
-
 		wsStore.setPlayerMeta(String(user.id), {
 			name: user.name,
 			avatar_url: user.avatar_url,
@@ -83,7 +82,7 @@
 			rating_sigma: Number(user.rating_sigma ?? 8.333),
 		};
 
-		wsStore.createOrJoinRoom(lobbyId, seed, player);
+		wsStore.createOrJoinRoom(lobbyId, 0, player);
 		const phase = liveRoomState()?.phase ?? null;
 		if (phase === null || phase === "lobby") {
 			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
@@ -136,6 +135,45 @@
 	});
 
 	/**
+	 * Detect when the current player is kicked (no longer in playerIds)
+	 */
+	$effect(() => {
+		if (didRedirect) return;
+
+		const ids = roomPlayerIdsLive();
+		if (ids.length === 0) return; // no state yet
+
+		const userId = String($userStore?.id ?? "");
+		if (!userId) return;
+
+		if (!ids.includes(userId)) {
+			didRedirect = true;
+			wsStore.disconnect();
+			toast.info("You were removed from the lobby.");
+			goto("/dashboard", { replaceState: true });
+		}
+	});
+
+	/**
+	 * Room closed
+	*/
+	$effect(() => {
+		const lobbyId = data.lobbyId;
+		const closed = lastRoomClosed();
+
+		if (!lobbyId || !closed) return;
+		if (String(closed.roomId) !== String(lobbyId)) return;
+
+		if (didRedirect) return;
+		didRedirect = true;
+
+		wsStore.leaveRoom();
+		toast.info(closed.reason || "The lobby was closed.");
+
+		goto("/dashboard", { replaceState: true });
+	});
+
+	/**
 	 * Determine when to leave lobby 
 	 */
 	let didRedirect = false;
@@ -157,6 +195,34 @@
 			await loadGameRecord(lobbyId);
 		}
 		willRedirect();
+	});
+
+	/* ====================================================================== */
+	/*                       CLEANUP ON NAVIGATE AWAY                         */
+	/* ====================================================================== */
+
+	let didCleanup = false;
+
+	function cleanupLobby() {
+		if (didCleanup) return;
+		didCleanup = true;
+		wsStore.leaveRoom();
+		wsStore.disconnect();
+	}
+
+	beforeNavigate(({ to }) => {
+		if (didRedirect) return;  // already handled (kicked, room closed, etc.)
+
+		// Don't clean up when transitioning to the game page (legitimate redirect)
+		const dest = to?.url?.pathname ?? "";
+		if (dest.startsWith("/game/")) return;
+
+		cleanupLobby();
+	});
+
+	onDestroy(() => {
+		// Safety net for cases beforeNavigate doesn't cover (e.g. full page unload)
+		if (!didRedirect) cleanupLobby();
 	});
 
 
@@ -196,21 +262,23 @@
 		backendStatus: GameStatus | null;
 	}) {
 		const { livePhase, backendStatus } = opts;
+		const userId = String($userStore?.id ?? "");
 
-		// Prefer live status
+		// Prefer live phase from WS
 		if (livePhase) {
 			if (livePhase === "lobby") return null;
-			return (`/dashboard`);
+			if (livePhase === "ready" || livePhase === "running")
+				return `/game/${data.lobbyId}?playerId=${userId}`;
+			return "/dashboard";
 		}
 
-		// Fallback to API
+		// Fallback to REST status
 		if (backendStatus) {
 			if (backendStatus === "pending" || backendStatus === "ready") return null;
-			return (`/dashboard`);
+			return "/dashboard";
 		}
-		return (null);
+		return null;
 	}
-
 
 </script>
 
@@ -221,24 +289,25 @@
 
 <section class="relative overflow-hidden">
 	<!-- Main content -->
-	<div class="flex flex-col items-start justify-between gap-6 lg:flex-row">
+	<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:justify-start">
 		<!-- Left Section - Player Slots -->
 		<LobbyGrid>
 			{#each playersInRoom() as player (player.id)}
 				<PlayerCard
 					{player}
 					scene={sceneByIdLive()[String(player.id)] ?? "lobby"}
-					isHost={String(player.id) === String(hostIdLive())}
 				/>
 			{/each}
 		</LobbyGrid>
 
 		<!-- Right Section - Match Settings -->
 		<div class="w-full lg:w-ranking shrink-0">
-			<MatchSettings
-			isHost={String($userStore?.id) === String(hostIdLive())}
-			game={gameRecord!}
-			playerCount={playersInRoom().length}
+				<MatchSettings
+				game={gameRecord!}
+				playerCount={playersInRoom().length}
+				lobbyId={data.lobbyId}
+				playerId={String($userStore?.id ?? '')}
+				sceneById={sceneByIdLive()}
 			/>
 		</div>
 	</div>

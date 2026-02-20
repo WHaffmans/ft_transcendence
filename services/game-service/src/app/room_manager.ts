@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 14:57:46 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/19 11:49:53 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,9 @@ import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
+const LOBBY_LIFETIME_MS = 60_000;
 
 type Room = {
 	phase: GamePhase;
@@ -47,6 +48,11 @@ type Room = {
 
 	// Handle ticks
 	timer?: NodeJS.Timeout | null;
+
+	// Lobby lifetime
+	lobbyTimerTimeout?: NodeJS.Timeout | null;  // setTimeout (kick)
+	lobbyTimerInterval?: NodeJS.Timeout | null; // setInterval (broadcast)
+	lobbyJoinDeadlineAtMs?: number | null;
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
@@ -245,6 +251,7 @@ export class RoomManager {
 			this.resetGame(room);
 		}
 
+		this.evaluateLobbyTimer(roomId);
 		this.broadcastState(roomId);
 	}
 
@@ -288,6 +295,188 @@ export class RoomManager {
 		return (room);
 	}
 
+
+	/* ====================================================================== */
+	/*                            LOBBY TIMER                                 */
+	/* ====================================================================== */
+
+	/**
+	 * Evaluate whether the lobby countdown should start, stop, or keep running.
+	 * Start: ≥ 2 players AND ≥ 2 ready AND not everyone ready (auto-start handles that).
+	 * Stop/reset: conditions no longer met.
+	 */
+	private evaluateLobbyTimer(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room || room.phase !== "lobby") return;
+
+		const playerIds = this.getPlayerIds(room);
+		const readyPlayers = playerIds.filter(
+			(id) => room.sceneById[id] === "game"
+		);
+		const allReady = readyPlayers.length === playerIds.length;
+
+		const shouldRun = room.players.length >= 2 && readyPlayers.length >= 2 && !allReady;
+		const isRunning = !!room.lobbyTimerTimeout;
+
+		if (shouldRun && !isRunning) {
+			this.startLobbyJoinTimer(room, LOBBY_LIFETIME_MS);
+		} else if (!shouldRun && isRunning) {
+			this.stopLobbyJoinTimer(room);
+			// Broadcast null timer so frontend clears the countdown
+			this.broadcast(roomId, {
+				type: "lobby_timer",
+				roomId,
+				secondsLeft: 0,
+				deadlineAtMs: 0,
+			});
+		}
+	}
+
+	/**
+	 * Start the lobby countdown timer.
+	 * On tick: broadcasts remaining seconds.
+	 * On expiry: kicks non-ready players, then force-starts if ≥ 2 remain.
+	 */
+	private startLobbyJoinTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
+		if (room.lobbyTimerTimeout || room.lobbyTimerInterval) return;
+
+		const roomId = room.roomId;
+		room.lobbyJoinDeadlineAtMs = Date.now() + ms;
+
+		const broadcastTick = () => {
+			const live = this.rooms.get(roomId);
+			if (!live) return;
+
+			if (live.phase !== "lobby") {
+				this.stopLobbyJoinTimer(live);
+				return;
+			}
+
+			const deadlineAtMs = live.lobbyJoinDeadlineAtMs ?? 0;
+			const msLeft = deadlineAtMs - Date.now();
+			const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
+
+			this.broadcast(roomId, {
+				type: "lobby_timer",
+				roomId,
+				secondsLeft,
+				deadlineAtMs,
+			});
+
+			if (secondsLeft <= 0) {
+				if (live.lobbyTimerInterval) {
+					clearInterval(live.lobbyTimerInterval);
+					live.lobbyTimerInterval = null;
+				}
+			}
+		};
+
+		broadcastTick();
+		room.lobbyTimerInterval = setInterval(broadcastTick, 1000);
+
+		room.lobbyTimerTimeout = setTimeout(() => {
+			const live = this.rooms.get(roomId);
+			if (!live) return;
+
+			if (live.phase !== "lobby") {
+				this.stopLobbyJoinTimer(live);
+				return;
+			}
+
+			this.stopLobbyJoinTimer(live);
+			this.onLobbyTimerExpired(roomId);
+		}, ms);
+
+		logInfo("room.lobby_timer_started", {
+			roomId,
+			ms,
+			deadlineAt: room.lobbyJoinDeadlineAtMs,
+		});
+	}
+
+	/**
+	 * Called when the lobby timer reaches zero.
+	 * Kicks all non-ready players, then force-starts the game
+	 * if ≥ 2 players remain. Otherwise closes the room.
+	 */
+	private onLobbyTimerExpired(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		// Identify who to kick: anyone not ready
+		const toKick = this.getPlayerIds(room).filter(
+			(id) => room.sceneById[id] !== "game"
+		);
+
+		logInfo("room.lobby_timer_expired", {
+			roomId,
+			toKick,
+			sceneById: room.sceneById,
+			playerCount: room.players.length,
+		});
+
+		(async () => {
+			// Broadcast `left` and drop each non-ready player
+			for (const playerId of toKick) {
+				const still = this.rooms.get(roomId);
+				if (!still) return;
+
+				if (still.sceneById[playerId] !== "game") {
+					this.broadcast(roomId, {
+						type: "left",
+						roomId,
+						playerId,
+					});
+					await this.dropPlayer(roomId, playerId);
+				}
+			}
+
+			const after = this.rooms.get(roomId);
+			if (!after) return;
+
+			// Not enough players to start → close the room
+			if (after.players.length < 2) {
+				logInfo("room.lobby_timer_not_enough_players", {
+					roomId,
+					playerCount: after.players.length,
+				});
+				this.closeRoom(roomId, "Not enough players after timer expired");
+				return;
+			}
+
+			// Force-start: set all remaining scenes to "game", then transition to "ready".
+			// The client-side countdown will handle the ready → running transition.
+			for (const id of this.getPlayerIds(after)) {
+				after.sceneById[id] = "game";
+			}
+
+			this.resetGame(after);
+
+			// lobby → ready (clients show 3-2-1 countdown, host fires start_game at the end)
+			after.phase = "ready";
+			logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
+
+			this.broadcastState(roomId);
+
+		})().catch((err) => {
+			logError("room.lobby_timer_expired_failed", { roomId, err });
+		});
+	}
+
+	private stopLobbyJoinTimer(room: Room) {
+		if (room.lobbyTimerInterval) {
+			clearInterval(room.lobbyTimerInterval);
+			room.lobbyTimerInterval = null;
+		}
+		if (room.lobbyTimerTimeout) {
+			clearTimeout(room.lobbyTimerTimeout);
+			room.lobbyTimerTimeout = null;
+		}
+		room.lobbyJoinDeadlineAtMs = null;
+
+		logInfo("room.lobby_join_timer_stopped", { roomId: room.roomId });
+	}
+
 	/**
 	 * Close current room
 	 */
@@ -295,6 +484,7 @@ export class RoomManager {
 		const room = this.getRoomOrThrow(roomId);
 
 		this.stopRoomTimer(room);
+		this.stopLobbyJoinTimer(room);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
@@ -344,8 +534,6 @@ export class RoomManager {
 	 */
 	private async willLeaveLobby(roomId: string, playerId: string) {
 		const room = this.getRoomOrThrow(roomId);
-
-		if (room.sceneById[playerId] !== "lobby") return;
 		
 		await this.dropPlayer(roomId, playerId);
 
@@ -357,6 +545,19 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
+
+		// If only 1 player remains, reset their ready state — can't be ready alone
+		if (room.players.length === 1) {
+			const lastId = String((room.players[0] as any).playerId);
+			if (room.sceneById[lastId] === "game") {
+				room.sceneById[lastId] = "lobby";
+			}
+		}
+
+		// Rebuild game state so it only contains the remaining players
+		this.resetGame(room);
+		this.evaluateLobbyTimer(roomId);
+		this.willUpdateRoomPhase(roomId);
 		this.broadcastState(roomId);
 	}
 
@@ -376,6 +577,19 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
+
+		// No players left → close the room
+		if (room.players.length === 0) {
+			this.closeRoom(roomId, "All players left");
+			return;
+		}
+
+		// During countdown (ready phase), not enough players to start → close
+		if (room.phase === "ready" && room.players.length < MIN_PLAYERS) {
+			this.closeRoom(roomId, "Not enough players during countdown");
+			return;
+		}
+
 		this.broadcastState(roomId);
 
 		if (room.phase === "running" && room.players.length === 1) {
@@ -399,13 +613,10 @@ export class RoomManager {
 			reason: meta
 		});
 
-		switch (room.sceneById[playerId]) {
-			case "lobby":
-				void this.willLeaveLobby(roomId, playerId);
-				break;
-			case "game":
-				void this.willLeaveGame(roomId, playerId);
-				break;
+		if (room.phase === "lobby") {
+			void this.willLeaveLobby(roomId, playerId);
+		} else {
+			void this.willLeaveGame(roomId, playerId);
 		}
 	}
 
@@ -536,6 +747,10 @@ export class RoomManager {
 			from: prev,
 			to: scene,
 		});
+
+		this.evaluateLobbyTimer(roomId);
+		this.willUpdateRoomPhase(roomId);
+  		this.broadcastState(roomId);
 	}
 
 	/**
@@ -563,6 +778,7 @@ export class RoomManager {
 		if (room.players.length > MAX_PLAYERS) return;
 
 		room.phase = "ready";
+		this.stopLobbyJoinTimer(room);
 
 		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
 
@@ -768,7 +984,7 @@ export class RoomManager {
 		}, dtMs);
 	}
 
-	// TODO: use
+	// TODO: Use this helper
 	/**
 	 * Stops the room tick timer
 	 */

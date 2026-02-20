@@ -131,8 +131,12 @@ export function startPublicWsServer(
 				switch (msg.type) {
 					case "create_or_join_room": {
 
-						if (boundRoomId || boundPlayerId) {
-							throw new Error("Already joined a room on this socket");
+						// If already bound to a different room (e.g. kicked player rejoining),
+						// clean up the old subscription first.
+						if (boundRoomId && boundRoomId !== msg.roomId) {
+							try { rooms.unsubscribe(boundRoomId, ws); } catch { /* room may be gone */ }
+							boundRoomId = null;
+							boundPlayerId = null;
 						}
 
 						boundRoomId = msg.roomId;
