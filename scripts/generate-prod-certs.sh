@@ -45,6 +45,61 @@ generate_cert() {
     echo -e "${GREEN}✓ Certificate created: ${name}-cert.pem${NC}"
 }
 
+# Function to generate MariaDB SSL certificates (CA-based)
+generate_mariadb_certs() {
+    local db_certs_dir="$CERTS_DIR/mariadb"
+    
+    echo -e "${GREEN}Generating MariaDB SSL certificates...${NC}"
+    
+    mkdir -p "$db_certs_dir"
+    
+    # Generate CA
+    echo -e "${YELLOW}  Creating CA certificate...${NC}"
+    openssl genrsa 2048 > "$db_certs_dir/ca-key.pem" 2>/dev/null
+    openssl req -new -x509 -nodes -days 3650 \
+        -key "$db_certs_dir/ca-key.pem" \
+        -out "$db_certs_dir/ca-cert.pem" \
+        -subj "/C=US/ST=State/L=City/O=FT_Transcendence/CN=MariaDB-CA" \
+        2>/dev/null
+    
+    # Generate server certificate
+    echo -e "${YELLOW}  Creating server certificate...${NC}"
+    openssl req -newkey rsa:2048 -days 3650 -nodes \
+        -keyout "$db_certs_dir/server-key.pem" \
+        -out "$db_certs_dir/server-req.pem" \
+        -subj "/C=US/ST=State/L=City/O=FT_Transcendence/CN=mariadb" \
+        2>/dev/null
+    openssl x509 -req -in "$db_certs_dir/server-req.pem" \
+        -days 3650 -CA "$db_certs_dir/ca-cert.pem" \
+        -CAkey "$db_certs_dir/ca-key.pem" -set_serial 01 \
+        -out "$db_certs_dir/server-cert.pem" 2>/dev/null
+    
+    # Generate client certificate
+    echo -e "${YELLOW}  Creating client certificate...${NC}"
+    openssl req -newkey rsa:2048 -days 3650 -nodes \
+        -keyout "$db_certs_dir/client-key.pem" \
+        -out "$db_certs_dir/client-req.pem" \
+        -subj "/C=US/ST=State/L=City/O=FT_Transcendence/CN=backend-service" \
+        2>/dev/null
+    openssl x509 -req -in "$db_certs_dir/client-req.pem" \
+        -days 3650 -CA "$db_certs_dir/ca-cert.pem" \
+        -CAkey "$db_certs_dir/ca-key.pem" -set_serial 02 \
+        -out "$db_certs_dir/client-cert.pem" 2>/dev/null
+    
+    # Cleanup temporary files
+    rm -f "$db_certs_dir"/*.req.pem
+    
+    # Set permissions (need to be readable by mysql user in container)
+    chmod 644 "$db_certs_dir"/ca-cert.pem
+    chmod 644 "$db_certs_dir"/server-cert.pem
+    chmod 644 "$db_certs_dir"/client-cert.pem
+    chmod 644 "$db_certs_dir"/ca-key.pem
+    chmod 644 "$db_certs_dir"/server-key.pem
+    chmod 644 "$db_certs_dir"/client-key.pem
+    
+    echo -e "${GREEN}✓ MariaDB certificates created${NC}"
+}
+
 # Generate certificates for each service
 echo ""
 echo -e "${GREEN}Generating Traefik gateway certificate...${NC}"
@@ -61,6 +116,9 @@ generate_cert "backend" "backend-service" "DNS:backend-service,DNS:localhost,IP:
 echo ""
 echo -e "${GREEN}Generating game service certificate...${NC}"
 generate_cert "game" "game-service" "DNS:game-service,DNS:localhost,IP:127.0.0.1"
+
+echo ""
+generate_mariadb_certs
 
 echo ""
 echo -e "${GREEN}=== Certificate Generation Complete ===${NC}"

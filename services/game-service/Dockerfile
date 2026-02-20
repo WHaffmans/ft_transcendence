@@ -32,6 +32,8 @@ RUN npm run -w @ft/game-service build
 # ============================================================================
 FROM node:22-alpine
 
+RUN apk add --no-cache netcat-openbsd 
+
 WORKDIR /app
 
 # Copy pruned package files for production install

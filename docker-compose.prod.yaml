@@ -49,6 +49,10 @@ services:
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ATTR_SSL_CA=/certs/prod/mariadb/ca-cert.pem
+      - MYSQL_ATTR_SSL_CERT=/certs/prod/mariadb/client-cert.pem
+      - MYSQL_ATTR_SSL_KEY=/certs/prod/mariadb/client-key.pem
+      - MYSQL_ATTR_SSL_VERIFY_SERVER_CERT=false
       - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
       - OAUTH_REDIRECT=${PROD_OAUTH_REDIRECT}
       - APP_FRONTEND_URL=${PROD_DOMAIN}
@@ -97,6 +101,11 @@ services:
     depends_on:
       - backend-service
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3443"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
 
   # ============================================================================
   # INFRASTRUCTURE
@@ -139,7 +148,9 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./services/mariadb/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./services/mariadb/conf/my-ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro
       - ./services/mariadb/conf/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - ./certs/prod/mariadb:/etc/mysql/ssl:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
@@ -158,6 +169,7 @@ services:
       gateway:
         condition: service_healthy
     restart: unless-stopped
+
 
 # ==============================================================================
 # VOLUMES

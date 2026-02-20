@@ -106,9 +106,11 @@ setup-prod-certs:
 	@bash scripts/generate-prod-certs.sh
 
 up: show-mode
-	@if [ "$(MODE)" = "prod" ] && [ ! -f certs/prod/traefik-cert.pem ]; then \
-		printf "$(YELLOW)⚠$(RESET)  Production certificates not found, generating...\n"; \
-		bash scripts/generate-prod-certs.sh; \
+	@if [ "$(MODE)" = "prod" ]; then \
+		if [ ! -f certs/prod/traefik-cert.pem ] || [ ! -f certs/prod/mariadb/ca-cert.pem ]; then \
+			printf "$(YELLOW)⚠$(RESET)  Production certificates not found, generating...\n"; \
+			bash scripts/generate-prod-certs.sh; \
+		fi; \
 	fi
 	@printf "$(BLUE)→$(RESET) Starting services...\n"
 	@docker compose -f $(COMPOSE_FILE) up -d
