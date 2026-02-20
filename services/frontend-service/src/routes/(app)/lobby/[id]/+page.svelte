@@ -6,8 +6,8 @@
 	import { userStore } from "$lib/stores/user";
 	import type { Game, User } from "$lib/types/types";
 	import type { GamePhase } from "@ft/game-ws-protocol";
-	import { onMount } from "svelte";
-	import { goto } from "$app/navigation";
+	import { onMount, onDestroy } from "svelte";
+	import { goto, beforeNavigate } from "$app/navigation";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
 	
@@ -192,6 +192,34 @@
 			await loadGameRecord(lobbyId);
 		}
 		willRedirect();
+	});
+
+	/* ====================================================================== */
+	/*                       CLEANUP ON NAVIGATE AWAY                         */
+	/* ====================================================================== */
+
+	let didCleanup = false;
+
+	function cleanupLobby() {
+		if (didCleanup) return;
+		didCleanup = true;
+		wsStore.leaveRoom();
+		wsStore.disconnect();
+	}
+
+	beforeNavigate(({ to }) => {
+		if (didRedirect) return;  // already handled (kicked, room closed, etc.)
+
+		// Don't clean up when transitioning to the game page (legitimate redirect)
+		const dest = to?.url?.pathname ?? "";
+		if (dest.startsWith("/game/")) return;
+
+		cleanupLobby();
+	});
+
+	onDestroy(() => {
+		// Safety net for cases beforeNavigate doesn't cover (e.g. full page unload)
+		if (!didRedirect) cleanupLobby();
 	});
 
 
