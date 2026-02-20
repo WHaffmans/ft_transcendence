@@ -577,6 +577,19 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
+
+		// No players left → close the room
+		if (room.players.length === 0) {
+			this.closeRoom(roomId, "All players left");
+			return;
+		}
+
+		// During countdown (ready phase), not enough players to start → close
+		if (room.phase === "ready" && room.players.length < MIN_PLAYERS) {
+			this.closeRoom(roomId, "Not enough players during countdown");
+			return;
+		}
+
 		this.broadcastState(roomId);
 
 		if (room.phase === "running" && room.players.length === 1) {

@@ -8,6 +8,7 @@
 	import type { GamePhase } from "@ft/game-ws-protocol";
 	import { onMount, onDestroy } from "svelte";
 	import { goto, beforeNavigate } from "$app/navigation";
+	import { toast } from "svelte-sonner";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
 	
@@ -148,6 +149,7 @@
 		if (!ids.includes(userId)) {
 			didRedirect = true;
 			wsStore.disconnect();
+			toast.info("You were removed from the lobby.");
 			goto("/dashboard", { replaceState: true });
 		}
 	});
@@ -166,6 +168,7 @@
 		didRedirect = true;
 
 		wsStore.leaveRoom();
+		toast.info(closed.reason || "The lobby was closed.");
 
 		goto("/dashboard", { replaceState: true });
 	});

@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws";
+  import { toast } from "svelte-sonner";
 
   import PlayersPanel from "$lib/components/game/PlayersPanel.svelte";
   import GameCanvas from "$lib/components/game/GameCanvas.svelte";
@@ -171,6 +172,7 @@
     if (!roomId || !closed) return;
     if (String(closed.roomId) !== String(roomId)) return;
 
+    toast.info(closed.reason || "The game was closed.");
     leaveAndGoDashboard();
   });
 
