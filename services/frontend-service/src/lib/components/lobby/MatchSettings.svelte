@@ -59,8 +59,10 @@
 
   const myScene = $derived(sceneById[playerId] ?? "lobby");
   const isReady = $derived(myScene === "game");
+  const canReady = $derived(playerCount >= 2 && !isTooSmall);
 
   function toggleReady() {
+    if (!isReady && !canReady) return;
     const nextScene = isReady ? "lobby" : "game";
     wsStore.updatePlayerScene(lobbyId, playerId, nextScene);
   }
@@ -95,6 +97,7 @@
 
   function handleEnter(e: KeyboardEvent) {
     if (e.key !== 'Enter') return;
+    if (!isReady && !canReady) return;
     toggleReady();
   }
 
@@ -175,6 +178,7 @@
           <ActionButton
             text="READY UP"
             variant="primary"
+            disabled={!canReady}
             onclick={toggleReady}
             class="w-full max-w-[16rem]"
           />
