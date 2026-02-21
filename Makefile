@@ -145,6 +145,10 @@ re: show-mode
 	@docker compose -f $(COMPOSE_FILE) down --remove-orphans
 	@docker compose -f $(COMPOSE_FILE) build --no-cache
 	@docker compose -f $(COMPOSE_FILE) up -d --force-recreate
+	@if [ "$(MODE)" = "prod" ] && [ -f dumps/latest.sql ]; then \
+		printf "$(YELLOW)→$(RESET) Production mode: Database dump found, restoring...\n"; \
+		bash scripts/db-restore.sh --auto; \
+	fi
 
 reset: show-mode
 	@printf "$(RED)⚠$(RESET)  This will remove ALL volumes and networks, then rebuild from scratch!\n"
@@ -156,6 +160,10 @@ reset: show-mode
 	@printf "$(BLUE)→$(RESET) Rebuilding from scratch...\n"
 	@docker compose -f $(COMPOSE_FILE) build --no-cache
 	@docker compose -f $(COMPOSE_FILE) up -d --force-recreate
+	@if [ "$(MODE)" = "prod" ] && [ -f dumps/latest.sql ]; then \
+		printf "$(YELLOW)→$(RESET) Production mode: Database dump found, restoring...\n"; \
+		bash scripts/db-restore.sh --auto; \
+	fi
 	@printf "$(GREEN)✓$(RESET) Reset complete\n"
 
 ################################################################################
