@@ -83,6 +83,7 @@ help:
 	@printf "  $(GREEN)db-dump$(RESET)          Create database backup to dumps/latest.sql\n"
 	@printf "  $(GREEN)db-restore$(RESET)       Restore database from dumps/latest.sql\n"
 	@printf "  $(GREEN)db-clear-dump$(RESET)    Remove the local database dump file\n"
+	@printf "  $(YELLOW)Note:$(RESET) Auto-dump/restore only in production mode\n"
 	@printf "\n"
 	@printf "$(CYAN)Cleanup:$(RESET)\n"
 	@printf "  $(GREEN)clean$(RESET)            Stop and remove containers & volumes\n"
@@ -119,9 +120,16 @@ up: show-mode
 	fi
 	@printf "$(BLUE)→$(RESET) Starting services...\n"
 	@docker compose -f $(COMPOSE_FILE) up -d
+	@if [ "$(MODE)" = "prod" ] && [ -f dumps/latest.sql ]; then \
+		printf "$(YELLOW)→$(RESET) Production mode: Database dump found, restoring...\n"; \
+		bash scripts/db-restore.sh --auto; \
+	fi
 
 down: show-mode
-	@bash scripts/db-dump.sh || true
+	@if [ "$(MODE)" = "prod" ]; then \
+		printf "$(YELLOW)→$(RESET) Production mode: Creating database backup...\n"; \
+		bash scripts/db-dump.sh || true; \
+	fi
 	@printf "$(BLUE)→$(RESET) Stopping services...\n"
 	@docker compose -f $(COMPOSE_FILE) down --remove-orphans
 

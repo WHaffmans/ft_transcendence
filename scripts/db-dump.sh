@@ -22,8 +22,18 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
 fi
 
+# Read mode from .mode file
+MODE=$(cat "$PROJECT_ROOT/.mode" 2>/dev/null || echo "dev")
+
+# Determine which compose file to use
+if [ "$MODE" = "prod" ]; then
+    COMPOSE_FILE="docker-compose.prod.yaml"
+else
+    COMPOSE_FILE="docker-compose.yaml"
+fi
+
 # Check if mariadb container is running
-if ! docker compose -f "$PROJECT_ROOT/docker-compose.yaml" ps mariadb | grep -q "Up\|running"; then
+if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" ps mariadb | grep -q "Up\|running"; then
     printf "${YELLOW}⚠${RESET}  MariaDB container is not running. Skipping dump.\n"
     exit 0
 fi
@@ -34,7 +44,7 @@ mkdir -p "$PROJECT_ROOT/dumps"
 # Perform the dump
 printf "${BLUE}→${RESET} Creating database dump...\n"
 
-if docker compose -f "$PROJECT_ROOT/docker-compose.yaml" exec -T mariadb mysqldump \
+if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysqldump \
     -u"${DB_USERNAME}" \
     -p"${DB_PASSWORD}" \
     "${DB_DATABASE}" \

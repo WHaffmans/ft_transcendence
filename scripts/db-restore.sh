@@ -9,6 +9,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DUMP_FILE="$PROJECT_ROOT/dumps/latest.sql"
+AUTO_MODE=false
+
+# Check for --auto flag
+if [ "$1" = "--auto" ]; then
+    AUTO_MODE=true
+fi
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -30,8 +36,18 @@ if [ ! -f "$DUMP_FILE" ]; then
     exit 1
 fi
 
+# Read mode from .mode file
+MODE=$(cat "$PROJECT_ROOT/.mode" 2>/dev/null || echo "dev")
+
+# Determine which compose file to use
+if [ "$MODE" = "prod" ]; then
+    COMPOSE_FILE="docker-compose.prod.yaml"
+else
+    COMPOSE_FILE="docker-compose.yaml"
+fi
+
 # Check if mariadb container is running
-if ! docker compose -f "$PROJECT_ROOT/docker-compose.yaml" ps mariadb | grep -q "Up\|running"; then
+if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" ps mariadb | grep -q "Up\|running"; then
     printf "${RED}✗${RESET} MariaDB container is not running\n"
     printf "${YELLOW}→${RESET} Start services first with: ${BOLD}make up${RESET}\n"
     exit 1
@@ -40,18 +56,20 @@ fi
 # Get dump file size
 DUMP_SIZE=$(du -h "$DUMP_FILE" | cut -f1)
 
-# Safety confirmation
-printf "${YELLOW}⚠${RESET}  This will ${BOLD}replace${RESET} the current database with data from dumps/latest.sql (${DUMP_SIZE})\n"
-read -p "Are you sure? (y/N): " confirm
-if [ "$confirm" != "y" ]; then
-    printf "${BLUE}→${RESET} Restore cancelled\n"
-    exit 0
+# Safety confirmation (skip in auto mode)
+if [ "$AUTO_MODE" = false ]; then
+    printf "${YELLOW}⚠${RESET}  This will ${BOLD}replace${RESET} the current database with data from dumps/latest.sql (${DUMP_SIZE})\n"
+    read -p "Are you sure? (y/N): " confirm
+    if [ "$confirm" != "y" ]; then
+        printf "${BLUE}→${RESET} Restore cancelled\n"
+        exit 0
+    fi
 fi
 
 # Perform the restore
 printf "${BLUE}→${RESET} Restoring database from dump...\n"
 
-if docker compose -f "$PROJECT_ROOT/docker-compose.yaml" exec -T mariadb mysql \
+if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
     -u"${DB_USERNAME}" \
     -p"${DB_PASSWORD}" \
     "${DB_DATABASE}" \
