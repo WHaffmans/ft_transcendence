@@ -53,17 +53,23 @@ if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" ps mariadb | grep -q "Up\|r
     exit 1
 fi
 
-# In auto mode, check if database already has tables
+# In auto mode, check if database already has data
 if [ "$AUTO_MODE" = true ]; then
-    TABLE_COUNT=$(docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
+    # Check if key tables (users, games, user_game) have any data
+    # These tables will be empty after migrations but populated after seeding or production use
+    DATA_CHECK=$(docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
         -u"${DB_USERNAME}" \
         -p"${DB_PASSWORD}" \
         -N -B \
-        -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_DATABASE}';" \
+        -e "SELECT (
+            (SELECT COUNT(*) FROM ${DB_DATABASE}.users) + 
+            (SELECT COUNT(*) FROM ${DB_DATABASE}.games) + 
+            (SELECT COUNT(*) FROM ${DB_DATABASE}.user_game)
+        ) AS total_rows;" \
         2>/dev/null)
     
-    if [ "$TABLE_COUNT" -gt 0 ]; then
-        printf "${BLUE}→${RESET} Database already contains ${TABLE_COUNT} table(s), skipping restore\n"
+    if [ "$DATA_CHECK" -gt 0 ]; then
+        printf "${BLUE}→${RESET} Database already contains data (${DATA_CHECK} rows in users/games/user_game), skipping restore\n"
         exit 0
     fi
 fi
