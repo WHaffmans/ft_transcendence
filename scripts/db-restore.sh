@@ -53,6 +53,21 @@ if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" ps mariadb | grep -q "Up\|r
     exit 1
 fi
 
+# In auto mode, check if database already has tables
+if [ "$AUTO_MODE" = true ]; then
+    TABLE_COUNT=$(docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
+        -u"${DB_USERNAME}" \
+        -p"${DB_PASSWORD}" \
+        -N -B \
+        -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_DATABASE}';" \
+        2>/dev/null)
+    
+    if [ "$TABLE_COUNT" -gt 0 ]; then
+        printf "${BLUE}→${RESET} Database already contains ${TABLE_COUNT} table(s), skipping restore\n"
+        exit 0
+    fi
+fi
+
 # Get dump file size
 DUMP_SIZE=$(du -h "$DUMP_FILE" | cut -f1)
 
