@@ -79,6 +79,11 @@ help:
 	@printf "  $(GREEN)shell-db$(RESET)         Enter database container shell\n"
 	@printf "  $(GREEN)db-cli$(RESET)           Connect to MySQL CLI\n"
 	@printf "\n"
+	@printf "$(CYAN)Database Operations:$(RESET)\n"
+	@printf "  $(GREEN)db-dump$(RESET)          Create database backup to dumps/latest.sql\n"
+	@printf "  $(GREEN)db-restore$(RESET)       Restore database from dumps/latest.sql\n"
+	@printf "  $(GREEN)db-clear-dump$(RESET)    Remove the local database dump file\n"
+	@printf "\n"
 	@printf "$(CYAN)Cleanup:$(RESET)\n"
 	@printf "  $(GREEN)clean$(RESET)            Stop and remove containers & volumes\n"
 	@printf "  $(GREEN)clean-volumes$(RESET)    $(RED)⚠$(RESET)  Remove all volumes\n"
@@ -116,6 +121,7 @@ up: show-mode
 	@docker compose -f $(COMPOSE_FILE) up -d
 
 down: show-mode
+	@bash scripts/db-dump.sh || true
 	@printf "$(BLUE)→$(RESET) Stopping services...\n"
 	@docker compose -f $(COMPOSE_FILE) down --remove-orphans
 
@@ -218,6 +224,24 @@ db-cli: show-mode
 	@docker compose -f $(COMPOSE_FILE) exec mariadb mysql -u${DB_USERNAME} -p${DB_PASSWORD} ${DB_DATABASE}
 
 ################################################################################
+#                         DATABASE OPERATIONS                                  #
+################################################################################
+
+db-dump: show-mode
+	@bash scripts/db-dump.sh
+
+db-restore: show-mode
+	@bash scripts/db-restore.sh
+
+db-clear-dump:
+	@if [ -f dumps/latest.sql ]; then \
+		rm -f dumps/latest.sql; \
+		printf "$(GREEN)✓$(RESET) Database dump removed\n"; \
+	else \
+		printf "$(YELLOW)⚠$(RESET)  No dump file found\n"; \
+	fi
+
+################################################################################
 #                            CLEANUP                                           #
 ################################################################################
 
@@ -270,6 +294,7 @@ destroy:
 .PHONY: help all up down build rm re reset logs clean deps setup-prod-certs set-prod set-dev show-mode \
 	ps health logs-frontend logs-backend logs-game logs-gateway logs-db \
 	shell-frontend shell-backend shell-game shell-gateway shell-db db-cli \
+	db-dump db-restore db-clear-dump \
 	clean-volumes clean-networks clean-all destroy default
 
 default:
