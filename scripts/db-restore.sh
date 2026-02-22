@@ -68,7 +68,7 @@ if [ "$AUTO_MODE" = true ]; then
             (SELECT COUNT(*) FROM ${DB_DATABASE}.games) + 
             (SELECT COUNT(*) FROM ${DB_DATABASE}.user_game)
         ) AS total_rows;" \
-        2>/dev/null)
+        2>/dev/null || echo "0")
     
     if [ "$DATA_CHECK" -gt 0 ]; then
         printf "${BLUE}→${RESET} Database already contains data (${DATA_CHECK} rows in users/games/user_game), skipping restore\n"
