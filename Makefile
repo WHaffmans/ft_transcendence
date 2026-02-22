@@ -115,46 +115,23 @@ setup-prod-certs:
 
 init:
 	@printf "$(BOLD)Initializing ft_transcendence...$(RESET)\n"
-	@printf "\n"
-	@printf "$(CYAN)This will:$(RESET)\n"
-	@printf "  1. Validate .env.key exists\n"
-	@printf "  2. Decrypt .env files from encrypted versions\n"
-	@printf "  3. Validate .env configuration\n"
-	@printf "  4. Destroy existing environment ($(YELLOW)preserves dumps$(RESET))\n"
-	@printf "  5. Install dependencies\n"
-	@printf "  6. Set up environment mode\n"
-	@printf "\n"
-	@# Step 1: Check .env.key exists
 	@if [ ! -f .env.key ]; then \
 		printf "$(RED)ERROR: .env.key not found!$(RESET)\n"; \
-		printf "\n"; \
-		printf "The encryption key is required to decrypt .env files.\n"; \
-		printf "\n"; \
-		printf "$(YELLOW)To fix:$(RESET)\n"; \
-		printf "  1. Obtain .env.key from the project maintainer\n"; \
-		printf "  2. Place it in project root: $$(pwd)/.env.key\n"; \
-		printf "  3. Re-run: make init\n"; \
-		printf "\n"; \
 		exit 1; \
 	fi
 	@printf "$(GREEN)✓$(RESET) .env.key found\n"
 	@printf "\n"
-	@# Step 2: Decrypt .env files
 	@printf "$(BLUE)→$(RESET) Decrypting .env files...\n"
 	@bash scripts/decrypt-env.sh
 	@printf "\n"
-	@# Step 3: Validate .env
 	@bash scripts/validate-env.sh
 	@printf "\n"
-	@# Step 4: Destroy existing environment
 	@printf "$(YELLOW)⚠$(RESET)  About to destroy existing environment (preserves dumps)\n"
 	@$(MAKE) destroy
 	@printf "\n"
-	@# Step 5: Install dependencies
 	@printf "$(BLUE)→$(RESET) Installing dependencies...\n"
 	@$(MAKE) deps
 	@printf "\n"
-	@# Step 6: Mode selection
 	@printf "$(CYAN)Select environment mode:$(RESET)\n"
 	@printf "  $(GREEN)dev$(RESET)  - Fresh test data (15 users, 21 games) on each reset\n"
 	@printf "  $(RED)prod$(RESET) - Persistent database with backup/restore\n"
@@ -170,11 +147,6 @@ init:
 			printf "$(YELLOW)⚠  WARNING: No database dump found$(RESET)\n"; \
 			printf "   Location: dumps/latest.sql\n"; \
 			printf "   Database will start empty (only OAuth client seeded)\n"; \
-			printf "\n"; \
-			printf "   To create demo data later:\n"; \
-			printf "     1. Start services: make up\n"; \
-			printf "     2. Populate database with demo data\n"; \
-			printf "     3. Create dump: make db-dump\n"; \
 			printf "\n"; \
 		else \
 			printf "$(GREEN)✓$(RESET) Database dump found - will auto-restore on 'make up'\n"; \
@@ -193,9 +165,9 @@ init:
 	@printf "  1. Run $(GREEN)make up$(RESET) to start the application\n"
 	@read -r mode_check < .mode 2>/dev/null || mode_check="dev"; \
 	if [ "$$mode_check" = "prod" ]; then \
-		printf "  2. Visit $(CYAN)https://localhost$(RESET)\n"; \
+		printf "  2. Visit $(CYAN)https://transcendence.duinvoetje.nl$(RESET)\n"; \
 	else \
-		printf "  2. Visit $(CYAN)http://localhost$(RESET)\n"; \
+		printf "  2. Visit $(CYAN)http://localhost:8080$(RESET)\n"; \
 	fi
 	@printf "\n"
 
