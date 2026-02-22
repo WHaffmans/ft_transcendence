@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
-  import Footer from "$lib/components/Footer.svelte";
   import type { Game } from "$lib/types/types";
   import { userStore } from "$lib/stores/user";
   import { wsStore } from "$lib/stores/ws";
@@ -195,8 +194,4 @@
     </div>
   </div>
 
-  <!-- Footer -->
-  <div class="px-6 pt-6 pb-6">
-    <Footer textSize="card" />
-  </div>
 </div>

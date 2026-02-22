@@ -1,7 +1,6 @@
 <script>
   import LoginSection from "$lib/components/LoginSection.svelte";
   import Leaderboard from "$lib/components/Leaderboard.svelte";
-  import Footer from "$lib/components/Footer.svelte";
 
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
@@ -33,5 +32,3 @@
     </section>
   </div>
 </main>
-
-<Footer />
