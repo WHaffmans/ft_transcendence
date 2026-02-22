@@ -1,5 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 	import { userStore } from '$lib/stores/user';
+	import { apiStore } from '$lib/stores/api';
+	import { modalStore } from '$lib/components/modal/modal';
 	import ChangeAvatarModal from './ChangeAvatarModal.svelte';
 	import ChangeNicknameModal from './ChangeNicknameModal.svelte';
 	import DeleteAccountModal from './DeleteAccountModal.svelte';
@@ -10,6 +14,17 @@
 
 	// Sub-modal routing
 	let activeSubModal: 'avatar' | 'nickname' | 'delete' | null = $state(null);
+
+	const handleLogout = () => {
+		modalStore.close();
+		apiStore.logout().then(() => {
+			toast.success('Successfully logged out.');
+			goto('/', { replaceState: true });
+		}).catch((error) => {
+			console.error('Logout failed:', error);
+			toast.error('Failed to log out. Please try again.');
+		});
+	};
 </script>
 
 <div class="space-y-6">
@@ -42,6 +57,17 @@
 		<button
 			type="button"
 			class="btn-danger h-14 w-4/5 text-sm"
+			onclick={handleLogout}
+		>
+			LOGOUT
+		</button>
+
+		<!-- Separator -->
+		<div class="w-4/5 h-px bg-white/10"></div>
+
+		<button
+			type="button"
+			class="btn-danger-strong h-14 w-4/5 text-sm"
 			onclick={() => (activeSubModal = 'delete')}
 		>
 			DELETE ACCOUNT

@@ -2,23 +2,17 @@
   import { userStore } from '$lib/stores/user';
 
   interface Props {
-    onLogout?: () => void;
     onOpenSettings?: () => void;
   }
 
-  let { onLogout, onOpenSettings }: Props = $props();
+  let { onOpenSettings }: Props = $props();
 
   let username = $derived($userStore?.name ?? 'Guest');
   let avatar = $derived($userStore?.avatar_url ?? '');
 
-  const handleLogoutClick = () => {
-    onLogout?.();
-  };
-
   const handleOpenSettingsClick = () => {
     onOpenSettings?.();
   };
-
 </script>
 
 <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-black/50 backdrop-blur-[10px]">
@@ -47,14 +41,6 @@
           alt={username}
           class="object-cover rounded-full h-9 w-9"
         />
-      </button>
-
-      <!-- Logout -->
-      <button
-        onclick={handleLogoutClick}
-        class="ml-2 text-[11px] font-bold text-[#f36] transition-colors hover:text-[#ff4466]"
-      >
-        LOGOUT
       </button>
     </div>
   </div>

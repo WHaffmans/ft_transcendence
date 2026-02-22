@@ -82,6 +82,15 @@
       box-shadow: 0px 6px 20px 0px rgba(255, 51, 102, 0.35);
     }
   }
+
+  .btn-danger-strong {
+    @apply flex items-center justify-center rounded-lg bg-[#e11d48] font-bold text-white transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-30;
+    box-shadow: 0px 4px 15px 0px rgba(225, 29, 72, 0.3);
+
+    &:hover {
+      box-shadow: 0px 6px 20px 0px rgba(225, 29, 72, 0.45);
+    }
+  }
 }
 
 /* Dark scrollbar styling */

@@ -6,9 +6,10 @@
 		title: string;
 		children: Snippet;
 		onClose: () => void;
+		autoHeight?: boolean;
 	}
 
-	let { open, title, children, onClose }: Props = $props();
+	let { open, title, children, onClose, autoHeight = false }: Props = $props();
 </script>
 
 <svelte:window onkeydown={(e) => {
@@ -29,7 +30,7 @@
 		</button>
 
 		<!-- Modal -->
-		<div class="relative z-10 w-lg max-w-[90vw] flex flex-col max-h-[60vh] shadow-xl rounded-xl bg-neutral-900">
+		<div class="relative z-10 w-lg max-w-[90vw] flex flex-col shadow-xl rounded-xl bg-neutral-900" class:max-h-[60vh]={!autoHeight}>
 			<!-- Fixed Header -->
 			<header class="relative flex items-center justify-center px-6 pt-6 pb-4 border-b border-white/10">
 				<h2 class="text-lg font-medium text-white">{title}</h2>

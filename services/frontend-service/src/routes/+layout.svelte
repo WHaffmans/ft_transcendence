@@ -68,6 +68,7 @@
 		open={true}
 		title={modalConfig.profileSettings.title}
 		onClose={() => modalStore.close()}
+		autoHeight={true}
 	>
 		<ProfileSettingsModal />
 	</Modal>
