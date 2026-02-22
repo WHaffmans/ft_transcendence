@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,14 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'access_token',
             'refresh_token',
         ]);
-        
-        // API routes already don't have CSRF protection
-        // Internal routes are now in api.php with InternalAuthMiddleware
-    })
-    ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'auth.internal' => \App\Http\Middleware\InternalAuthMiddleware::class,
+            'cookie.passport' => \App\Http\Middleware\CookiePassportAuth::class,
         ]);
+        $middleware->prependToPriorityList(
+            AuthenticatesRequests::class,
+            \App\Http\Middleware\CookiePassportAuth::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $exception, Request $request): JsonResponse|RedirectResponse {
