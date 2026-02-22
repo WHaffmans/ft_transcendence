@@ -300,7 +300,7 @@ destroy:
 	@printf "  • All networks\n"
 	@printf "  • All project images\n"
 	@printf "\n"
-	@read -p "Type 'DESTROY' to confirm: " confirm && [ "$$confirm" = "DESTROY" ] || exit 1
+	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
 	@printf "\n"
 	@printf "$(BLUE)→$(RESET) Destroying development environment...\n"
 	@docker compose -f docker-compose.yaml down -v --remove-orphans --rmi all 2>/dev/null || true
