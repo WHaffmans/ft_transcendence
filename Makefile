@@ -250,11 +250,19 @@ db-restore: show-mode
 	@bash scripts/db-restore.sh
 
 db-clear-dump:
-	@if [ -f dumps/latest.sql ]; then \
+	@REMOVED=false; \
+	if [ -f dumps/latest.sql ]; then \
 		rm -f dumps/latest.sql; \
 		printf "$(GREEN)✓$(RESET) Database dump removed\n"; \
-	else \
-		printf "$(YELLOW)⚠$(RESET)  No dump file found\n"; \
+		REMOVED=true; \
+	fi; \
+	if [ -f dumps/avatars.tar.gz ]; then \
+		rm -f dumps/avatars.tar.gz; \
+		printf "$(GREEN)✓$(RESET) Avatar backup removed\n"; \
+		REMOVED=true; \
+	fi; \
+	if [ "$$REMOVED" = "false" ]; then \
+		printf "$(YELLOW)⚠$(RESET)  No dump files found\n"; \
 	fi
 
 ################################################################################

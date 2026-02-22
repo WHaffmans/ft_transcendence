@@ -2,6 +2,7 @@
 # ============================================================================
 # Database Restore Script
 # Restores the MariaDB database from dumps/latest.sql
+# Also restores avatar files from dumps/avatars.tar.gz
 # ============================================================================
 
 set -e
@@ -9,6 +10,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DUMP_FILE="$PROJECT_ROOT/dumps/latest.sql"
+AVATAR_DUMP="$PROJECT_ROOT/dumps/avatars.tar.gz"
 AUTO_MODE=false
 
 # Check for --auto flag
@@ -97,8 +99,37 @@ if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
     < "$DUMP_FILE" 2>/dev/null; then
     
     printf "${GREEN}✓${RESET} Database restored successfully from dumps/latest.sql\n"
-    exit 0
 else
     printf "${RED}✗${RESET} Failed to restore database\n"
     exit 1
 fi
+
+# Check if backend-service container is running (for avatar restore)
+if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" ps backend-service | grep -q "Up\|running"; then
+    printf "${YELLOW}⚠${RESET}  Backend service is not running. Skipping avatar restore.\n"
+    exit 0
+fi
+
+# Restore avatar files if backup exists
+if [ -f "$AVATAR_DUMP" ]; then
+    printf "${BLUE}→${RESET} Restoring avatar files...\n"
+    
+    # Ensure the avatars directory exists in the container
+    docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service mkdir -p /var/www/html/storage/app/public/avatars 2>/dev/null
+    
+    # Extract the tar archive into the container
+    if cat "$AVATAR_DUMP" | docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service tar -xzf - -C /var/www/html/storage/app/public 2>/dev/null; then
+        # Fix permissions
+        docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service chown -R www-data:www-data /var/www/html/storage/app/public/avatars 2>/dev/null
+        docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service chmod -R 755 /var/www/html/storage/app/public/avatars 2>/dev/null
+        
+        AVATAR_SIZE=$(du -h "$AVATAR_DUMP" | cut -f1)
+        printf "${GREEN}✓${RESET} Avatar files restored from dumps/avatars.tar.gz (${AVATAR_SIZE})\n"
+    else
+        printf "${YELLOW}⚠${RESET}  Failed to restore avatars, but database restore succeeded\n"
+    fi
+else
+    printf "${BLUE}→${RESET} No avatar backup found, skipping avatar restore\n"
+fi
+
+exit 0

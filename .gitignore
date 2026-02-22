@@ -27,3 +27,4 @@ frontend/src/**/*.js
 
 # Database dumps (local backups only)
 /dumps/*.sql
+/dumps/*.tar.gz
