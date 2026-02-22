@@ -26,22 +26,16 @@ http:
         - web
         - websecure
 
-    game-ws-web:
+    game-ws:
       rule: "PathPrefix(`/ws`)"
       service: game-service
       priority: 50
-      entryPoints: [web]
+      entryPoints:
+        - web
+        - websecure
       middlewares:
         - ws-headers
-
-    game-ws-websecure:
-      rule: "PathPrefix(`/ws`)"
-      service: game-service
-      priority: 50
-      entryPoints: [websecure]
-      tls: {}
-      middlewares:
-        - ws-headers
+        - auth-forward
 
   services:
     frontend-service:

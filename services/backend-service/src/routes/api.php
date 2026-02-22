@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\CookiePassportAuth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\InternalAuthMiddleware;
 use App\Http\Controllers\AvatarController;
@@ -22,21 +24,15 @@ Route::middleware('auth:api')->group(function () {
     // Keep these for external API usage (if needed)
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
     Route::apiResource('games', App\Http\Controllers\GameController::class);
-    Route::get('/verify', function (Request $request) {
-        $user = $request->user();
-
-        return response()->json(
-            ['message' => 'Authenticated', 'user_id' => $user->id],
-            200,
-            ['X-User-Id' => $user->id]
-        );
-    });
 
     Route::get('/user', function (Request $request) {
         return app(\App\Http\Controllers\UserController::class)->show($request->user());
     });
 
 });
+
+Route::get('/verify', fn () => response()->json(['message' => 'Authenticated'], 200, ['X-User-Id' => auth()->id()]))->middleware(['cookie.passport', 'auth:api']);
+
 
 Route::post('users/{user}/avatar', [AvatarController::class, 'upload'])->middleware('auth:api');
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);

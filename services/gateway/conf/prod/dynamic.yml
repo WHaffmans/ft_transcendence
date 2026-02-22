@@ -35,6 +35,7 @@ http:
       tls: {}
       middlewares:
         - ws-headers
+        - auth-forward
 
   services:
     frontend-service:
@@ -71,5 +72,7 @@ http:
       forwardAuth:
         address: "https://backend-service:4443/api/verify"
         trustForwardHeader: true
+        tls:
+          insecureSkipVerify: true
         authResponseHeaders:
           - "X-User-Id"
