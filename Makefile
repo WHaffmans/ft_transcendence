@@ -5,6 +5,7 @@
 ################################################################################
 
 .DEFAULT_GOAL := default
+MAKEFLAGS += --no-print-directory
 
 # Colors for output
 GREEN := \033[0;32m
