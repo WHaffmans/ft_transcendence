@@ -18,6 +18,7 @@
   const handleOpenSettingsClick = () => {
     onOpenSettings?.();
   };
+
 </script>
 
 <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-black/50 backdrop-blur-[10px]">
@@ -32,30 +33,21 @@
 
     <!-- User Panel -->
     <div class="flex items-center gap-3">
-      <!-- Settings -->
+      <!-- Username & Avatar (opens settings) -->
       <button
         onclick={handleOpenSettingsClick}
-        class="w-5 h-5 text-white transition-colors hover:text-white/40"
-        aria-label="Settings"
+        class="flex items-center gap-3 transition-opacity duration-100 hover:opacity-70"
+        aria-label="Open settings"
       >
+        <p class="text-sm font-bold text-white">
+          {username}
+        </p>
         <img
-          src="/assets/settings-icon.svg"
-          alt=""
-          class="w-full h-full"
+          src={avatar || '/placeholders/avatars/avatar_placeholder.webp'}
+          alt={username}
+          class="object-cover rounded-full h-9 w-9"
         />
       </button>
-
-      <!-- Username -->
-      <p class="text-sm font-bold text-white">
-        {username}
-      </p>
-
-      <!-- Avatar -->
-      <img
-        src={avatar || '/placeholders/avatars/avatar_placeholder.webp'}
-        alt={username}
-        class="object-cover rounded-full h-9 w-9"
-      />
 
       <!-- Logout -->
       <button
