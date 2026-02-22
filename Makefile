@@ -8,17 +8,18 @@
 MAKEFLAGS += --no-print-directory
 
 # Colors for output
-GREEN := \033[0;32m
+GREEN  := \033[0;32m
 YELLOW := \033[0;33m
-RED := \033[0;31m
-BLUE := \033[0;34m
-CYAN := \033[0;36m
-BOLD := \033[1m
-RESET := \033[0m
+RED    := \033[0;31m
+BLUE   := \033[0;34m
+CYAN   := \033[0;36m
+BOLD   := \033[1m
+RESET  := \033[0m
 
 ################################################################################
-#                            MODE SWITCHING                                    #
+#                              MODE MANAGEMENT                                 #
 ################################################################################
+
 # Read mode from .mode file, default to dev
 MODE := $(shell cat .mode 2>/dev/null || echo dev)
 
@@ -31,87 +32,20 @@ else
 	MODE_COLOR := $(GREEN)
 endif
 
-set-prod:
-	@echo "prod" > .mode
-	@printf "$(GREEN)✓$(RESET) Switched to $(RED)production$(RESET) mode\n"
+show-mode:
+	@printf "$(BLUE)Mode:$(RESET) $(MODE_COLOR)$(MODE)$(RESET) $(BLUE)|$(RESET) $(COMPOSE_FILE)\n"
 
 set-dev:
 	@echo "dev" > .mode
 	@printf "$(GREEN)✓$(RESET) Switched to $(GREEN)development$(RESET) mode\n"
 
-show-mode:
-	@printf "$(BLUE)Mode:$(RESET) $(MODE_COLOR)$(MODE)$(RESET) $(BLUE)|$(RESET) $(COMPOSE_FILE)\n"
+set-prod:
+	@echo "prod" > .mode
+	@printf "$(GREEN)✓$(RESET) Switched to $(RED)production$(RESET) mode\n"
 
 ################################################################################
-#                                HELP                                          #
+#                          SETUP & INITIALIZATION                              #
 ################################################################################
-
-help:
-	@printf "$(BOLD)FT_TRANSCENDENCE - Available Commands$(RESET)\n"
-	@printf "\n"
-	@printf "$(CYAN)Mode Management:$(RESET)\n"
-	@printf "  $(GREEN)show-mode$(RESET)        Show current environment mode\n"
-	@printf "  $(GREEN)set-dev$(RESET)          Switch to development mode\n"
-	@printf "  $(GREEN)set-prod$(RESET)         Switch to production mode\n"
-	@printf "\n"
-	@printf "$(CYAN)Docker Operations:$(RESET)\n"
-	@printf "  $(GREEN)up$(RESET)               Start all services\n"
-	@printf "  $(GREEN)down$(RESET)             Stop all services\n"
-	@printf "  $(GREEN)build$(RESET)            Build all services\n"
-	@printf "  $(GREEN)re$(RESET)               Rebuild services (preserves data)\n"
-	@printf "  $(GREEN)reset$(RESET)            $(RED)⚠$(RESET)  Full reset: remove volumes, rebuild everything\n"
-	@printf "  $(GREEN)rm$(RESET)               Remove stopped containers\n"
-	@printf "\n"
-	@printf "$(CYAN)Monitoring:$(RESET)\n"
-	@printf "  $(GREEN)ps$(RESET)               Show container status\n"
-	@printf "  $(GREEN)health$(RESET)           Show health status of all services\n"
-	@printf "  $(GREEN)logs$(RESET)             Tail logs from all services\n"
-	@printf "  $(GREEN)logs-frontend$(RESET)    Tail logs from frontend service\n"
-	@printf "  $(GREEN)logs-backend$(RESET)     Tail logs from backend service\n"
-	@printf "  $(GREEN)logs-game$(RESET)        Tail logs from game service\n"
-	@printf "  $(GREEN)logs-gateway$(RESET)     Tail logs from gateway\n"
-	@printf "  $(GREEN)logs-db$(RESET)          Tail logs from database\n"
-	@printf "\n"
-	@printf "$(CYAN)Shell Access:$(RESET)\n"
-	@printf "  $(GREEN)shell-frontend$(RESET)   Enter frontend container shell\n"
-	@printf "  $(GREEN)shell-backend$(RESET)    Enter backend container shell\n"
-	@printf "  $(GREEN)shell-game$(RESET)       Enter game service container shell\n"
-	@printf "  $(GREEN)shell-gateway$(RESET)    Enter gateway container shell\n"
-	@printf "  $(GREEN)shell-db$(RESET)         Enter database container shell\n"
-	@printf "  $(GREEN)db-cli$(RESET)           Connect to MySQL CLI\n"
-	@printf "\n"
-	@printf "$(CYAN)Database Operations:$(RESET)\n"
-	@printf "  $(GREEN)db-dump$(RESET)          Create database backup to dumps/latest.sql\n"
-	@printf "  $(GREEN)db-restore$(RESET)       Restore database from dumps/latest.sql\n"
-	@printf "  $(GREEN)db-clear-dump$(RESET)    Remove the local database dump file\n"
-	@printf "  $(YELLOW)Note:$(RESET) Auto-dump/restore only in production mode\n"
-	@printf "\n"
-	@printf "$(CYAN)Cleanup:$(RESET)\n"
-	@printf "  $(GREEN)clean$(RESET)            Stop and remove containers & volumes\n"
-	@printf "  $(GREEN)clean-volumes$(RESET)    $(RED)⚠$(RESET)  Remove all volumes\n"
-	@printf "  $(GREEN)clean-networks$(RESET)   Remove project networks\n"
-	@printf "  $(GREEN)clean-all$(RESET)        $(RED)⚠$(RESET)  Complete cleanup (volumes + networks)\n"
-	@printf "  $(RED)destroy$(RESET)          $(RED)⚠$(RESET)  $(BOLD)NUCLEAR:$(RESET) Remove dev + prod + images\n"
-	@printf "\n"
-	@printf "$(CYAN)Setup:$(RESET)\n"
-	@printf "  $(GREEN)init$(RESET)             Complete initialization (first-time setup)\n"
-	@printf "  $(GREEN)deps$(RESET)             Install development dependencies\n"
-	@printf "  $(GREEN)setup-prod-certs$(RESET) Generate production certificates\n"
-	@printf "\n"
-	@printf "$(BLUE)Current Mode:$(RESET) $(MODE_COLOR)$(MODE)$(RESET)\n"
-	@printf "\n"
-
-################################################################################
-#                            SETUP & INITIALIZATION                            #
-################################################################################
-
-all: build up
-
-deps:
-	@bash scripts/init-dev.sh
-
-setup-prod-certs:
-	@bash scripts/generate-prod-certs.sh
 
 init:
 	@printf "$(BOLD)Initializing ft_transcendence...$(RESET)\n"
@@ -171,6 +105,18 @@ init:
 	fi
 	@printf "\n"
 
+deps:
+	@bash scripts/init-dev.sh
+
+setup-prod-certs:
+	@bash scripts/generate-prod-certs.sh
+
+################################################################################
+#                           DOCKER OPERATIONS                                  #
+################################################################################
+
+all: build up
+
 up: show-mode
 	@if [ "$(MODE)" = "prod" ]; then \
 		if [ ! -f certs/prod/traefik-cert.pem ] || [ ! -f certs/prod/mariadb/ca-cert.pem ]; then \
@@ -227,7 +173,7 @@ reset: show-mode
 	@printf "$(GREEN)✓$(RESET) Reset complete\n"
 
 ################################################################################
-#                         MONITORING & HEALTH                                  #
+#                           MONITORING & HEALTH                                #
 ################################################################################
 
 ps: show-mode
@@ -272,7 +218,7 @@ logs-db: show-mode
 	@docker compose -f $(COMPOSE_FILE) logs -f mariadb
 
 ################################################################################
-#                            SHELL ACCESS                                      #
+#                             SHELL ACCESS                                     #
 ################################################################################
 
 shell-frontend: show-mode
@@ -300,7 +246,7 @@ db-cli: show-mode
 	@docker compose -f $(COMPOSE_FILE) exec mariadb mysql -u${DB_USERNAME} -p${DB_PASSWORD} ${DB_DATABASE}
 
 ################################################################################
-#                         DATABASE OPERATIONS                                  #
+#                          DATABASE OPERATIONS                                 #
 ################################################################################
 
 db-dump: show-mode
@@ -326,7 +272,7 @@ db-clear-dump:
 	fi
 
 ################################################################################
-#                            CLEANUP                                           #
+#                               CLEANUP                                        #
 ################################################################################
 
 clean: show-mode
@@ -375,15 +321,78 @@ destroy:
 	@printf "\n"
 	@printf "$(GREEN)✓$(RESET) Complete destruction finished - all traces removed\n"
 
-.PHONY: help all init up down build rm re reset logs clean deps setup-prod-certs set-prod set-dev show-mode \
-	ps health logs-frontend logs-backend logs-game logs-gateway logs-db \
-	shell-frontend shell-backend shell-game shell-gateway shell-db db-cli \
-	db-dump db-restore db-clear-dump \
-	clean-volumes clean-networks clean-all destroy default
+################################################################################
+#                                 HELP                                         #
+################################################################################
+
+help:
+	@printf "$(BOLD)FT_TRANSCENDENCE - Available Commands$(RESET)\n"
+	@printf "\n"
+	@printf "$(CYAN)Setup:$(RESET)\n"
+	@printf "  $(GREEN)init$(RESET)             Complete initialization (first-time setup)\n"
+	@printf "  $(GREEN)deps$(RESET)             Install development dependencies\n"
+	@printf "  $(GREEN)setup-prod-certs$(RESET) Generate production certificates\n"
+	@printf "\n"
+	@printf "$(CYAN)Mode Management:$(RESET)\n"
+	@printf "  $(GREEN)show-mode$(RESET)        Show current environment mode\n"
+	@printf "  $(GREEN)set-dev$(RESET)          Switch to development mode\n"
+	@printf "  $(GREEN)set-prod$(RESET)         Switch to production mode\n"
+	@printf "\n"
+	@printf "$(CYAN)Docker Operations:$(RESET)\n"
+	@printf "  $(GREEN)up$(RESET)               Start all services\n"
+	@printf "  $(GREEN)down$(RESET)             Stop all services\n"
+	@printf "  $(GREEN)build$(RESET)            Build all services\n"
+	@printf "  $(GREEN)re$(RESET)               Rebuild services (preserves data)\n"
+	@printf "  $(GREEN)reset$(RESET)            $(RED)⚠$(RESET)  Full reset: remove volumes, rebuild everything\n"
+	@printf "  $(GREEN)rm$(RESET)               Remove stopped containers\n"
+	@printf "\n"
+	@printf "$(CYAN)Monitoring:$(RESET)\n"
+	@printf "  $(GREEN)ps$(RESET)               Show container status\n"
+	@printf "  $(GREEN)health$(RESET)           Show health status of all services\n"
+	@printf "  $(GREEN)logs$(RESET)             Tail logs from all services\n"
+	@printf "  $(GREEN)logs-<service>$(RESET)   Tail logs from specific service\n"
+	@printf "\n"
+	@printf "$(CYAN)Shell Access:$(RESET)\n"
+	@printf "  $(GREEN)shell-<service>$(RESET)  Enter container shell (frontend, backend, game, gateway, db)\n"
+	@printf "  $(GREEN)db-cli$(RESET)           Connect to MySQL CLI\n"
+	@printf "\n"
+	@printf "$(CYAN)Database Operations:$(RESET)\n"
+	@printf "  $(GREEN)db-dump$(RESET)          Create database backup to dumps/latest.sql\n"
+	@printf "  $(GREEN)db-restore$(RESET)       Restore database from dumps/latest.sql\n"
+	@printf "  $(GREEN)db-clear-dump$(RESET)    Remove the local database dump file\n"
+	@printf "  $(YELLOW)Note:$(RESET) Auto-dump/restore only in production mode\n"
+	@printf "\n"
+	@printf "$(CYAN)Cleanup:$(RESET)\n"
+	@printf "  $(GREEN)clean$(RESET)            Stop and remove containers & volumes\n"
+	@printf "  $(GREEN)clean-volumes$(RESET)    $(RED)⚠$(RESET)  Remove all volumes\n"
+	@printf "  $(GREEN)clean-networks$(RESET)   Remove project networks\n"
+	@printf "  $(GREEN)clean-all$(RESET)        $(RED)⚠$(RESET)  Complete cleanup (volumes + networks)\n"
+	@printf "  $(RED)destroy$(RESET)          $(RED)⚠$(RESET)  $(BOLD)NUCLEAR:$(RESET) Remove dev + prod + images\n"
+	@printf "\n"
+	@printf "$(BLUE)Current Mode:$(RESET) $(MODE_COLOR)$(MODE)$(RESET)\n"
+	@printf "\n"
+
+################################################################################
+#                               DEFAULT                                        #
+################################################################################
 
 default:
 	@if docker compose -f $(COMPOSE_FILE) ps --format '{{.Names}}' | grep . >/dev/null; then \
-		$(MAKE) --no-print-directory health; \
+		$(MAKE) health; \
 	else \
-		$(MAKE) --no-print-directory help; \
+		$(MAKE) help; \
 	fi
+
+################################################################################
+#                                PHONY                                         #
+################################################################################
+
+.PHONY: \
+	show-mode set-dev set-prod \
+	init deps setup-prod-certs \
+	all up down build rm re reset \
+	ps health logs logs-frontend logs-backend logs-game logs-gateway logs-db \
+	shell-frontend shell-backend shell-game shell-gateway shell-db db-cli \
+	db-dump db-restore db-clear-dump \
+	clean clean-volumes clean-networks clean-all destroy \
+	help default
