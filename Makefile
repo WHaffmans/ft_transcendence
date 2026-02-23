@@ -67,7 +67,7 @@ init:
 	@$(MAKE) deps
 	@printf "\n"
 	@printf "$(CYAN)Select environment mode:$(RESET)\n"
-	@printf "  $(GREEN)dev$(RESET)  - Fresh test data (15 users, 21 games) on each reset\n"
+	@printf "  $(GREEN)dev$(RESET)  - Fresh test data on each reset (15 users = 5 named test users + 10 random, 21 games = 20 random + 1 pending)\n"
 	@printf "  $(RED)prod$(RESET) - Persistent database with backup/restore\n"
 	@printf "\n"
 	@read -p "Enter mode (dev/prod) [dev]: " mode; \
