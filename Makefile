@@ -134,7 +134,7 @@ up: show-mode
 down: show-mode
 	@if [ "$(MODE)" = "prod" ]; then \
 		printf "$(YELLOW)→$(RESET) Production mode: Creating database backup...\n"; \
-		bash scripts/db-dump.sh || true; \
+		bash scripts/db-dump.sh || printf "$(RED)⚠$(RESET)  Database backup failed!\n"; \
 	fi
 	@printf "$(BLUE)→$(RESET) Stopping services...\n"
 	@docker compose -f $(COMPOSE_FILE) down --remove-orphans

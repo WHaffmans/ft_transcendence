@@ -49,7 +49,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Frontend Service',
             'secret' => null,
             'provider' => null,
-            'redirect_uris' => '['.implode(',', array_map(fn ($url) => '"'.trim($url).'"', explode(',', $redirects))).']',
+            'redirect_uris' => json_encode(array_map('trim', explode(',', $redirects))),
             'grant_types' => '["authorization_code", "refresh_token"]',
             'revoked' => false,
             'created_at' => now(),

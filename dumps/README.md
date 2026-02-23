@@ -25,7 +25,7 @@ make init
 
 **After initialization:**
 - Run `make up` to start the application
-- In **prod mode** with existing dumps: database auto-restores on startup
+- In **prod mode** with existing dumps: database auto-restores on startup if database is empty
 - In **dev mode**: fresh test data is seeded on each reset
 
 ---
@@ -74,4 +74,4 @@ make up      # Start the application
 - No automatic dumps (re-seeds mock data instead)
 - Manual dump/restore commands still work
 
-**Note:** Dumps are NOT committed to git. Each developer maintains their own local backups.
+**Note:** Dumps are NOT committed to git. In production mode, dumps preserve your database state between restarts. In development mode, developers can create manual backups if needed.
