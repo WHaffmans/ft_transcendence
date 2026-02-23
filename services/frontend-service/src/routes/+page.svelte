@@ -15,7 +15,7 @@
 </svelte:head>
 
 <!-- Main page content -->
-<main class="relative z-10 flex items-center justify-center min-h-screen px-8">
+<div class="relative z-10 flex flex-1 items-center justify-center px-8">
   <!-- Width constrainment -->
   <div class="w-full max-w-7xl">
     <!-- Split layout -->
@@ -31,4 +31,4 @@
       </div>
     </section>
   </div>
-</main>
+</div>

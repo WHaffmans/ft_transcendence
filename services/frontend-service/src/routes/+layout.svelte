@@ -41,13 +41,13 @@
 
 	<!-- App shell (interactive) -->
 	<div class="relative z-10 flex flex-col min-h-screen">
-		<main class="flex-1">
+		<main class="flex flex-col flex-1">
 			{@render children()}
 		</main>
-	</div>
 
-	<!-- Global Footer -->
-	<Footer />
+		<!-- Global Footer -->
+		<Footer />
+	</div>
 </div>
 
 <!-- Global Modal System -->
