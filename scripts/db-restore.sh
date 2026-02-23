@@ -115,7 +115,10 @@ if [ -f "$AVATAR_DUMP" ]; then
     printf "${BLUE}→${RESET} Restoring avatar files...\n"
     
     # Ensure the avatars directory exists in the container
-    docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service mkdir -p /var/www/html/storage/app/public/avatars 2>/dev/null
+    if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service mkdir -p /var/www/html/storage/app/public/avatars 2>/dev/null; then
+        printf "${RED}✗${RESET} Failed to create avatars directory in backend-service container\n"
+        exit 1
+    fi
     
     # Extract the tar archive into the container
     if cat "$AVATAR_DUMP" | docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service tar -xzf - -C /var/www/html/storage/app/public 2>/dev/null; then
