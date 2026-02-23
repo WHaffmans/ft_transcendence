@@ -8,6 +8,7 @@
 	import PrivacyPolicyModal from '$lib/components/modal/privacy/PrivacyPolicyModal.svelte';
 	import TermsOfServiceModal from '$lib/components/modal/terms/TermsOfServiceModal.svelte';
 	import ProfileSettingsModal from '$lib/components/modal/profile-settings/ProfileSettingsModal.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import type { LayoutData } from './$types';
 	import type { User } from '$lib/types/types';
 	import type { Snippet } from 'svelte';
@@ -44,6 +45,9 @@
 			{@render children()}
 		</main>
 	</div>
+
+	<!-- Global Footer -->
+	<Footer />
 </div>
 
 <!-- Global Modal System -->
@@ -68,6 +72,7 @@
 		open={true}
 		title={modalConfig.profileSettings.title}
 		onClose={() => modalStore.close()}
+		autoHeight={true}
 	>
 		<ProfileSettingsModal />
 	</Modal>

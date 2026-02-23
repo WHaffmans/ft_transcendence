@@ -1,22 +1,8 @@
 <script lang="ts">
   import Navbar from "$lib/components/app/Navbar.svelte";
-  import { goto } from "$app/navigation";
-  import { toast } from "svelte-sonner";
-  import { apiStore } from "$lib/stores/api";
   import { modalStore } from "$lib/components/modal/modal";
 
   let { children } = $props();
-
-	const handleLogout = () => {
-		console.log('Logging out...');
-		apiStore.logout().then(() => {
-			toast.success("Successfully logged out.");
-			goto('/', { replaceState: true });
-		}).catch((error) => {
-			console.error("Logout failed:", error);
-			toast.error("Failed to log out. Please try again.");
-		});
-	};
 
   const handleOpenSettings = () => {
     modalStore.open('profileSettings');
@@ -27,7 +13,6 @@
   <!-- App navigation -->
   <nav>
     <Navbar
-      onLogout={handleLogout}
       onOpenSettings={handleOpenSettings}
     />
   </nav>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import GlobalRankEntry from './GlobalRankEntry.svelte';
-	import Footer from '$lib/components/Footer.svelte'
 	import type { User } from '$lib/types/types';
 
 	interface Props {
@@ -61,9 +60,4 @@
 			/>
 		</div>
 	{/if}
-
-	<!-- Footer -->
-	<div class="px-6 pt-6 pb-6">
-		<Footer textSize="card"/>
-	</div>
 </div>
