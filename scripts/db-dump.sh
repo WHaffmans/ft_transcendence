@@ -75,11 +75,11 @@ printf "${BLUE}→${RESET} Backing up avatar files...\n"
 AVATAR_PATH="/var/www/html/storage/app/public/avatars"
 
 # Check if avatars directory exists and has files
-if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service sh -c "[ -d $AVATAR_PATH ] && [ \$(ls -A $AVATAR_PATH 2>/dev/null | wc -l) -gt 0 ]" 2>/dev/null; then
+if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service sh -c "[ -d \"$AVATAR_PATH\" ] && [ \$(ls -A \"$AVATAR_PATH\" 2>/dev/null | wc -l) -gt 0 ]" 2>/dev/null; then
     # Create tar archive of avatars from within the container and pipe it to host
     if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service tar -czf - -C /var/www/html/storage/app/public avatars 2>/dev/null > "$AVATAR_DUMP"; then
         AVATAR_SIZE=$(du -h "$AVATAR_DUMP" | cut -f1)
-        AVATAR_COUNT=$(docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service sh -c "ls -1 $AVATAR_PATH | wc -l" 2>/dev/null | tr -d '[:space:]')
+        AVATAR_COUNT=$(docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service sh -c "ls -1 \"$AVATAR_PATH\" | wc -l" 2>/dev/null | tr -d '[:space:]')
         printf "${GREEN}✓${RESET} Avatar backup created: dumps/avatars.tar.gz (${AVATAR_COUNT} files, ${AVATAR_SIZE})\n"
     else
         printf "${YELLOW}⚠${RESET}  Failed to backup avatars, but database dump succeeded\n"
