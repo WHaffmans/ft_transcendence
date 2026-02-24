@@ -5,7 +5,8 @@
 </script>
 
 <footer class="mt-auto text-center">
-	<p class="text-sm font-medium text-gray-500">
+	<Healthcheck class="justify-center mt-1 mb-1" />
+	<p class="text-sm font-medium text-gray-500 mb-1">
 		<button
 			type="button"
 			class="transition-colors hover:text-white"
@@ -24,5 +25,4 @@
 			Terms of Service
 		</button>
 	</p>
-	<Healthcheck class="justify-center mt-1 mb-2" />
 </footer>
