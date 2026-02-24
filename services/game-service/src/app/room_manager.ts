@@ -614,7 +614,7 @@ export class RoomManager {
 
 		// If room is empty
 		if (room.players.length === 0) {
-			this.closeRoom(roomId);
+			this.closeRoom(roomId, "You were removed from the lobby.");
 		}
 	}
 

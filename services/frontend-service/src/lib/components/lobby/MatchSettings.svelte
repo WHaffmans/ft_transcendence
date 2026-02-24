@@ -165,7 +165,7 @@
           </div>
         {/if}
 
-        {#if afkSecondsLeft !== null && lobbySecondsLeft() === null}
+        {#if afkSecondsLeft !== null}
           <div class="w-full rounded-xl border border-orange-400/60 bg-orange-400/10 px-4 py-3">
             <div class="flex items-center justify-between">
               <p class="text-xs font-bold text-orange-300 uppercase">AFK Warning</p>
