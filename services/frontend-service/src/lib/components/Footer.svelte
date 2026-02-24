@@ -24,5 +24,5 @@
 			Terms of Service
 		</button>
 	</p>
-	<Healthcheck class="justify-center mt-1 mb-1" />
+	<Healthcheck class="justify-center mt-1 mb-2" />
 </footer>
