@@ -50,6 +50,14 @@ const LobbyTimerMsgSchema = z.object({
 	deadlineAtMs: z.number().int().nonnegative(),
 });
 
+const AfkTimerMsgSchema = z.object({
+	type: z.literal("afk_timer"),
+	roomId: z.string(),
+	playerId: z.string(),
+	secondsLeft: z.number().int().min(0),
+	deadlineAtMs: z.number().int().nonnegative(),
+});
+
 export const StateMsgSchema = z.object({
 	type: z.literal("state"),
 	snapshot: GameStateSnapshotSchema,
@@ -67,6 +75,7 @@ export const ServerMsgSchema = z.discriminatedUnion("type", [
 	GameStartedMsgSchema,
 	GameFinishedMsgSchema,
 	LobbyTimerMsgSchema,
+	AfkTimerMsgSchema,
 	StateMsgSchema,
 	ErrorMsgSchema,
 ]);

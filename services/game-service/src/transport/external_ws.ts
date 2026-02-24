@@ -145,6 +145,16 @@ export function startPublicWsServer(
 						const config = normalizeConfig(msg.config);
 						const seed = msg.seed;
 
+						// Subscribe first so the player receives broadcasts
+						// sent during createOrJoinRoom (e.g. afk_timer).
+						rooms.ensureRoom({
+							roomId: boundRoomId,
+							seed,
+							config,
+							hostId: msg.player.playerId,
+						});
+						rooms.subscribe(boundRoomId, ws);
+
 						rooms.createOrJoinRoom({
 							roomId: boundRoomId,
 							player: msg.player,
@@ -152,7 +162,6 @@ export function startPublicWsServer(
 							config,
 						});
 
-						rooms.subscribe(boundRoomId, ws);
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
 						rooms.broadcastState(boundRoomId);
 						return;

@@ -31,6 +31,7 @@ import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const LOBBY_LIFETIME_MS = 60_000;
+const AFK_TIMEOUT_MS = 5 * 60 * 1000;	// 5 minutes total
 
 type Room = {
 	phase: GamePhase;
@@ -53,6 +54,9 @@ type Room = {
 	lobbyTimerTimeout?: NodeJS.Timeout | null;  // setTimeout (kick)
 	lobbyTimerInterval?: NodeJS.Timeout | null; // setInterval (broadcast)
 	lobbyJoinDeadlineAtMs?: number | null;
+
+	// AFK timers (per-player inactivity kick)
+	afkKickTimeoutById: Record<string, NodeJS.Timeout>;
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
@@ -169,6 +173,7 @@ export class RoomManager {
 			sceneById,
 			inputsById,
 			finishOrder: [],
+			afkKickTimeoutById: {},
 			subscribers: new Set(),
 		};
 
@@ -188,7 +193,7 @@ export class RoomManager {
 	/**
 	 * Get current room, or create new room
 	 */
-	private ensureRoom(args: {
+	public ensureRoom(args: {
 		roomId: string;
 		seed: number;
 		config: GameConfig;
@@ -253,6 +258,11 @@ export class RoomManager {
 
 		this.evaluateLobbyTimer(roomId);
 		this.broadcastState(roomId);
+
+		// Start AFK timer for newly joined not-ready players
+		if (room.phase === "lobby" && room.sceneById[player.playerId] === "lobby") {
+			this.startAfkTimer(roomId, player.playerId);
+		}
 	}
 
 	/**
@@ -403,6 +413,8 @@ export class RoomManager {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
+		this.clearAllAfkTimers(roomId);
+
 		// Identify who to kick: anyone not ready
 		const toKick = this.getPlayerIds(room).filter(
 			(id) => room.sceneById[id] !== "game"
@@ -477,6 +489,80 @@ export class RoomManager {
 		logInfo("room.lobby_join_timer_stopped", { roomId: room.roomId });
 	}
 
+
+	/* ====================================================================== */
+	/*                             AFK TIMER                                  */
+	/* ====================================================================== */
+
+	/**
+	 * Start an individual AFK timer for a not-ready player.
+	 * Sends the deadline once — the frontend computes the countdown locally.
+	 */
+	private startAfkTimer(roomId: string, playerId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room || room.phase !== "lobby") return;
+
+		this.clearAfkTimer(roomId, playerId);
+
+		const deadlineAtMs = Date.now() + AFK_TIMEOUT_MS;
+		room.afkKickTimeoutById[playerId] = setTimeout(() => {
+			this.onAfkExpired(roomId, playerId);
+		}, AFK_TIMEOUT_MS);
+
+		this.broadcast(roomId, {
+			type: "afk_timer",
+			roomId,
+			playerId,
+			secondsLeft: Math.ceil(AFK_TIMEOUT_MS / 1000),
+			deadlineAtMs,
+		});
+
+		logInfo("afk.timer_started", { roomId, playerId, deadlineAtMs });
+	}
+
+	/** Clear a player's AFK timer silently (used on drop/leave). */
+	private clearAfkTimer(roomId: string, playerId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+		if (room.afkKickTimeoutById[playerId]) {
+			clearTimeout(room.afkKickTimeoutById[playerId]);
+			delete room.afkKickTimeoutById[playerId];
+		}
+	}
+
+	/** Stop a player's AFK timer and tell the frontend to clear the countdown. */
+	private stopAfkTimer(roomId: string, playerId: string) {
+		this.clearAfkTimer(roomId, playerId);
+		this.broadcast(roomId, {
+			type: "afk_timer", roomId, playerId,
+			secondsLeft: 0, deadlineAtMs: 0,
+		});
+	}
+
+	/** Clear all AFK timers for a room (phase transition / room close). */
+	private clearAllAfkTimers(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+		for (const pid of Object.keys(room.afkKickTimeoutById)) {
+			clearTimeout(room.afkKickTimeoutById[pid]);
+		}
+		room.afkKickTimeoutById = {};
+	}
+
+	/** Called when a player's AFK timer expires — kicks them from the lobby. */
+	private onAfkExpired(roomId: string, playerId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room || room.phase !== "lobby") return;
+		if (!room.players.some(p => p.playerId === playerId)) return;
+
+		this.clearAfkTimer(roomId, playerId);
+		logInfo("afk.expired", { roomId, playerId });
+
+		this.broadcast(roomId, { type: "left", roomId, playerId });
+		void this.willLeaveLobby(roomId, playerId);
+	}
+
+
 	/**
 	 * Close current room
 	 */
@@ -485,6 +571,7 @@ export class RoomManager {
 
 		this.stopRoomTimer(room);
 		this.stopLobbyJoinTimer(room);
+		this.clearAllAfkTimers(roomId);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
@@ -504,6 +591,8 @@ export class RoomManager {
 		const room = this.getRoomOrThrow(roomId);
 		const idx = room.players.findIndex(p => (p as any).playerId === playerId);
 		if (idx === -1) return;
+
+		this.clearAfkTimer(roomId, playerId);
 
 		delete room.sceneById[playerId];
 		delete room.inputsById[playerId];
@@ -545,14 +634,6 @@ export class RoomManager {
 		});
 
 		if (! this.rooms.has(roomId)) return;
-
-		// If only 1 player remains, reset their ready state — can't be ready alone
-		if (room.players.length === 1) {
-			const lastId = String((room.players[0] as any).playerId);
-			if (room.sceneById[lastId] === "game") {
-				room.sceneById[lastId] = "lobby";
-			}
-		}
 
 		// Rebuild game state so it only contains the remaining players
 		this.resetGame(room);
@@ -748,6 +829,13 @@ export class RoomManager {
 			to: scene,
 		});
 
+		// AFK timer: ready -> stop, unready -> start
+		if (scene === "game") {
+			this.stopAfkTimer(roomId, playerId);
+		} else if (scene === "lobby" && room.phase === "lobby") {
+			this.startAfkTimer(roomId, playerId);
+		}
+
 		this.evaluateLobbyTimer(roomId);
 		this.willUpdateRoomPhase(roomId);
   		this.broadcastState(roomId);
@@ -779,6 +867,7 @@ export class RoomManager {
 
 		room.phase = "ready";
 		this.stopLobbyJoinTimer(room);
+		this.clearAllAfkTimers(roomId);
 
 		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
 
