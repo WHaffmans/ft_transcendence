@@ -139,18 +139,19 @@ export function startPublicWsServer(
 							boundPlayerId = null;
 						}
 
-						boundRoomId = msg.roomId;
-						boundPlayerId = msg.player.playerId;
-
 						const config = normalizeConfig(msg.config);
 						const seed = msg.seed;
 
+						// Join 'before' setting bindings - if it throws, bindings stay clean
 						rooms.createOrJoinRoom({
-							roomId: boundRoomId,
+							roomId: msg.roomId,
 							player: msg.player,
 							seed,
 							config,
 						});
+
+						boundRoomId = msg.roomId;
+						boundPlayerId = msg.player.playerId;
 
 						rooms.subscribe(boundRoomId, ws);
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
