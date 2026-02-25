@@ -1,9 +1,12 @@
 <script lang=ts>
 	import { modalStore } from '$lib/components/modal/modal';
+	import Healthcheck from '$lib/components/app/Healthcheck.svelte';
+
 </script>
 
-<footer class="fixed bottom-0 left-0 right-0 z-20 py-6 text-center pointer-events-none">
-	<p class="text-sm font-medium text-gray-500 pointer-events-auto">
+<footer class="mt-auto text-center">
+	<Healthcheck class="justify-center mt-1 mb-1" />
+	<p class="text-sm font-medium text-gray-500 mb-1">
 		<button
 			type="button"
 			class="transition-colors hover:text-white"
@@ -11,9 +14,9 @@
 		>
 			Privacy Policy
 		</button>
-
+		
 		<span class="mx-1">•</span>
-
+		
 		<button
 			type="button"
 			class="transition-colors hover:text-white"
