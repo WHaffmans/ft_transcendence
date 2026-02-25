@@ -62,11 +62,12 @@ export function step(
 
 		const turn = inputsById[p.id] ?? 0;
 		p.angle += turn * config.turnRate;
+		const speed = config.speed * (turn !== 0 ? config.turnSpeedModifier : 1); // reduce speed when turning
 
 		const prevX = p.x, prevY = p.y;
 
-		p.x += Math.cos(p.angle) * config.speed;
-		p.y += Math.sin(p.angle) * config.speed;
+		p.x += Math.cos(p.angle) * speed;
+		p.y += Math.sin(p.angle) * speed;
 
 		// Wall death
 		if (p.x < 0 || p.x > config.arenaWidth || p.y < 0 || p.y > config.arenaHeight) {

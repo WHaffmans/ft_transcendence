@@ -19,6 +19,7 @@ export type GameConfig = {
 
 	// Movement
 	speed: number;			// units per tick
+	turnSpeedModifier: number;	// multiplier for turn rate based on speed (0..1)
 	turnRate: number;		// radians per tick
 	playerRadius: number;
 	segmentSendCount: number;	// number of segments sent in a snapshot
@@ -41,7 +42,8 @@ export const DEFAULT_CONFIG: GameConfig = {
 	arenaHeight: 800,
 
 	speed: 4.0,
-	turnRate: 0.2,
+	turnSpeedModifier: 0.65,
+	turnRate: 0.1,
 	playerRadius: 4,
 	segmentSendCount: 15,
 
@@ -49,6 +51,6 @@ export const DEFAULT_CONFIG: GameConfig = {
 	gapMinTicks: 2,
 	gapMaxTicks: 8,
 
-	spawnPadding: 60,
+	spawnPadding: 120,
 	spawnAngle: 0.35,
 };
