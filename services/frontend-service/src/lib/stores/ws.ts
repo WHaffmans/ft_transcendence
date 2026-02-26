@@ -44,6 +44,7 @@ type WSStoreState = {
 	playerMetaById: Record<string, PlayerMeta>;
 	winnerId: string | null;
 	lastRoomClosed: { roomId: string; reason: string } | null;
+	afkTimer: { secondsLeft: number; deadlineAtMs: number } | null;
 	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
@@ -72,6 +73,7 @@ function createWebSocketStore() {
 		playerMetaById: {},
 		winnerId: null as string | null,
 		lastRoomClosed: null,
+		afkTimer: null,
 		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
@@ -174,6 +176,18 @@ function createWebSocketStore() {
 					lastRoomClosed = { roomId: msg.roomId, reason: msg.reason };
 				}	
 
+				// AFK timer
+				let afkTimer = s.afkTimer;
+				if (msg.type === "afk_timer" && msg.playerId === s.playerId) {
+					if (msg.secondsLeft <= 0 && msg.deadlineAtMs === 0) {
+						afkTimer = null;
+					} else {
+						afkTimer = { secondsLeft: msg.secondsLeft, deadlineAtMs: msg.deadlineAtMs };
+					}
+				} else if (msg.type === "game_started" || msg.type === "game_finished") {
+					afkTimer = null;
+				}
+
 
 				return {
 					...s,
@@ -184,6 +198,7 @@ function createWebSocketStore() {
 					lastSegI,
 					lobbyTimer,
 					lastRoomClosed,
+					afkTimer,
 
 					winnerId:
 						msg.type === "game_finished"
@@ -239,6 +254,7 @@ function createWebSocketStore() {
 			playerMetaById: {},
 			winnerId: null,
 			lastRoomClosed: null,
+			afkTimer: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
@@ -350,6 +366,7 @@ function createWebSocketStore() {
 			playerMetaById: {},
 			winnerId: null,
 			lastRoomClosed: null,
+			afkTimer: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		}));
