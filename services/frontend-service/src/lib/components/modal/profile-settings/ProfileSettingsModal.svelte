@@ -39,7 +39,7 @@
 	</div>
 
 	<!-- Action buttons -->
-	<div class="flex flex-col items-center gap-3 mb-6">
+	<div class="flex flex-col items-center gap-3">
 		<button
 			type="button"
 			class="btn-primary h-14 w-4/5 text-sm"

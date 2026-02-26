@@ -38,38 +38,35 @@
 </script>
 
 <div
-  class="backdrop-blur-[10px] bg-black/40 border {styling().borderColor}
-         rounded-2xl w-full h-full min-h-0 relative
-         flex items-center justify-center p-6"
+	class="backdrop-blur-[10px] bg-black/40 border {styling().borderColor} rounded-2xl h-70 w-full relative flex items-center justify-center"
 >
-  <!-- Rank Badge (top left) -->
-  <div class="absolute top-2.75 left-2.75 bg-black/20 rounded h-5 px-2 flex items-center">
-    <p class="text-[10px] font-bold text-[#888]">{player.rating}</p>
-  </div>
+	<!-- Rank Badge (top left) -->
+	<div class="absolute top-2.75 left-2.75 bg-black/20 rounded h-5 px-2 flex items-center">
+		<p class="text-[10px] font-bold text-[#888]">{player.rating}</p>
+	</div>
 
-  <!-- Labels (top right) -->
-  <div class="absolute top-2.75 right-2.75 flex gap-2">
-    {#if isYou}
-      <div class="bg-[#3b82f6] rounded-[10px] h-5 px-2 flex items-center justify-center">
-        <p class="text-[10px] font-bold text-white">YOU</p>
-      </div>
-    {/if}
-  </div>
+	<!-- Labels (top right) -->
+	<div class="absolute top-2.75 right-2.75 flex gap-2">
+		{#if isYou}
+			<div class="bg-[#3b82f6] rounded-[10px] h-5 px-2 flex items-center justify-center">
+				<p class="text-[10px] font-bold text-white">YOU</p>
+			</div>
+		{/if}
+	</div>
 
-  <!-- Player Info -->
-  <div class="flex flex-col items-center justify-center gap-2 min-h-0">
-    <img
-      src={player.avatar_url || "/placeholders/avatars/avatar_placeholder.webp"}
-      alt={player.name}
-      class="w-20 h-20 rounded-full object-cover"
-    />
+	<!-- Player Info (centered) -->
+	<div class="flex flex-col items-center gap-2">
+		<img
+			src={player.avatar_url || '/placeholders/avatars/avatar_placeholder.webp'}
+			alt={player.name}
+			class="w-20 h-20 rounded-full object-cover"
+		/>
 
-    <p class="text-2xl font-bold text-white text-center truncate max-w-full">
-      {player.name}
-    </p>
+		<p class="text-2xl font-bold text-white text-center">{player.name}</p>
 
-    <div class="{styling().badgeBg} h-6 rounded-xl px-5 flex items-center justify-center">
-      <p class="font-bold {styling().badgeText}">{styling().statusLabel}</p>
-    </div>
-  </div>
+		<!-- Status Badge -->
+		<div class="{styling().badgeBg} h-6 rounded-xl px-5 flex items-center justify-center">
+			<p class="font-bold {styling().badgeText}">{styling().statusLabel}</p>
+		</div>
+	</div>
 </div>
