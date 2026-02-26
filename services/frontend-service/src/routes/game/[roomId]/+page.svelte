@@ -16,7 +16,7 @@
   /* ============================================================================
    * DOM refs + Handles
    * ========================================================================== */
-  let canvas: HTMLCanvasElement | null = null;
+  let canvas = $state<HTMLCanvasElement | null>(null);
   let stopRender: null | (() => void) = null;
   let stopFinishWatch: null | (() => void) = null;
 

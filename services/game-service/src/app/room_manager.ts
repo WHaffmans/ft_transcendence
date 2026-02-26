@@ -46,6 +46,7 @@ type Room = {
 	// Players
 	hostId: string;
 	players: Player[];
+	allPlayers: Player[];					// snapshot of all participants at game start (never mutated by dropPlayer)
 	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
 	finishOrder: string[];								// [firstOut, ..., winner]
@@ -171,6 +172,7 @@ export class RoomManager {
 			state,
 			hostId,
 			players: [...players],
+			allPlayers: [],
 			sceneById,
 			inputsById,
 			finishOrder: [],
@@ -222,6 +224,10 @@ export class RoomManager {
 	private addPlayerToRoom(roomId: string, player: Player) {
 		const room = this.getRoomOrThrow(roomId);
 		if (room.phase === "finished") throw new Error(`Room ${roomId} is finished`);
+		if (room.phase === "running" || room.phase === "ready") {
+			const alreadyIn = room.players.some(p => p.playerId === player.playerId);
+			if (!alreadyIn) throw new Error(`Room ${roomId} is already in progress`);
+		}
 
 		const existing = this.getPlayer(room, player.playerId);
 		const wasAlreadyInRoom = !!existing;
@@ -913,6 +919,7 @@ export class RoomManager {
 		}
 
 		room.phase = "running";
+		room.allPlayers = room.players.map(p => ({ ...p }));
 
 		logInfo("room.phase_changed", { roomId, from: "ready", to: "running" });
 
@@ -1099,17 +1106,17 @@ export class RoomManager {
 	}
 
 	private computeAndApplyNewRatings(room: Room) {
-		const playerIds = new Set(room.players.map(p => p.playerId));
-  		const finishOrder = room.finishOrder.filter(id => playerIds.has(id));
-		
-		const playerRatings = room.players.map((p) => ({
+		// Use allPlayers (snapshot from game start) so departed players are included
+		const allP = room.allPlayers.length > 0 ? room.allPlayers : room.players;
+
+		const playerRatings = allP.map((p) => ({
 			id: p.playerId,
 			mu: p.rating_mu,
 			sigma: p.rating_sigma,
 		}));
 
 		logInfo("ratings.pre", {
-			players: room.players.map((p) => ({
+			players: allP.map((p) => ({
 				id: p.playerId,
 				mu: p.rating_mu,
 				sigma: p.rating_sigma,
@@ -1117,12 +1124,12 @@ export class RoomManager {
 		});
 
 		// Compute new ratings with OpenSkill
-		const updated = updateRatingsOpenSkill(playerRatings, { finishOrder });
+		const updated = updateRatingsOpenSkill(playerRatings, { finishOrder: room.finishOrder });
 		
-		// Merge updated mu/sigma back into room.players
+		// Merge updated mu/sigma back into allPlayers
 		const updatedById = new Map(updated.map((u) => [u.id, u] as const));
 
-		room.players = room.players.map((p) => {
+		room.allPlayers = allP.map((p) => {
 			const u = updatedById.get(p.playerId);
 			if (!u) return p;
 
@@ -1134,7 +1141,7 @@ export class RoomManager {
 		});
 
 		logInfo("ratings.post", {
-			players: room.players.map((p) => ({
+			players: room.allPlayers.map((p) => ({
 				id: p.playerId,
 				mu: p.rating_mu,
 				sigma: p.rating_sigma,
@@ -1172,9 +1179,10 @@ export class RoomManager {
 		try {
 			this.computeAndApplyNewRatings(room);
 
-			// Build backend payload
+			// Build backend payload from allPlayers (includes departed players)
+			const allP = room.allPlayers.length > 0 ? room.allPlayers : room.players;
 			const payload = this.toFinishPayload(
-				room.players.map((p) => ({
+				allP.map((p) => ({
 					playerId: p.playerId,
 					rating_mu: p.rating_mu,
 					rating_sigma: p.rating_sigma,

@@ -41,3 +41,12 @@ export interface LastMatchData {
     players: LastMatchPlayer[];
     date: string;
 }
+
+export interface ContainerHealth {
+    name: string;
+    status: 'healthy' | 'unhealthy';
+}
+
+export interface HealthcheckResponse {
+    containers: ContainerHealth[];
+}

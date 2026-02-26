@@ -26,6 +26,7 @@
 
   let userId = $userStore?.id;
   let isTooSmall = $state(false);
+  let isTooShort = $state(false);
 
   // Timer
   const lobbyTimer = $derived(() => $wsStore.lobbyTimer);
@@ -46,23 +47,36 @@
   });
 
   onMount(() => {
-    const mq = window.matchMedia("(max-width: 1279px)");
+    const mqWidth = window.matchMedia("(max-width: 1279px)");
+    const mqHeight = window.matchMedia("(max-height: 809px)");
 
-    const update = () => {
-      isTooSmall = mq.matches;
+    const updateWidth = () => {
+      isTooSmall = mqWidth.matches;
+    };
+    const updateHeight = () => {
+      isTooShort = mqHeight.matches;
     };
 
-    update();
+    updateWidth();
+    updateHeight();
 
-    const add = (mq as MediaQueryList & { addListener?: (cb: () => void) => void }).addListener;
-    const remove = (mq as MediaQueryList & { removeListener?: (cb: () => void) => void }).removeListener;
+    const addW = (mqWidth as MediaQueryList & { addListener?: (cb: () => void) => void }).addListener;
+    const removeW = (mqWidth as MediaQueryList & { removeListener?: (cb: () => void) => void }).removeListener;
+    const addH = (mqHeight as MediaQueryList & { addListener?: (cb: () => void) => void }).addListener;
+    const removeH = (mqHeight as MediaQueryList & { removeListener?: (cb: () => void) => void }).removeListener;
 
-    if (mq.addEventListener) mq.addEventListener("change", update);
-    else add?.call(mq, update);
+    if (mqWidth.addEventListener) mqWidth.addEventListener("change", updateWidth);
+    else addW?.call(mqWidth, updateWidth);
+
+    if (mqHeight.addEventListener) mqHeight.addEventListener("change", updateHeight);
+    else addH?.call(mqHeight, updateHeight);
 
     return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", update);
-      else remove?.call(mq, update);
+      if (mqWidth.removeEventListener) mqWidth.removeEventListener("change", updateWidth);
+      else removeW?.call(mqWidth, updateWidth);
+
+      if (mqHeight.removeEventListener) mqHeight.removeEventListener("change", updateHeight);
+      else removeH?.call(mqHeight, updateHeight);
     };
   });
 
@@ -72,7 +86,7 @@
 
   const myScene = $derived(sceneById[playerId] ?? "lobby");
   const isReady = $derived(myScene === "game");
-  const canReady = $derived(!isTooSmall);
+  const canReady = $derived(playerCount >= 2 && !isTooSmall && !isTooShort);
 
   function toggleReady() {
     if (!isReady && !canReady) return;
@@ -86,8 +100,15 @@
 
     if (isTooSmall) {
       out.push({
-        title: "Screen too small",
+        title: "Screen too narrow",
         body: "Please widen your window (≥ 1280 px) to start a match.",
+      });
+    }
+
+    if (isTooShort) {
+      out.push({
+        title: "Screen too short",
+        body: "Please increase your window height (≥ 810 px) to start a match.",
       });
     }
 

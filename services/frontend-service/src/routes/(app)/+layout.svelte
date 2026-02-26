@@ -9,7 +9,7 @@
   };
 </script>
 
-<div class="relative z-10 flex flex-col min-h-screen">
+<div class="relative z-10 flex flex-col flex-1">
   <!-- App navigation -->
   <nav>
     <Navbar
