@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/19 11:49:53 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/26 10:14:24 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@ import type { TurnInput } from "../engine/step.js";
 // Utils
 import { finishGame, leaveGame, startGame } from "../stores/backend_api.js";
 import { updateRatingsOpenSkill } from "../open_skill/openskill_adapter.js";
+import { replaceTimeout, replaceInterval, replaceMapTimeout } from "./timers.js";
+import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 
 // External
 import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
@@ -31,7 +33,8 @@ import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const LOBBY_LIFETIME_MS = 60_000;
-const AFK_TIMEOUT_MS = 5 * 60 * 1000;	// 5 minutes total
+const LIFETIME_BROADCAST_INTERVAL = 1000;
+const AFK_TIMEOUT_MS = 5 * 60 * 1000;					// 5 minutes total
 
 type Room = {
 	phase: GamePhase;
@@ -45,18 +48,16 @@ type Room = {
 	players: Player[];
 	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
-	finishOrder: string[];					// [firstOut, ..., winner]
+	finishOrder: string[];								// [firstOut, ..., winner]
 
 	// Handle ticks
 	timer?: NodeJS.Timeout | null;
 
 	// Lobby lifetime
-	lobbyTimerTimeout?: NodeJS.Timeout | null;  // setTimeout (kick)
-	lobbyTimerInterval?: NodeJS.Timeout | null; // setInterval (broadcast)
-	lobbyJoinDeadlineAtMs?: number | null;
-
-	// AFK timers (per-player inactivity kick)
-	afkKickTimeoutById: Record<string, NodeJS.Timeout>;
+	autoStartTimerTimeout: TimeoutHandle;				// setTimeout (kick)
+	autoStartTimerInterval: IntervalHandle;				// setInterval (broadcast)
+	autoStartDeadlineAtMs: number | null;				// log info
+	afkTimeoutById: Record<string, TimeoutHandle>;		// setTimeout (inactivity)
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
@@ -173,7 +174,10 @@ export class RoomManager {
 			sceneById,
 			inputsById,
 			finishOrder: [],
-			afkKickTimeoutById: {},
+			autoStartTimerTimeout: null,
+			autoStartTimerInterval: null,
+			autoStartDeadlineAtMs: null,
+			afkTimeoutById: {},
 			subscribers: new Set(),
 		};
 
@@ -193,7 +197,7 @@ export class RoomManager {
 	/**
 	 * Get current room, or create new room
 	 */
-	public ensureRoom(args: {
+	private ensureRoom(args: {
 		roomId: string;
 		seed: number;
 		config: GameConfig;
@@ -256,7 +260,7 @@ export class RoomManager {
 			this.resetGame(room);
 		}
 
-		this.evaluateLobbyTimer(roomId);
+		this.executeAutoStartTimer(roomId);
 		this.broadcastState(roomId);
 
 		// Start AFK timer for newly joined not-ready players
@@ -307,15 +311,27 @@ export class RoomManager {
 
 
 	/* ====================================================================== */
-	/*                            LOBBY TIMER                                 */
+	/*                            AUTO-START TIMER                            */
 	/* ====================================================================== */
 
+	private autoStartTimerTimeout(roomId: string) {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+
+		this.stopAutoStartTimer(room);
+
+		if (room.phase === "lobby") {
+			this.onAutoStartTimerExpired(roomId);
+		}
+	}
+
+
 	/**
-	 * Evaluate whether the lobby countdown should start, stop, or keep running.
-	 * Start: ≥ 2 players AND ≥ 2 ready AND not everyone ready (auto-start handles that).
-	 * Stop/reset: conditions no longer met.
+	 * Start, stop or continue lobby timer
+	 * 		- 2+ ready players, auto-start game.
+	 * 		- Else, close room.
 	 */
-	private evaluateLobbyTimer(roomId: string) {
+	private executeAutoStartTimer(roomId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room || room.phase !== "lobby") return;
 
@@ -326,13 +342,12 @@ export class RoomManager {
 		const allReady = readyPlayers.length === playerIds.length;
 
 		const shouldRun = room.players.length >= 2 && readyPlayers.length >= 2 && !allReady;
-		const isRunning = !!room.lobbyTimerTimeout;
+		const isRunning = !!room.autoStartTimerTimeout || !!room.autoStartTimerInterval;
 
 		if (shouldRun && !isRunning) {
-			this.startLobbyJoinTimer(room, LOBBY_LIFETIME_MS);
+			this.autoStartTimer(room, LOBBY_LIFETIME_MS);
 		} else if (!shouldRun && isRunning) {
-			this.stopLobbyJoinTimer(room);
-			// Broadcast null timer so frontend clears the countdown
+			this.stopAutoStartTimer(room);
 			this.broadcast(roomId, {
 				type: "lobby_timer",
 				roomId,
@@ -343,26 +358,26 @@ export class RoomManager {
 	}
 
 	/**
-	 * Start the lobby countdown timer.
-	 * On tick: broadcasts remaining seconds.
-	 * On expiry: kicks non-ready players, then force-starts if ≥ 2 remain.
+	 * Timer to auto-start game.
+	 * 		- On tick: broadcasts remaining seconds.
+	 *		- On expiry: kicks non-ready players, start with 2+ players.
 	 */
-	private startLobbyJoinTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
-		if (room.lobbyTimerTimeout || room.lobbyTimerInterval) return;
+	private autoStartTimer(room: Room, ms = LOBBY_LIFETIME_MS) {
+		if (room.autoStartTimerTimeout || room.autoStartTimerInterval) return;
 
 		const roomId = room.roomId;
-		room.lobbyJoinDeadlineAtMs = Date.now() + ms;
+		room.autoStartDeadlineAtMs = Date.now() + ms;
 
 		const broadcastTick = () => {
 			const live = this.rooms.get(roomId);
 			if (!live) return;
 
 			if (live.phase !== "lobby") {
-				this.stopLobbyJoinTimer(live);
+				this.stopAutoStartTimer(live);
 				return;
 			}
 
-			const deadlineAtMs = live.lobbyJoinDeadlineAtMs ?? 0;
+			const deadlineAtMs = live.autoStartDeadlineAtMs ?? 0;
 			const msLeft = deadlineAtMs - Date.now();
 			const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
 
@@ -374,48 +389,34 @@ export class RoomManager {
 			});
 
 			if (secondsLeft <= 0) {
-				if (live.lobbyTimerInterval) {
-					clearInterval(live.lobbyTimerInterval);
-					live.lobbyTimerInterval = null;
-				}
+				this.stopAutoStartTimer(live);
+				return;
 			}
 		};
 
 		broadcastTick();
-		room.lobbyTimerInterval = setInterval(broadcastTick, 1000);
 
-		room.lobbyTimerTimeout = setTimeout(() => {
-			const live = this.rooms.get(roomId);
-			if (!live) return;
-
-			if (live.phase !== "lobby") {
-				this.stopLobbyJoinTimer(live);
-				return;
-			}
-
-			this.stopLobbyJoinTimer(live);
-			this.onLobbyTimerExpired(roomId);
-		}, ms);
+		replaceInterval(room, "autoStartTimerInterval", LIFETIME_BROADCAST_INTERVAL, broadcastTick);
+		replaceTimeout(room, "autoStartTimerTimeout", ms, () => {
+			this.autoStartTimerTimeout(roomId);
+		});
 
 		logInfo("room.lobby_timer_started", {
 			roomId,
 			ms,
-			deadlineAt: room.lobbyJoinDeadlineAtMs,
+			deadlineAt: room.autoStartDeadlineAtMs,
 		});
 	}
 
 	/**
-	 * Called when the lobby timer reaches zero.
-	 * Kicks all non-ready players, then force-starts the game
-	 * if ≥ 2 players remain. Otherwise closes the room.
+	 * Auto-start action.
 	 */
-	private onLobbyTimerExpired(roomId: string) {
+	private onAutoStartTimerExpired(roomId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
 
-		this.clearAllAfkTimers(roomId);
+		this.stopAllAfkTimers(room);
 
-		// Identify who to kick: anyone not ready
 		const toKick = this.getPlayerIds(room).filter(
 			(id) => room.sceneById[id] !== "game"
 		);
@@ -446,7 +447,7 @@ export class RoomManager {
 			const after = this.rooms.get(roomId);
 			if (!after) return;
 
-			// Not enough players to start → close the room
+			// Not enough players to start. Will close the room
 			if (after.players.length < 2) {
 				logInfo("room.lobby_timer_not_enough_players", {
 					roomId,
@@ -456,15 +457,13 @@ export class RoomManager {
 				return;
 			}
 
-			// Force-start: set all remaining scenes to "game", then transition to "ready".
-			// The client-side countdown will handle the ready → running transition.
+			// Auto-start. All ready players enter game
 			for (const id of this.getPlayerIds(after)) {
 				after.sceneById[id] = "game";
 			}
 
+			// Set room to ready
 			this.resetGame(after);
-
-			// lobby → ready (clients show 3-2-1 countdown, host fires start_game at the end)
 			after.phase = "ready";
 			logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
 
@@ -475,16 +474,16 @@ export class RoomManager {
 		});
 	}
 
-	private stopLobbyJoinTimer(room: Room) {
-		if (room.lobbyTimerInterval) {
-			clearInterval(room.lobbyTimerInterval);
-			room.lobbyTimerInterval = null;
+	private stopAutoStartTimer(room: Room) {
+		if (room.autoStartTimerInterval) {
+			clearInterval(room.autoStartTimerInterval);
+			room.autoStartTimerInterval = null;
 		}
-		if (room.lobbyTimerTimeout) {
-			clearTimeout(room.lobbyTimerTimeout);
-			room.lobbyTimerTimeout = null;
+		if (room.autoStartTimerTimeout) {
+			clearTimeout(room.autoStartTimerTimeout);
+			room.autoStartTimerTimeout = null;
 		}
-		room.lobbyJoinDeadlineAtMs = null;
+		room.autoStartDeadlineAtMs = null;
 
 		logInfo("room.lobby_join_timer_stopped", { roomId: room.roomId });
 	}
@@ -495,19 +494,21 @@ export class RoomManager {
 	/* ====================================================================== */
 
 	/**
-	 * Start an individual AFK timer for a not-ready player.
-	 * Sends the deadline once — the frontend computes the countdown locally.
+	 * Away From Keyboard. Close lobby after 5 minutes.
 	 */
 	private startAfkTimer(roomId: string, playerId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room || room.phase !== "lobby") return;
 
-		this.clearAfkTimer(roomId, playerId);
+		if (room.sceneById[playerId] === "game") return;
+
+		this.stopAfkTimer(room, playerId);
 
 		const deadlineAtMs = Date.now() + AFK_TIMEOUT_MS;
-		room.afkKickTimeoutById[playerId] = setTimeout(() => {
+
+		replaceMapTimeout(room.afkTimeoutById, playerId, AFK_TIMEOUT_MS, () => {
 			this.onAfkExpired(roomId, playerId);
-		}, AFK_TIMEOUT_MS);
+		});
 
 		this.broadcast(roomId, {
 			type: "afk_timer",
@@ -516,52 +517,44 @@ export class RoomManager {
 			secondsLeft: Math.ceil(AFK_TIMEOUT_MS / 1000),
 			deadlineAtMs,
 		});
-
-		logInfo("afk.timer_started", { roomId, playerId, deadlineAtMs });
 	}
 
-	/** Clear a player's AFK timer silently (used on drop/leave). */
-	private clearAfkTimer(roomId: string, playerId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
-		if (room.afkKickTimeoutById[playerId]) {
-			clearTimeout(room.afkKickTimeoutById[playerId]);
-			delete room.afkKickTimeoutById[playerId];
-		}
-	}
-
-	/** Stop a player's AFK timer and tell the frontend to clear the countdown. */
-	private stopAfkTimer(roomId: string, playerId: string) {
-		this.clearAfkTimer(roomId, playerId);
-		this.broadcast(roomId, {
-			type: "afk_timer", roomId, playerId,
-			secondsLeft: 0, deadlineAtMs: 0,
-		});
-	}
-
-	/** Clear all AFK timers for a room (phase transition / room close). */
-	private clearAllAfkTimers(roomId: string) {
-		const room = this.rooms.get(roomId);
-		if (!room) return;
-		for (const pid of Object.keys(room.afkKickTimeoutById)) {
-			clearTimeout(room.afkKickTimeoutById[pid]);
-		}
-		room.afkKickTimeoutById = {};
-	}
-
-	/** Called when a player's AFK timer expires — kicks them from the lobby. */
+	/**
+	 * Fire AFK
+	 */
 	private onAfkExpired(roomId: string, playerId: string) {
 		const room = this.rooms.get(roomId);
 		if (!room || room.phase !== "lobby") return;
-		if (!room.players.some(p => p.playerId === playerId)) return;
+		if (!this.getPlayer(room, playerId)) return;
 
-		this.clearAfkTimer(roomId, playerId);
-		logInfo("afk.expired", { roomId, playerId });
+		this.stopAfkTimer(room, playerId);
 
 		this.broadcast(roomId, { type: "left", roomId, playerId });
 		void this.willLeaveLobby(roomId, playerId);
 	}
 
+	/**
+	 * Clear a player's AFK timer.
+	 */
+	private stopAfkTimer(room: Room, playerId: string) {
+		const h = room.afkTimeoutById[playerId];
+		if (h) clearTimeout(h);
+		delete room.afkTimeoutById[playerId];
+	}
+
+	/**
+	 * Clear all AFK timers for a room.
+	 */
+	private stopAllAfkTimers(room: Room) {
+		for (const pid of Object.keys(room.afkTimeoutById)) {
+			this.stopAfkTimer(room, pid);
+		}
+	}
+
+
+	/* ====================================================================== */
+	/*                             CLOSE ROOM                                 */
+	/* ====================================================================== */
 
 	/**
 	 * Close current room
@@ -570,8 +563,8 @@ export class RoomManager {
 		const room = this.getRoomOrThrow(roomId);
 
 		this.stopRoomTimer(room);
-		this.stopLobbyJoinTimer(room);
-		this.clearAllAfkTimers(roomId);
+		this.stopAutoStartTimer(room);
+		this.stopAllAfkTimers(room);
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
@@ -587,12 +580,18 @@ export class RoomManager {
 		});
 	}
 
+	
+	/**
+	 * Remove a single player from the room.
+	 * 		- Sets new `host`.
+	 * 		- Close room if empty.
+	 */
 	private async dropPlayer(roomId: string, playerId: string) {
 		const room = this.getRoomOrThrow(roomId);
 		const idx = room.players.findIndex(p => (p as any).playerId === playerId);
 		if (idx === -1) return;
 
-		this.clearAfkTimer(roomId, playerId);
+		this.stopAfkTimer(room, playerId);
 
 		delete room.sceneById[playerId];
 		delete room.inputsById[playerId];
@@ -612,9 +611,9 @@ export class RoomManager {
 
 		await this.persistLeaveRoom(roomId, playerId);
 
-		// If room is empty
+		// Close if empty
 		if (room.players.length === 0) {
-			this.closeRoom(roomId, "You were removed from the lobby.");
+			this.closeRoom(roomId, "Room was empty, all players were removed.");
 		}
 	}
 
@@ -637,7 +636,7 @@ export class RoomManager {
 
 		// Rebuild game state so it only contains the remaining players
 		this.resetGame(room);
-		this.evaluateLobbyTimer(roomId);
+		this.executeAutoStartTimer(roomId);
 		this.willUpdateRoomPhase(roomId);
 		this.broadcastState(roomId);
 	}
@@ -659,13 +658,13 @@ export class RoomManager {
 
 		if (! this.rooms.has(roomId)) return;
 
-		// No players left → close the room
+		// Close if empty
 		if (room.players.length === 0) {
-			this.closeRoom(roomId, "All players left");
+			this.closeRoom(roomId, "Room was empty, all players were removed.");
 			return;
 		}
 
-		// During countdown (ready phase), not enough players to start → close
+		// Close room, too few players to start
 		if (room.phase === "ready" && room.players.length < MIN_PLAYERS) {
 			this.closeRoom(roomId, "Not enough players during countdown");
 			return;
@@ -682,6 +681,9 @@ export class RoomManager {
 		}
 	}
 
+	/**
+	 * Leave `lobby` or `game`
+	 */
 	public onPlayerDisconnected(roomId: string, playerId: string, ws: WebSocket, meta: any) {
 		const room = this.getRoomOrThrow(roomId);
 
@@ -702,6 +704,9 @@ export class RoomManager {
 	}
 
 
+	/**
+	 * Notify API of player leave.
+	 */
 	private async persistLeaveRoom(roomId: string, playerId: string) {
 		const userId = Number(playerId);
 		const payload = {
@@ -715,6 +720,9 @@ export class RoomManager {
 		}
 	}
 
+	/**
+	 * Toggle player `alive` / `dead`
+	 */
 	private setPlayerAlive(roomId: string, playerId: string, newAlive: boolean) {
 		const room = this.getRoomOrThrow(roomId);
 		const p = this.getPlayerState(room.state, playerId);
@@ -831,12 +839,12 @@ export class RoomManager {
 
 		// AFK timer: ready -> stop, unready -> start
 		if (scene === "game") {
-			this.stopAfkTimer(roomId, playerId);
+			this.stopAfkTimer(room, playerId);
 		} else if (scene === "lobby" && room.phase === "lobby") {
 			this.startAfkTimer(roomId, playerId);
 		}
 
-		this.evaluateLobbyTimer(roomId);
+		this.executeAutoStartTimer(roomId);
 		this.willUpdateRoomPhase(roomId);
   		this.broadcastState(roomId);
 	}
@@ -866,8 +874,8 @@ export class RoomManager {
 		if (room.players.length > MAX_PLAYERS) return;
 
 		room.phase = "ready";
-		this.stopLobbyJoinTimer(room);
-		this.clearAllAfkTimers(roomId);
+		this.stopAutoStartTimer(room);
+		this.stopAllAfkTimers(room);
 
 		logInfo("room.phase_changed", { roomId, from: "lobby", to: "ready" });
 
@@ -968,7 +976,6 @@ export class RoomManager {
 
 		const segs = room.state.segments;
 		const start = Math.max(0, segs.length - room.config.segmentSendCount);
-
 
 		return {
 			phase: room.phase,

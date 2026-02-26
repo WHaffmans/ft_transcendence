@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 10:13:02 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/02/26 10:08:57 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,10 +131,9 @@ export function startPublicWsServer(
 				switch (msg.type) {
 					case "create_or_join_room": {
 
-						// If already bound to a different room (e.g. kicked player rejoining),
-						// clean up the old subscription first.
+						// Check for other room subcription
 						if (boundRoomId && boundRoomId !== msg.roomId) {
-							try { rooms.unsubscribe(boundRoomId, ws); } catch { /* room may be gone */ }
+							try { rooms.unsubscribe(boundRoomId, ws); } catch { }
 							boundRoomId = null;
 							boundPlayerId = null;
 						}
@@ -145,22 +144,14 @@ export function startPublicWsServer(
 						const config = normalizeConfig(msg.config);
 						const seed = msg.seed;
 
-						// Subscribe first so the player receives broadcasts
-						// sent during createOrJoinRoom (e.g. afk_timer).
-						rooms.ensureRoom({
-							roomId: boundRoomId,
-							seed,
-							config,
-							hostId: msg.player.playerId,
-						});
-						rooms.subscribe(boundRoomId, ws);
-
+						
 						rooms.createOrJoinRoom({
 							roomId: boundRoomId,
 							player: msg.player,
 							seed,
 							config,
 						});
+						rooms.subscribe(boundRoomId, ws);
 
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
 						rooms.broadcastState(boundRoomId);
