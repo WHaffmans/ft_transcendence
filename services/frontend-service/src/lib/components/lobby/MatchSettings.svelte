@@ -31,6 +31,20 @@
   // Timer
   const lobbyTimer = $derived(() => $wsStore.lobbyTimer);
   const lobbySecondsLeft = $derived(() => lobbyTimer()?.secondsLeft ?? null);
+  const afkTimer = $derived(() => $wsStore.afkTimer);
+  let afkSecondsLeft = $state<number | null>(null);
+
+  $effect(() => {
+    const timer = afkTimer();
+    if (!timer) { afkSecondsLeft = null; return; }
+    const tick = () => {
+      const secs = Math.ceil((timer.deadlineAtMs - Date.now()) / 1000);
+      afkSecondsLeft = (secs > 0 && secs <= 60) ? secs : null;
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  });
 
   onMount(() => {
     const mqWidth = window.matchMedia("(max-width: 1279px)");
@@ -100,8 +114,8 @@
 
     if (playerCount <= 1) {
       out.push({
-        title: "Not enough players",
-        body: "Need at least 2 players to start.",
+        title: "Waiting for players",
+        body: "At least 2 players needed to start a match.",
       });
     }
 
@@ -168,6 +182,20 @@
             </div>
             <p class="mt-1 text-sm text-white/60">
               Game will auto-start when this reaches 0. Non-ready players will be removed.
+            </p>
+          </div>
+        {/if}
+
+        {#if afkSecondsLeft !== null}
+          <div class="w-full rounded-xl border border-orange-400/60 bg-orange-400/10 px-4 py-3">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-bold text-orange-300 uppercase">AFK Warning</p>
+              <p class="text-sm font-semibold text-orange-200">
+                {afkSecondsLeft}s
+              </p>
+            </div>
+            <p class="mt-1 text-sm text-orange-200/80">
+              You'll be removed for inactivity. Ready up to stay in the lobby.
             </p>
           </div>
         {/if}
