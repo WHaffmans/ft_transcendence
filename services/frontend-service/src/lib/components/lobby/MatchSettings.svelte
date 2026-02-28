@@ -3,7 +3,6 @@
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
   import type { Game } from "$lib/types/types";
-  import { userStore } from "$lib/stores/user";
   import { wsStore } from "$lib/stores/ws";
 
   interface Props {
@@ -24,18 +23,17 @@
     sceneById,
   }: Props = $props();
 
-  let userId = $userStore?.id;
   let isTooSmall = $state(false);
   let isTooShort = $state(false);
 
   // Timer
-  const lobbyTimer = $derived(() => $wsStore.lobbyTimer);
-  const lobbySecondsLeft = $derived(() => lobbyTimer()?.secondsLeft ?? null);
-  const afkTimer = $derived(() => $wsStore.afkTimer);
+  const lobbyTimer = $derived($wsStore.lobbyTimer);
+  const lobbySecondsLeft = $derived(lobbyTimer?.secondsLeft ?? null);
+  const afkTimer = $derived($wsStore.afkTimer);
   let afkSecondsLeft = $state<number | null>(null);
 
   $effect(() => {
-    const timer = afkTimer();
+    const timer = afkTimer;
     if (!timer) { afkSecondsLeft = null; return; }
     const tick = () => {
       const secs = Math.ceil((timer.deadlineAtMs - Date.now()) / 1000);
@@ -95,7 +93,7 @@
   }
 
   // Warnings
-  const warningNotices = $derived((): Notice[] => {
+  const warningNotices = $derived.by((): Notice[] => {
     const out: Notice[] = [];
 
     if (isTooSmall) {
@@ -142,18 +140,9 @@
   function leaveRoom() {
     if (!game) return;
 
-    fetch(`/api/games/${game.id}/leave`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ user_id: userId }),
-    })
-      .then(() => {
-        wsStore.leaveRoom();
-        wsStore.disconnect();
-        goto("/");
-      })
-      .catch((err) => console.error("Error informing backend of leaving the game:", err));
+    wsStore.leaveRoom();
+    wsStore.disconnect();
+    goto("/");
   }
 </script>
 
@@ -172,12 +161,12 @@
 
       <!-- Timer + Warnings -->
       <div class="w-full space-y-2">
-        {#if lobbySecondsLeft() !== null}
+        {#if lobbySecondsLeft !== null}
           <div class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3">
             <div class="flex items-center justify-between">
               <p class="text-xs font-bold text-[#888] uppercase">Lobby Life-Span</p>
               <p class="text-sm font-semibold text-white">
-                {lobbySecondsLeft()}s
+                {lobbySecondsLeft}s
               </p>
             </div>
             <p class="mt-1 text-sm text-white/60">
@@ -200,9 +189,9 @@
           </div>
         {/if}
 
-        {#if warningNotices().length > 0}
+        {#if warningNotices.length > 0}
           <div class="w-full space-y-2">
-            {#each warningNotices() as w}
+            {#each warningNotices as w}
               <div class="rounded-xl border border-yellow-400/60 bg-yellow-400/10 px-4 py-3">
                 <p class="text-xs font-bold text-yellow-300 uppercase">{w.title}</p>
                 <p class="mt-1 text-sm text-yellow-200/90">{w.body}</p>
