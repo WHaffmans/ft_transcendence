@@ -15,7 +15,7 @@
 	let saving = $state(false);
 	let deleteConfirmInput = $state('');
 
-	let canDelete = $derived(deleteConfirmInput === currentNickname);
+	const canDelete = $derived(deleteConfirmInput === currentNickname);
 
 	async function confirmDelete() {
 		if (!$userStore?.id) {

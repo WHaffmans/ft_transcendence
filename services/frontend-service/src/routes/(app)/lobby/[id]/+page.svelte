@@ -36,10 +36,10 @@
 		}
 	}
 
-	const userDirectory = $derived(() => {
+	const userDirectory = $derived.by(() => {
 		const map = new Map<string, User>();
 		for (const u of gameRecord?.users ?? []) map.set(String(u.id), u);
-		return (map);
+		return map;
 	});
 
 
@@ -47,14 +47,14 @@
 	/*                           WS / LIVE ROOM STATE                         */
 	/* ====================================================================== */
 
-	const liveRoomState = $derived(() => $wsStore.latestState);
-	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
-	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
-	const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
+	const liveRoomState = $derived($wsStore.latestState);
+	const roomPlayerIdsLive = $derived(liveRoomState?.playerIds ?? []);
+	const sceneByIdLive = $derived(liveRoomState?.sceneById ?? {});
+	const lastRoomClosed = $derived($wsStore.lastRoomClosed);
 
-	const playersInRoom = $derived(() =>
-		roomPlayerIdsLive()
-			.map((id) => userDirectory().get(String(id)))
+	const playersInRoom = $derived(
+		roomPlayerIdsLive
+			.map((id) => userDirectory.get(String(id)))
 			.filter(Boolean) as User[]
 	);
 
@@ -83,7 +83,7 @@
 		};
 
 		wsStore.createOrJoinRoom(lobbyId, 0, player);
-		const phase = liveRoomState()?.phase ?? null;
+		const phase = liveRoomState?.phase ?? null;
 		if (phase === null || phase === "lobby") {
 			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
   		}
@@ -126,7 +126,7 @@
 		const lobbyId = data.lobbyId;
 		if (!lobbyId) return;
 
-		const ids = roomPlayerIdsLive().map(String).sort();
+		const ids = roomPlayerIdsLive.map(String).sort();
 		const key = ids.join(",");
 		if (key === lastRosterKey) return;
 
@@ -140,7 +140,7 @@
 	$effect(() => {
 		if (didRedirect) return;
 
-		const ids = roomPlayerIdsLive();
+		const ids = roomPlayerIdsLive;
 		if (ids.length === 0) return; // no state yet
 
 		const userId = String($userStore?.id ?? "");
@@ -159,7 +159,7 @@
 	*/
 	$effect(() => {
 		const lobbyId = data.lobbyId;
-		const closed = lastRoomClosed();
+		const closed = lastRoomClosed;
 
 		if (!lobbyId || !closed) return;
 		if (String(closed.roomId) !== String(lobbyId)) return;
@@ -292,10 +292,10 @@
 	<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:justify-start">
 		<!-- Left Section - Player Slots -->
 		<LobbyGrid>
-			{#each playersInRoom() as player (player.id)}
+			{#each playersInRoom as player (player.id)}
 				<PlayerCard
 					{player}
-					scene={sceneByIdLive()[String(player.id)] ?? "lobby"}
+					scene={sceneByIdLive[String(player.id)] ?? "lobby"}
 				/>
 			{/each}
 		</LobbyGrid>
@@ -304,10 +304,10 @@
 		<div class="w-full lg:w-ranking shrink-0">
 				<MatchSettings
 				game={gameRecord!}
-				playerCount={playersInRoom().length}
+				playerCount={playersInRoom.length}
 				lobbyId={data.lobbyId}
 				playerId={String($userStore?.id ?? '')}
-				sceneById={sceneByIdLive()}
+				sceneById={sceneByIdLive}
 			/>
 		</div>
 	</div>

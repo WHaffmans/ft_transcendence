@@ -24,8 +24,8 @@
 		currentIndex = 0;
 	});
 
-	let hasPrev = $derived(currentIndex < gameIds.length - 1);
-	let hasNext = $derived(currentIndex > 0);
+	const hasPrev = $derived(currentIndex < gameIds.length - 1);
+	const hasNext = $derived(currentIndex > 0);
 	let direction = $state<'left' | 'right'>('left');
 
 	function buildMatchData(game: any): LastMatchData {
