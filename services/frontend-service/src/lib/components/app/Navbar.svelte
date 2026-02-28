@@ -7,8 +7,8 @@
 
   let { onOpenSettings }: Props = $props();
 
-  const username = $derived($userStore?.name ?? 'Guest');
-  const avatar = $derived($userStore?.avatar_url ?? '');
+  let username = $derived($userStore?.name ?? 'Guest');
+  let avatar = $derived($userStore?.avatar_url ?? '');
 
   const handleOpenSettingsClick = () => {
     onOpenSettings?.();

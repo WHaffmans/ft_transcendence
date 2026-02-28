@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, untrack } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
   import { wsStore } from "$lib/stores/ws";
   import { toast } from "svelte-sonner";
@@ -54,53 +54,54 @@
   /* ============================================================================
    * Derived UI state (RUNES)
    * ========================================================================== */
-  const snapshot = $derived($wsStore.latestState);
-  const phase = $derived(snapshot?.phase ?? null);
+  const snapshot = $derived(() => $wsStore.latestState);
+  const phase = $derived(() => snapshot()?.phase ?? null);
 
-  const showStartOverlay = $derived(phase === "lobby" || phase === "ready");
+  const showStartOverlay = $derived(() => {
+    const p = phase();
+    return p === "lobby" || p === "ready";
+  });
 
-  const showFinishedOverlay = $derived(phase === "finished");
+  const showFinishedOverlay = $derived(() => phase() === "finished");
 
-  const isHost = $derived.by(() => {
-    const s = snapshot;
-    const y = youId;
+  const isHost = $derived(() => {
+    const s = snapshot();
+    const y = youId();
     return !!s?.hostId && !!y && String(s.hostId) === String(y);
   });
 
   // Player list/meta
-  const youId = $derived($wsStore.playerId ? String($wsStore.playerId) : null);
-  const players = $derived(snapshot?.players ?? []);
-  const metaById = $derived($wsStore.playerMetaById ?? {});
+  const youId = $derived(() => ($wsStore.playerId ? String($wsStore.playerId) : null));
+  const players = $derived(() => snapshot()?.players ?? []);
+  const metaById = $derived(() => $wsStore.playerMetaById ?? {});
 
-  const winnerId = $derived($wsStore.winnerId ?? null);
-  const winnerName = $derived.by(() => {
-    const id = winnerId;
+  const winnerId = $derived(() => $wsStore.winnerId ?? null);
+  const winnerName = $derived(() => {
+    const id = winnerId();
     return id ? displayName(String(id)) : "No winner";
   });
-  const winnerAvatar = $derived.by(() => {
-    const id = winnerId;
+  const winnerAvatar = $derived(() => {
+    const id = winnerId();
     return id ? avatarUrl(String(id)) : null;
   });
 
   $effect(() => {
-    if (showFinishedOverlay) {
-      untrack(() => {
-        console.log("winner", {
-          winnerId: winnerId,
-          winnerName: winnerName,
-          winnerAvatar: winnerAvatar,
-          meta: metaById[String(winnerId ?? "")],
-        });
+    if (showFinishedOverlay()) {
+      console.log("winner", {
+        winnerId: winnerId(),
+        winnerName: winnerName(),
+        winnerAvatar: winnerAvatar(),
+        meta: metaById()[String(winnerId() ?? "")],
       });
     }
   });
 
   function displayName(playerId: string) {
-    return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
+    return metaById()[String(playerId)]?.name ?? `Player ${playerId}`;
   }
 
   function avatarUrl(playerId: string) {
-    return metaById[String(playerId)]?.avatar_url ?? null;
+    return metaById()[String(playerId)]?.avatar_url ?? null;
   }
 
   // Meta loader
@@ -115,7 +116,7 @@
   // Finish overlay redirect
   const finish = createFinishRedirect({
     seconds: 10,
-    isFinished: () => showFinishedOverlay,
+    isFinished: () => showFinishedOverlay(),
     onDone: () => goto("/dashboard", { invalidateAll: true }),
   });
   const countdown = finish.countdown;
@@ -128,7 +129,7 @@
    * Inputs
    * ========================================================================== */
   function handleCountdownEnd() {
-    if (isHost && $wsStore.status === "open" && $wsStore.roomId) {
+    if (isHost() && $wsStore.status === "open" && $wsStore.roomId) {
       wsStore.startGame();
     }
   }
@@ -139,7 +140,7 @@
       return;
     }
 
-    if (phase !== "running") return;
+    if (phase() !== "running") return;
 
     if (ev.key === "ArrowLeft") {
       if ($wsStore.status === "open" && $wsStore.roomId) {
@@ -163,11 +164,11 @@
   /* ============================================================================
    * Room closed -> redirect
    * ========================================================================== */
-  const lastRoomClosed = $derived($wsStore.lastRoomClosed);
+  const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
 
   $effect(() => {
     const roomId = $wsStore.roomId;
-    const closed = lastRoomClosed;
+    const closed = lastRoomClosed();
     if (!roomId || !closed) return;
     if (String(closed.roomId) !== String(roomId)) return;
 
@@ -184,12 +185,12 @@
     const renderer = createCanvasRenderer(canvas, {
       w: 806,
       h: 806,
-      getPulseEnabled: () => showStartOverlay,
+      getPulseEnabled: () => showStartOverlay(),
       getPulsePlayerId: () => ($wsStore.playerId ? String($wsStore.playerId) : null),
     });
 
     stopRender = renderer.start(
-      () => snapshot,
+      () => snapshot(),
       () => $wsStore.segments,
     );
 
@@ -219,17 +220,17 @@
 <div class="page">
   <div class="layout">
     <!-- Left: Game -->
-    <div class="canvasWrap" class:blurred={showStartOverlay}>
+    <div class="canvasWrap" class:blurred={showStartOverlay()}>
       <GameCanvas bind:canvas />
       <StartOverlay
-        show={showStartOverlay}
-        phase={phase}
+        show={showStartOverlay()}
+        phase={phase()}
         onCountdownEnd={handleCountdownEnd}
       />
       <FinishOverlay
-        show={showFinishedOverlay}
-        winnerName={winnerName}
-        winnerAvatar={winnerAvatar}
+        show={showFinishedOverlay()}
+        winnerName={winnerName()}
+        winnerAvatar={winnerAvatar()}
         countdown={$countdown}
         onGoDashboard={goDashboard}
       />
@@ -238,9 +239,9 @@
     <!-- Right: Players -->
     <PlayersPanel
       status={$wsStore.status}
-      players={players}
-      youId={youId}
-      metaById={metaById}
+      players={players()}
+      youId={youId()}
+      metaById={metaById()}
       onLeave={leaveAndGoDashboard}
     />
   </div>

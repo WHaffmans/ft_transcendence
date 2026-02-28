@@ -9,8 +9,8 @@
 	import DeleteAccountModal from './DeleteAccountModal.svelte';
 
 	// Reactive store values
-	const avatar = $derived($userStore?.avatar_url ?? '');
-	const nickname = $derived($userStore?.name ?? '');
+	let avatar = $derived($userStore?.avatar_url ?? '');
+	let nickname = $derived($userStore?.name ?? '');
 
 	// Sub-modal routing
 	let activeSubModal: 'avatar' | 'nickname' | 'delete' | null = $state(null);

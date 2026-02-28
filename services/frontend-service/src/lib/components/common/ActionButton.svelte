@@ -11,7 +11,7 @@
 
 	let { text, variant = 'primary', disabled = false, onclick, class: className = '' }: Props = $props();
 
-	const variantStyles = $derived.by(() => {
+	const variantStyles = $derived(() => {
 		if (variant === 'destructive') {
 			return {
 				bg: 'bg-[#f36]',
@@ -28,7 +28,7 @@
 <button
 	{onclick}
 	{disabled}
-	class="w-52.5 h-13.5 {variantStyles.bg} {variantStyles.text} font-bold text-xs rounded-lg transition-all
+	class="w-52.5 h-13.5 {variantStyles().bg} {variantStyles().text} font-bold text-xs rounded-lg transition-all
 		{disabled ? 'opacity-40 cursor-not-allowed' : 'hover:-translate-y-0.5 active:translate-y-0'} {className}"
 >
 	{text}
