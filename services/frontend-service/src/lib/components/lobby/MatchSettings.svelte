@@ -3,7 +3,6 @@
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
   import type { Game } from "$lib/types/types";
-  import { userStore } from "$lib/stores/user";
   import { wsStore } from "$lib/stores/ws";
 
   interface Props {
@@ -24,7 +23,6 @@
     sceneById,
   }: Props = $props();
 
-  let userId = $userStore?.id;
   let isTooSmall = $state(false);
   let isTooShort = $state(false);
 
@@ -142,18 +140,9 @@
   function leaveRoom() {
     if (!game) return;
 
-    fetch(`/api/games/${game.id}/leave`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ user_id: userId }),
-    })
-      .then(() => {
-        wsStore.leaveRoom();
-        wsStore.disconnect();
-        goto("/");
-      })
-      .catch((err) => console.error("Error informing backend of leaving the game:", err));
+    wsStore.leaveRoom();
+    wsStore.disconnect();
+    goto("/");
   }
 </script>
 
