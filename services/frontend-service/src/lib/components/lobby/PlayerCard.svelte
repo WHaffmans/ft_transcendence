@@ -17,7 +17,7 @@
 		scene === "game" ? "ready" : "not-ready"
 	);
 
-	const styling = $derived.by(() => {
+	const styling = $derived(() => {
 		switch (status) {
 			case "ready":
 				return {
@@ -38,7 +38,7 @@
 </script>
 
 <div
-  class="backdrop-blur-[10px] bg-black/40 border {styling.borderColor}
+  class="backdrop-blur-[10px] bg-black/40 border {styling().borderColor}
          rounded-2xl w-full h-full min-h-0 relative
          flex items-center justify-center p-6"
 >
@@ -68,8 +68,8 @@
       {player.name}
     </p>
 
-    <div class="{styling.badgeBg} h-6 rounded-xl px-5 flex items-center justify-center">
-      <p class="font-bold {styling.badgeText}">{styling.statusLabel}</p>
+    <div class="{styling().badgeBg} h-6 rounded-xl px-5 flex items-center justify-center">
+      <p class="font-bold {styling().badgeText}">{styling().statusLabel}</p>
     </div>
   </div>
 </div>

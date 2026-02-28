@@ -11,8 +11,8 @@
 	let { player, position, isCurrentUser = false }: Props = $props();
 
 	// Use live store values for the current user, static data for others
-	const displayName = $derived(isCurrentUser ? ($userStore?.name ?? player.name) : player.name);
-	const displayAvatar = $derived(isCurrentUser ? ($userStore?.avatar_url ?? player.avatar_url) : player.avatar_url);
+	let displayName = $derived(isCurrentUser ? ($userStore?.name ?? player.name) : player.name);
+	let displayAvatar = $derived(isCurrentUser ? ($userStore?.avatar_url ?? player.avatar_url) : player.avatar_url);
 
 	// Determine position color based on rank
 	const getPositionColor = (position: number): string => {

@@ -29,10 +29,6 @@
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
 			});
-			if (res.status === 404) {
-				gameRecord = null;
-				return;
-			}
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			gameRecord = await res.json();
 		} catch (err) {
@@ -40,10 +36,10 @@
 		}
 	}
 
-	const userDirectory = $derived.by(() => {
+	const userDirectory = $derived(() => {
 		const map = new Map<string, User>();
 		for (const u of gameRecord?.users ?? []) map.set(String(u.id), u);
-		return map;
+		return (map);
 	});
 
 
@@ -51,14 +47,14 @@
 	/*                           WS / LIVE ROOM STATE                         */
 	/* ====================================================================== */
 
-	const liveRoomState = $derived($wsStore.latestState);
-	const roomPlayerIdsLive = $derived(liveRoomState?.playerIds ?? []);
-	const sceneByIdLive = $derived(liveRoomState?.sceneById ?? {});
-	const lastRoomClosed = $derived($wsStore.lastRoomClosed);
+	const liveRoomState = $derived(() => $wsStore.latestState);
+	const roomPlayerIdsLive = $derived(() => liveRoomState()?.playerIds ?? []);
+	const sceneByIdLive = $derived(() => liveRoomState()?.sceneById ?? {});
+	const lastRoomClosed = $derived(() => $wsStore.lastRoomClosed);
 
-	const playersInRoom = $derived(
-		roomPlayerIdsLive
-			.map((id) => userDirectory.get(String(id)))
+	const playersInRoom = $derived(() =>
+		roomPlayerIdsLive()
+			.map((id) => userDirectory().get(String(id)))
 			.filter(Boolean) as User[]
 	);
 
@@ -87,7 +83,7 @@
 		};
 
 		wsStore.createOrJoinRoom(lobbyId, 0, player);
-		const phase = liveRoomState?.phase ?? null;
+		const phase = liveRoomState()?.phase ?? null;
 		if (phase === null || phase === "lobby") {
 			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
   		}
@@ -130,15 +126,11 @@
 		const lobbyId = data.lobbyId;
 		if (!lobbyId) return;
 
-		const ids = roomPlayerIdsLive.map(String).sort();
+		const ids = roomPlayerIdsLive().map(String).sort();
 		const key = ids.join(",");
 		if (key === lastRosterKey) return;
 
 		lastRosterKey = key;
-
-		// Don't re-fetch if the lobby is empty (player was kicked/left)
-		if (ids.length === 0) return;
-
 		loadGameRecord(lobbyId);
 	});
 
@@ -148,7 +140,7 @@
 	$effect(() => {
 		if (didRedirect) return;
 
-		const ids = roomPlayerIdsLive;
+		const ids = roomPlayerIdsLive();
 		if (ids.length === 0) return; // no state yet
 
 		const userId = String($userStore?.id ?? "");
@@ -167,7 +159,7 @@
 	*/
 	$effect(() => {
 		const lobbyId = data.lobbyId;
-		const closed = lastRoomClosed;
+		const closed = lastRoomClosed();
 
 		if (!lobbyId || !closed) return;
 		if (String(closed.roomId) !== String(lobbyId)) return;
@@ -182,34 +174,16 @@
 	});
 
 	/**
-	 * Determine when to leave lobby.
-	 *
-	 * `redirectTarget` is a derived value that recomputes whenever the live
-	 * phase or backend status changes.  The effect only fires when the
-	 * *target itself* changes (null → "/game/..." etc.), which avoids
-	 * the old loop where every WS tick re-ran willRedirect().
+	 * Determine when to leave lobby 
 	 */
 	let didRedirect = false;
-
-	const redirectTarget = $derived.by(() => {
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return null;
-
-		const livePhase = liveRoomState?.phase ?? null;
-		const backendStatus: GameStatus | null =
-			(gameRecord?.status as GameStatus | undefined) ?? null;
-
-		if (!livePhase && !backendStatus) return null;
-		return redirectTo({ livePhase, backendStatus });
-	});
-
 	$effect(() => {
 		if (didRedirect) return;
-		const target = redirectTarget;
-		if (!target) return;
 
-		didRedirect = true;
-		goto(target, { replaceState: true });
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		willRedirect();
 	});
 
 	onMount(async () => {
@@ -220,8 +194,7 @@
 			lastLoadedLobbyId = lobbyId;
 			await loadGameRecord(lobbyId);
 		}
-		// After loading, the derived `redirectTarget` will recompute
-		// and the effect above will handle the redirect if needed.
+		willRedirect();
 	});
 
 	/* ====================================================================== */
@@ -256,6 +229,33 @@
 	/* ====================================================================== */
 	/*                                HELPERS                                 */
 	/* ====================================================================== */
+
+	function willRedirect() {
+		if (didRedirect) return;
+
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return;
+
+		// Refresh REST record
+		// loadGameRecord(lobbyId);
+
+		const livePhase = liveRoomState()?.phase ?? null;
+		const backendStatus: GameStatus | null = (gameRecord?.status as GameStatus | undefined) ?? null;
+
+		console.log("lobby.willRedirect", {
+			live: liveRoomState?.(),
+			livePhase: livePhase,
+			backendStatus: backendStatus,
+		});
+
+		if (!livePhase && !backendStatus) return;
+
+		const target = redirectTo({ livePhase, backendStatus });
+		if (target) {
+			didRedirect = true;
+			goto(target, { replaceState: true });
+		}
+	}
 
 	function redirectTo(opts: {
 		livePhase: GamePhase | null;
@@ -292,10 +292,10 @@
 	<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:justify-start">
 		<!-- Left Section - Player Slots -->
 		<LobbyGrid>
-			{#each playersInRoom as player (player.id)}
+			{#each playersInRoom() as player (player.id)}
 				<PlayerCard
 					{player}
-					scene={sceneByIdLive[String(player.id)] ?? "lobby"}
+					scene={sceneByIdLive()[String(player.id)] ?? "lobby"}
 				/>
 			{/each}
 		</LobbyGrid>
@@ -304,10 +304,10 @@
 		<div class="w-full lg:w-ranking shrink-0">
 				<MatchSettings
 				game={gameRecord!}
-				playerCount={playersInRoom.length}
+				playerCount={playersInRoom().length}
 				lobbyId={data.lobbyId}
 				playerId={String($userStore?.id ?? '')}
-				sceneById={sceneByIdLive}
+				sceneById={sceneByIdLive()}
 			/>
 		</div>
 	</div>
