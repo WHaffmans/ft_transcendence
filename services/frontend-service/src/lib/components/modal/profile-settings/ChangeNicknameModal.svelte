@@ -12,9 +12,9 @@
 
 	let saving = $state(false);
 	let draftOverride: string | null = $state(null);
-	let draftNickname = $derived(draftOverride ?? currentNickname);
+	const draftNickname = $derived(draftOverride ?? currentNickname);
 
-	let hasChanged = $derived(
+	const hasChanged = $derived(
 		draftNickname.trim() !== '' && draftNickname.trim() !== currentNickname
 	);
 
