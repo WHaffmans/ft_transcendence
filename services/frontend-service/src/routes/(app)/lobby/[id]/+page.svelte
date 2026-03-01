@@ -29,6 +29,10 @@
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
 			});
+			if (res.status === 404) {
+				gameRecord = null;
+				return;
+			}
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			gameRecord = await res.json();
 		} catch (err) {
@@ -131,6 +135,10 @@
 		if (key === lastRosterKey) return;
 
 		lastRosterKey = key;
+
+		// Don't re-fetch if the lobby is empty (player was kicked/left)
+		if (ids.length === 0) return;
+
 		loadGameRecord(lobbyId);
 	});
 
@@ -174,16 +182,34 @@
 	});
 
 	/**
-	 * Determine when to leave lobby 
+	 * Determine when to leave lobby.
+	 *
+	 * `redirectTarget` is a derived value that recomputes whenever the live
+	 * phase or backend status changes.  The effect only fires when the
+	 * *target itself* changes (null → "/game/..." etc.), which avoids
+	 * the old loop where every WS tick re-ran willRedirect().
 	 */
 	let didRedirect = false;
+
+	const redirectTarget = $derived.by(() => {
+		const lobbyId = data.lobbyId;
+		if (!lobbyId) return null;
+
+		const livePhase = liveRoomState?.phase ?? null;
+		const backendStatus: GameStatus | null =
+			(gameRecord?.status as GameStatus | undefined) ?? null;
+
+		if (!livePhase && !backendStatus) return null;
+		return redirectTo({ livePhase, backendStatus });
+	});
+
 	$effect(() => {
 		if (didRedirect) return;
+		const target = redirectTarget;
+		if (!target) return;
 
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
-		willRedirect();
+		didRedirect = true;
+		goto(target, { replaceState: true });
 	});
 
 	onMount(async () => {
@@ -194,7 +220,8 @@
 			lastLoadedLobbyId = lobbyId;
 			await loadGameRecord(lobbyId);
 		}
-		willRedirect();
+		// After loading, the derived `redirectTarget` will recompute
+		// and the effect above will handle the redirect if needed.
 	});
 
 	/* ====================================================================== */
@@ -229,33 +256,6 @@
 	/* ====================================================================== */
 	/*                                HELPERS                                 */
 	/* ====================================================================== */
-
-	function willRedirect() {
-		if (didRedirect) return;
-
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
-		// Refresh REST record
-		// loadGameRecord(lobbyId);
-
-		const livePhase = liveRoomState?.phase ?? null;
-		const backendStatus: GameStatus | null = (gameRecord?.status as GameStatus | undefined) ?? null;
-
-		console.log("lobby.willRedirect", {
-			live: liveRoomState,
-			livePhase: livePhase,
-			backendStatus: backendStatus,
-		});
-
-		if (!livePhase && !backendStatus) return;
-
-		const target = redirectTo({ livePhase, backendStatus });
-		if (target) {
-			didRedirect = true;
-			goto(target, { replaceState: true });
-		}
-	}
 
 	function redirectTo(opts: {
 		livePhase: GamePhase | null;
