@@ -141,21 +141,17 @@ export function startPublicWsServer(
 						const config = normalizeConfig(msg.config);
 						const seed = msg.seed;
 
-						
-						rooms.createOrJoinRoom({
-							roomId: msg.roomId,
-							player: msg.player,
-							seed,
-							config,
-						});
-
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.player.playerId;
 
-						rooms.subscribe(boundRoomId, ws);
+						rooms.createOrJoinRoom({
+							roomId: boundRoomId,
+							player: msg.player,
+							seed,
+							config,
+						}, ws);
 
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
-						rooms.broadcastState(boundRoomId);
 						return;
 					}
 
