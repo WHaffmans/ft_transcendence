@@ -35,6 +35,7 @@
 
   async function leaveAndGoDashboard() {
     if (didLeave) return;
+    console.log("[game] leaveAndGoDashboard");
     didLeave = true;
 
     stopLocal();
@@ -129,6 +130,7 @@
    * ========================================================================== */
   function handleCountdownEnd() {
     if (isHost && $wsStore.status === "open" && $wsStore.roomId) {
+      console.log("[game] handleCountdownEnd — host starting game");
       wsStore.startGame();
     }
   }
@@ -171,6 +173,7 @@
     if (!roomId || !closed) return;
     if (String(closed.roomId) !== String(roomId)) return;
 
+    console.log("[game] room closed → leaving", { roomId: closed.roomId, reason: closed.reason });
     toast.info(closed.reason || "The game was closed.");
     leaveAndGoDashboard();
   });
@@ -180,6 +183,9 @@
    * ========================================================================== */
   onMount(() => {
     if (!canvas) return;
+    const roomId = $wsStore.roomId;
+    const playerId = $wsStore.playerId;
+    console.log("[game] onMount", { roomId, playerId });
 
     const renderer = createCanvasRenderer(canvas, {
       w: 806,
@@ -196,8 +202,6 @@
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    const roomId = $wsStore.roomId;
-    const playerId = $wsStore.playerId;
     if (roomId && playerId) {
       wsStore.updatePlayerScene(roomId, playerId, "game");
     }
@@ -206,6 +210,7 @@
   });
 
   onDestroy(() => {
+    console.log("[game] onDestroy", { didLeave });
     stopLocal();
     if (!didLeave) {
       didLeave = true;
