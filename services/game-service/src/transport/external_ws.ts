@@ -181,6 +181,7 @@ export function startPublicWsServer(
 				: null;
 
 			if (authenticatedUserId && claimedPlayerId && claimedPlayerId !== authenticatedUserId) {
+				console.log("[ws:transport] auth mismatch — closing", { authenticatedUserId, claimedPlayerId });
 				safeSendServer(ws, {
 					type: "error",
 					message: "Player ID does not match authenticated user",
@@ -193,6 +194,7 @@ export function startPublicWsServer(
 			try {
 				switch (msg.type) {
 					case "create_or_join_room": {
+						console.log("[ws:transport] recv create_or_join_room", { roomId: msg.roomId, playerId: msg.player.playerId });
 
 						// Check for other room subcription
 						if (boundRoomId && boundRoomId !== msg.roomId) {
@@ -237,6 +239,7 @@ export function startPublicWsServer(
 					}
 
 					case "start_game": {
+						console.log("[ws:transport] recv start_game", { roomId: msg.roomId, boundPlayerId });
 						if (!boundRoomId || !boundPlayerId) {
 							throw new Error("Must join_room first");
 						}
@@ -258,6 +261,7 @@ export function startPublicWsServer(
 					}
 
 					case "leave_room": {
+						console.log("[ws:transport] recv leave_room", { roomId: msg.roomId, playerId: msg.playerId });
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
@@ -287,6 +291,7 @@ export function startPublicWsServer(
 						assertNever(msg);
 				}
 			} catch (e) {
+				console.log("[ws:transport] message handling error", { type: msg.type, error: e instanceof Error ? e.message : String(e) });
 				safeSend(ws, {
 					type: "error",
 					message: e instanceof Error ? e.message : String(e),
@@ -296,6 +301,7 @@ export function startPublicWsServer(
 		});
 
 		ws.on("close", (code, reason) => {
+			console.log(`[ws:transport] close code=${code} reason="${reason.toString()}"`, { boundRoomId, boundPlayerId });
 			if (boundRoomId && boundPlayerId) {
 				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
 			} else {
@@ -303,7 +309,8 @@ export function startPublicWsServer(
 			}
 		});
 
-		ws.on("error", () => {
+		ws.on("error", (err) => {
+			console.log("[ws:transport] error", { boundRoomId, boundPlayerId, error: String(err) });
 			if (boundRoomId && boundPlayerId) {
 				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
 			} else {
