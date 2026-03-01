@@ -1191,8 +1191,8 @@ export class RoomManager {
 			roomId,
 			winnerId,
 		} satisfies ServerMsg;
-		this.broadcastState(roomId);
 		this.broadcast(roomId, msg);
+		this.broadcastState(roomId);
 
 		// Persist game with new ratings
 		try {
