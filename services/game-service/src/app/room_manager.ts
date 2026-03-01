@@ -199,7 +199,7 @@ export class RoomManager {
 	/**
 	 * Get current room, or create new room
 	 */
-	private ensureRoom(args: {
+	public ensureRoom(args: {
 		roomId: string;
 		seed: number;
 		config: GameConfig;
