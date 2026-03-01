@@ -850,6 +850,10 @@ export class RoomManager {
 		// AFK timer: ready -> stop, unready -> start
 		if (scene === "game") {
 			this.stopAfkTimer(room, playerId);
+			this.broadcast(roomId, {
+				type: "afk_timer", roomId, playerId,
+				secondsLeft: 0, deadlineAtMs: 0,
+			});
 		} else if (scene === "lobby" && room.phase === "lobby") {
 			this.startAfkTimer(roomId, playerId);
 		}
