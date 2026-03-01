@@ -8,6 +8,8 @@ import {
 	type ClientMsg,
 	type ServerMsg,
 	PlayerSchema,
+	WS_CLOSE_NORMAL,
+	WS_CLOSE_LABELS,
 } from "@ft/game-ws-protocol";
 
 
@@ -216,7 +218,8 @@ function createWebSocketStore() {
 		}
 
 		ws.onclose = (e) => {
-			console.log("WS close", e.code, e.reason);
+			const label = WS_CLOSE_LABELS[e.code] ?? "unknown";
+			console.log(`WS close: code=${e.code} (${label}), reason="${e.reason}"`);
 			ws = null;
 			update((s) => ({ ...s, status: "disconnected" }));
 		};
@@ -239,7 +242,7 @@ function createWebSocketStore() {
 	}
 
 	function disconnect() {
-		ws?.close();
+		ws?.close(WS_CLOSE_NORMAL, "client disconnect");
 		ws = null;
 
 		set({
