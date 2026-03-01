@@ -13,7 +13,7 @@
 	let saving = $state(false);
 
 	let draftOverride: string | null = $state(null);
-	let draftAvatarUrl = $derived(draftOverride ?? currentAvatar);
+	const draftAvatarUrl = $derived(draftOverride ?? currentAvatar);
 	let avatarLoadError = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();
 	let selectedFile: File | null = $state(null);

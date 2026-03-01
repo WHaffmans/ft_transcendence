@@ -700,9 +700,14 @@ export class RoomManager {
 	 * Leave `lobby` or `game`
 	 */
 	public onPlayerDisconnected(roomId: string, playerId: string, ws: WebSocket, meta: any) {
-		const room = this.getRoomOrThrow(roomId);
+		const room = this.rooms.get(roomId);
 
 		this.unsubscribe(roomId, ws);
+
+		if (!room) {
+			logInfo("room.player_disconnected_after_close", { roomId, playerId, reason: meta });
+			return;
+		}
 
 		logInfo("room.player_disconnected", {
 			roomId,
@@ -801,7 +806,8 @@ export class RoomManager {
 	 * Remove a web socket from list of subscribers
 	 */
 	unsubscribe(roomId: string, ws: WebSocket) {
-		const room = this.getRoomOrThrow(roomId);
+		const room = this.rooms.get(roomId);
+		if (!room) return;
 		
 		const before = room.subscribers.size;
 		room.subscribers.delete(ws);
