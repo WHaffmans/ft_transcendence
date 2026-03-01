@@ -47,6 +47,6 @@ Route::get('online-users', function () {
     return DB::table(config('session.table'))
         ->whereNotNull('user_id')
         ->where('last_activity', '>=', now()->subMinutes(5)->getTimestamp())
-        ->distinct('user_id')
-        ->count();
+        ->distinct()
+        ->count('user_id');
 });
