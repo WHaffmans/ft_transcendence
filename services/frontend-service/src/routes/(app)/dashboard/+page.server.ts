@@ -85,16 +85,18 @@ export const load = (async ({ fetch, parent }) => {
     const lastGameId = completedGames[0]?.id;
     const fetches: Promise<Response>[] = [
         fetch('/api/leaderboard'),
-        fetch('/api/users')
+        fetch('/api/users'),
+        fetch('/api/online-users')
     ];
     if (lastGameId) {
         fetches.push(fetch(`/api/games/${lastGameId}`));
     }
 
-    const [leaderboardRes, allUsersRes, lastGameRes] = await Promise.all(fetches);
+    const [leaderboardRes, allUsersRes, onlineUsersRes, lastGameRes] = await Promise.all(fetches);
 
     const leaderboard = leaderboardRes.ok ? await leaderboardRes.json().catch(() => []) : [];
     const allUsers = allUsersRes.ok ? await allUsersRes.json().catch(() => []) : [];
+    const onlineUsersCount = onlineUsersRes.ok ? await onlineUsersRes.json().catch(() => 0) : 0;
 
     const sortedUsers = allUsers.sort((a: User, b: User) => (b.rating ?? 0) - (a.rating ?? 0));
     const userPosition = sortedUsers.findIndex((u: User) => u.id === user.id) + 1;
@@ -115,6 +117,7 @@ export const load = (async ({ fetch, parent }) => {
         ratingHistory,
         userPosition,
         totalPlayers,
+        onlineUsersCount,
         completedGameIds: completedGames.map((g) => g.id)
     };
 }) satisfies ServerLoad;

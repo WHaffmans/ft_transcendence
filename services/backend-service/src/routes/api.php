@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CookiePassportAuth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\InternalAuthMiddleware;
@@ -18,6 +19,7 @@ Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(func
     });
 });
 
+// External API routes (require authentication)
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
@@ -28,11 +30,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', function (Request $request) {
         return app(\App\Http\Controllers\UserController::class)->show($request->user());
     });
-
 });
 
-Route::get('/verify', fn () => response()->json(['message' => 'Authenticated'], 200, ['X-User-Id' => auth()->id()]))->middleware(['cookie.passport', 'auth:api']);
-
+// External API route to verify authentication (for frontend)
+Route::get('/verify', fn() => response()->json(['message' => 'Authenticated'], 200, ['X-User-Id' => auth()->id()]))->middleware(['cookie.passport', 'auth:api']);
 
 Route::post('users/{user}/avatar', [AvatarController::class, 'upload'])->middleware('auth:api');
 Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);
@@ -44,3 +45,10 @@ Route::get('leaderboard', function (Request $request) {
         ->get();
 });
 
+Route::get('online-users', function () {
+    return DB::table(config('session.table'))
+        ->whereNotNull('user_id')
+        ->where('last_activity', '>=', now()->subMinutes(5)->getTimestamp())
+        ->distinct('user_id')
+        ->count();
+});
