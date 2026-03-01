@@ -26,7 +26,7 @@ import { replaceTimeout, replaceInterval, replaceMapTimeout } from "./timers.js"
 import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 
 // External
-import { ServerMsgSchema, type ServerMsg } from "@ft/game-ws-protocol";
+import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 
 
@@ -578,6 +578,11 @@ export class RoomManager {
 
 		for (const ws of room.subscribers) {
 			safeSend(ws, { type: "room_closed", roomId, reason });
+			// Close the socket with a proper application close code so the
+			// client can distinguish "room closed" from unexpected disconnects.
+			if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) {
+				ws.close(WS_CLOSE_ROOM_CLOSED, reason.slice(0, 123));
+			}
 		}
 
 		this.rooms.delete(roomId);

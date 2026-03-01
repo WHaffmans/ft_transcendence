@@ -12,6 +12,7 @@
 
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
+import type { IncomingMessage } from "http";
 import type { GameConfig } from "../engine/config.js";
 import { DEFAULT_CONFIG } from "../engine/config.js";
 import { RoomManager } from "../app/room_manager.js";
@@ -24,8 +25,22 @@ import {
 	ClientMsgSchema,
 	type ClientMsg,
 	ServerMsgSchema,
-	type ServerMsg
+	type ServerMsg,
+	WS_CLOSE_AUTH_FAILURE,
+	WS_CLOSE_ROOM_FULL,
+	WS_CLOSE_INVALID_MSG,
 } from "@ft/game-ws-protocol";
+
+// ---------------------
+// heartbeat
+// ---------------------
+
+const HEARTBEAT_INTERVAL_MS = 30_000;
+
+/** Extends the ws WebSocket with a liveness flag for heartbeat tracking. */
+interface AliveWebSocket extends WebSocket {
+	isAlive: boolean;
+}
 
 // ---------------------
 // helpers
@@ -93,8 +108,47 @@ export function startPublicWsServer(
 
 	const wss: WebSocketServer = new WebSocketServer(wsOptions);
 
-	wss.on("connection", (ws) => {
-		console.log("public WS: client connected");
+	// ── Heartbeat ──────────────────────────────────────────────────────────
+	// Every HEARTBEAT_INTERVAL_MS, ping all clients.  If a client has not
+	// responded with a pong since the last cycle, terminate the connection
+	// (it is likely a zombie from a silent network drop).
+	const heartbeat = setInterval(() => {
+		for (const client of wss.clients) {
+			const alive = client as AliveWebSocket;
+			if (!alive.isAlive) {
+				console.log("heartbeat: terminating unresponsive client");
+				alive.terminate();
+				continue;
+			}
+			alive.isAlive = false;
+			alive.ping();
+		}
+	}, HEARTBEAT_INTERVAL_MS);
+
+	wss.on("close", () => {
+		clearInterval(heartbeat);
+	});
+
+	// ── Connection handler ─────────────────────────────────────────────────
+	wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
+
+		// -- Heartbeat bookkeeping --
+		const alive = ws as AliveWebSocket;
+		alive.isAlive = true;
+		ws.on("pong", () => { alive.isAlive = true; });
+
+		// -- Auth: extract user id set by gateway's forwardAuth middleware --
+		const headerVal = req.headers["x-user-id"];
+		const authenticatedUserId: string | null =
+			typeof headerVal === "string" ? headerVal
+			: Array.isArray(headerVal) ? headerVal[0] ?? null
+			: null;
+
+		if (!authenticatedUserId) {
+			console.warn("public WS: client connected WITHOUT X-User-Id header (direct connection or gateway misconfiguration)");
+		} else {
+			console.log(`public WS: client connected (userId=${authenticatedUserId})`);
+		}
 
 		let boundRoomId: string | null = null;
 		let boundPlayerId: string | null = null;
@@ -119,12 +173,21 @@ export function startPublicWsServer(
 
 			const msg: ClientMsg = parsed.data;
 
-			// ! Log all incomming traffic
-			// console.log("IN", {
-			// 	type: msg.type,
-			// 	roomId: "roomId" in msg ? msg.roomId : undefined,
-			// 	playerId: "playerId" in msg ? msg.playerId : undefined,
-			// });
+			// -- Auth: verify playerId matches the authenticated user --
+			// Extract playerId from whichever field the message uses.
+			const claimedPlayerId =
+				"player" in msg ? String(msg.player.playerId)
+				: "playerId" in msg ? String(msg.playerId)
+				: null;
+
+			if (authenticatedUserId && claimedPlayerId && claimedPlayerId !== authenticatedUserId) {
+				safeSendServer(ws, {
+					type: "error",
+					message: "Player ID does not match authenticated user",
+				} satisfies ServerMsg);
+				ws.close(WS_CLOSE_AUTH_FAILURE, "Player ID mismatch");
+				return;
+			}
 
 			// Handle messages
 			try {
@@ -243,7 +306,6 @@ export function startPublicWsServer(
 		ws.on("error", () => {
 			if (boundRoomId && boundPlayerId) {
 				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
-
 			} else {
 				rooms.unsubscribeAll(ws);
 			}
