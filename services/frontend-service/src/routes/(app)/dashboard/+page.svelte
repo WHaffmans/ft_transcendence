@@ -51,7 +51,7 @@
           Ready to Curve?
         </h2>
         <p class="mb-10 text-sm font-bold text-neutral-400">
-          Global Server • {data.totalPlayers ?? 0} Players Ranked
+          Global Server • {data.totalPlayers ?? 0} Players Ranked • {data.onlineUsersCount ?? 0} Online
         </p>
 
         <button
