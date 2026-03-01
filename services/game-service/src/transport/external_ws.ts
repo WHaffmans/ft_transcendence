@@ -144,23 +144,12 @@ export function startPublicWsServer(
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.player.playerId;
 
-						// Ensure room exists, subscribe, then join - so the
-						// player's WS receives broadcasts fired during join
-						// (e.g. afk_timer, state).
-						rooms.ensureRoom({
-							roomId: boundRoomId,
-							seed,
-							config,
-							hostId: boundPlayerId,
-						});
-						rooms.subscribe(boundRoomId, ws);
-
 						rooms.createOrJoinRoom({
 							roomId: boundRoomId,
 							player: msg.player,
 							seed,
 							config,
-						});
+						}, ws);
 
 						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
 						return;

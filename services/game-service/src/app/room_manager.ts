@@ -199,7 +199,7 @@ export class RoomManager {
 	/**
 	 * Get current room, or create new room
 	 */
-	public ensureRoom(args: {
+	private ensureRoom(args: {
 		roomId: string;
 		seed: number;
 		config: GameConfig;
@@ -276,14 +276,16 @@ export class RoomManager {
 	}
 
 	/**
-	 * Will create a room if nonexistent, otherwise join
+	 * Will create a room if nonexistent, otherwise join.
+	 * If 'ws' is provided, subscribes it before adding the player
+	 * so the joining client receives broadcasts fired during join.
 	 */
 	public createOrJoinRoom(args: {
 		roomId: string;
 		player: Player;
 		seed: number;
 		config: GameConfig;
-	}): Room {
+	}, ws?: WebSocket): Room {
 
 		const existedBefore = this.rooms.has(args.roomId);
 
@@ -293,6 +295,8 @@ export class RoomManager {
 			config: args.config,
 			hostId: args.player.playerId,
 		});
+
+		if (ws) this.subscribe(args.roomId, ws);
 
 		const beforeCount = room.players.length;
 		const alreadyMember = !!this.getPlayer(room, args.player.playerId);
