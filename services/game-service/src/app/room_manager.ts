@@ -276,14 +276,16 @@ export class RoomManager {
 	}
 
 	/**
-	 * Will create a room if nonexistent, otherwise join
+	 * Will create a room if nonexistent, otherwise join.
+	 * If 'ws' is provided, subscribes it before adding the player
+	 * so the joining client receives broadcasts fired during join.
 	 */
 	public createOrJoinRoom(args: {
 		roomId: string;
 		player: Player;
 		seed: number;
 		config: GameConfig;
-	}): Room {
+	}, ws?: WebSocket): Room {
 
 		const existedBefore = this.rooms.has(args.roomId);
 
@@ -293,6 +295,8 @@ export class RoomManager {
 			config: args.config,
 			hostId: args.player.playerId,
 		});
+
+		if (ws) this.subscribe(args.roomId, ws);
 
 		const beforeCount = room.players.length;
 		const alreadyMember = !!this.getPlayer(room, args.player.playerId);
@@ -851,6 +855,10 @@ export class RoomManager {
 		// AFK timer: ready -> stop, unready -> start
 		if (scene === "game") {
 			this.stopAfkTimer(room, playerId);
+			this.broadcast(roomId, {
+				type: "afk_timer", roomId, playerId,
+				secondsLeft: 0, deadlineAtMs: 0,
+			});
 		} else if (scene === "lobby" && room.phase === "lobby") {
 			this.startAfkTimer(roomId, playerId);
 		}

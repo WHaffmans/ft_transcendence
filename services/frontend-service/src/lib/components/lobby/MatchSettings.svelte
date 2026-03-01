@@ -86,7 +86,7 @@
 
   const myScene = $derived(sceneById[playerId] ?? "lobby");
   const isReady = $derived(myScene === "game");
-  const canReady = $derived(playerCount >= 2 && !isTooSmall && !isTooShort);
+  const canReady = $derived(!isTooSmall && !isTooShort);
 
   function toggleReady() {
     if (!isReady && !canReady) return;
