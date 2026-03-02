@@ -287,6 +287,9 @@ function createWebSocketStore() {
 		console.log("[ws] disconnect");
 		ws?.close(WS_CLOSE_NORMAL, "client disconnect");
 		ws = null;
+		lastLoggedPhase = null;
+		lastLoggedLobbyTimer = null;
+		lastLoggedAfkTimer = null;
 
 		set({
 			status: "disconnected",
