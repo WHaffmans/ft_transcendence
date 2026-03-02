@@ -83,6 +83,8 @@ function createWebSocketStore() {
 	const { subscribe, set, update } = store;
 	let ws: WebSocket | null = null;
 	let lastLoggedPhase: string | null = null;
+	let lastLoggedLobbyTimer: number | null = null;
+	let lastLoggedAfkTimer: number | null = null;
 
 
 	/* ========================================================================== */
@@ -148,9 +150,19 @@ function createWebSocketStore() {
 			} else if (msg.type === "room_closed") {
 				console.log("[ws] recv room_closed", { roomId: msg.roomId, reason: msg.reason });
 			} else if (msg.type === "lobby_timer") {
-				console.log("[ws] recv lobby_timer", { secondsLeft: msg.secondsLeft });
+				const isStart = lastLoggedLobbyTimer === null && msg.secondsLeft > 0;
+				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+				if (isStart || isStop) {
+					console.log("[ws] recv lobby_timer", { secondsLeft: msg.secondsLeft });
+				}
+				lastLoggedLobbyTimer = isStop ? null : msg.secondsLeft;
 			} else if (msg.type === "afk_timer") {
-				console.log("[ws] recv afk_timer", { playerId: msg.playerId, secondsLeft: msg.secondsLeft });
+				const isStart = lastLoggedAfkTimer === null && msg.secondsLeft > 0;
+				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+				if (isStart || isStop) {
+					console.log("[ws] recv afk_timer", { playerId: msg.playerId, secondsLeft: msg.secondsLeft });
+				}
+				lastLoggedAfkTimer = isStop ? null : msg.secondsLeft;
 			} else if (msg.type === "joined") {
 				console.log("[ws] recv joined", { roomId: msg.roomId, playerId: msg.playerId });
 			} else if (msg.type === "left") {
