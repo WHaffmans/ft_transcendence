@@ -266,7 +266,8 @@ function createWebSocketStore() {
 			return;
 		}
 
-		console.log("[ws] send:", parsed.data);
+		// --- Per tick input logging, disabled by default ---
+		// console.log("[ws] send:", parsed.data);
 		ws.send(JSON.stringify(parsed.data));
 	}
 
