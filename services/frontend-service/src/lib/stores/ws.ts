@@ -256,7 +256,7 @@ function createWebSocketStore() {
 		ws.onerror = (e) => {
 			console.log("[ws] error", e);
 			update((s) => ({ ...s, status: "error" }));
-		}
+		};
 
 		ws.onclose = (e) => {
 			const label = WS_CLOSE_LABELS[e.code] ?? "unknown";
