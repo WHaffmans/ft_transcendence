@@ -347,7 +347,6 @@ function createWebSocketStore() {
 			...s,
 			roomId,
 			playerId: player.playerId,
-			playersById: { ...s.playerMetaById, [String(player.playerId)]: player },
 	}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
