@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/02 11:40:23 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/02 17:38:48 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 // External
 import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
+import type { GameStateSnapshot } from "@ft/game-ws-protocol";
 
 
 const MIN_PLAYERS = 2;
@@ -341,7 +342,15 @@ export class RoomManager {
 		});
 
 		if (ws) {
-			safeSend(ws, { type: "state", snapshot: this.makeSnapshot(room) } satisfies ServerMsg);
+			const pid = args.player.playerId;
+			const isRejoinDuringGame =
+				(room.phase === "running" || room.phase === "ready") &&
+				room.allPlayers.some((p) => p.playerId === pid);
+
+			safeSend(ws, {
+				type: "state",
+				snapshot: this.makeSnapshot(room, { fullSegments: isRejoinDuringGame }),
+			} satisfies ServerMsg);
 		}
 
 		return (room);
@@ -1062,12 +1071,19 @@ export class RoomManager {
 	}
 
 	/**
-	 * Make snapshot with correct types
+	 * Make snapshot with correct types.
 	 */
-	private makeSnapshot(room: Room) {
-
+	private makeSnapshot(
+		room: Room,
+		{ fullSegments = false }: { fullSegments?: boolean } = {},
+	): GameStateSnapshot {
 		const segs = room.state.segments;
-		const start = Math.max(0, segs.length - room.config.segmentSendCount);
+		const start = fullSegments
+			? 0
+			: Math.max(0, segs.length - room.config.segmentSendCount);
+
+		const segmentsMode: GameStateSnapshot["segmentsMode"] =
+    		fullSegments ? "full" : "delta";
 
 		return {
 			phase: room.phase,
@@ -1099,6 +1115,8 @@ export class RoomManager {
 				color: s.color,
 				isGap: s.isGap,
 			})),
+			segmentsMode,
+			segmentsStartI: start,
 
 			roomId: room.roomId,
 		};
