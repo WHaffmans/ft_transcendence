@@ -17,12 +17,12 @@
   };
 </script>
 
-<section class="flex flex-col items-center w-150 shrink-0">
+<section class="flex flex-col items-center w-full max-w-150 shrink-0 px-4">
   <!-- Logo and Subtitle Frame -->
-  <header class="relative w-150 h-81.75 mb-8">
+  <header class="relative w-full max-w-150 aspect-[600/327] mb-8">
     <!-- Subtitle (overlaps under logo) -->
     <p
-      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[24px] font-medium tracking-[-1.2px] whitespace-nowrap"
+      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[clamp(14px,3.5vw,24px)] font-medium tracking-[-1.2px] whitespace-nowrap"
     >
       {subtitle}
     </p>
@@ -37,7 +37,7 @@
   <!-- Primary call to action -->
   <button
     onclick={handleLogin}
-    class="bg-white text-black font-bold text-[18px] px-16.75 py-5.25 rounded-xl shadow-button ease-out w-75 h-16 flex items-center justify-center cursor-pointer"
+    class="bg-white text-black font-bold text-[18px] px-16.75 py-5.25 rounded-xl shadow-button ease-out w-75 max-w-full h-16 flex items-center justify-center cursor-pointer"
   >
     Login
   </button>
