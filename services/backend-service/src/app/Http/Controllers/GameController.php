@@ -142,7 +142,7 @@ class GameController extends Controller
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
         ]);
-        
+
         if ($game->status !== "pending") {
             return response()->json(null, status: 200);
         }
@@ -165,14 +165,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    /**
-     * Ready a game.
-     *
-     * Marks a game as ready to start. Requires at least 2 players.
-     *
-     * @response 200 scenario="Success" {"id": "uuid", "status": "ready", "users": [{"id": 1, "name": "John"}]}
-     * @response 400 scenario="Not enough players" {"message": "Not enough players to start the game."}
-     */
+    //unused
     public function readyGame(Request $request, Game $game)
     {
         // if ($game->status !== 'pending') {
@@ -198,9 +191,9 @@ class GameController extends Controller
      */
     public function startGame(Request $request, Game $game)
     {
-        // if ($game->status !== 'ready') {
-        //     return response()->json(['message' => 'Game must be in ready state to start.'], 400);
-        // }
+        if ($game->status !== 'pending') {
+            return response()->json(['message' => 'Game must be in pending state to start.'], 400);
+        }
 
         $game->status = 'active';
         $game->save();
@@ -218,9 +211,9 @@ class GameController extends Controller
      */
     public function finishGame(FinishGameRequest $request, Game $game)
     {
-        // if ($game->status !== 'active') {
-        //     return response()->json(['message' => 'Game must be active to finish.'], 400);
-        // }
+        if ($game->status !== 'active') {
+            return response()->json(['message' => 'Game must be active to finish.'], 400);
+        }
 
         $game->status = 'completed';
         $game->save();
