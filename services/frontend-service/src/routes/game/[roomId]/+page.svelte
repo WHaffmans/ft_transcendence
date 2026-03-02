@@ -56,10 +56,12 @@
    * ========================================================================== */
   const snapshot = $derived($wsStore.latestState);
   const phase = $derived(snapshot?.phase ?? null);
-
-  const showStartOverlay = $derived(phase === "lobby" || phase === "ready");
+  const hasAnySegments = $derived(($wsStore.segments?.length ?? 0) > 0);
 
   const showFinishedOverlay = $derived(phase === "finished");
+  const showStartOverlay = $derived(
+    (phase === "lobby" || phase === "ready") && !hasAnySegments
+  );
 
   const isHost = $derived.by(() => {
     const s = snapshot;

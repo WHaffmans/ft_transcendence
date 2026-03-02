@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/26 10:20:22 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/02 11:27:02 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,6 +275,13 @@ export function startPublicWsServer(
 							throw new Error("Must join_room first");
 						}
 
+						const room = rooms.get(boundRoomId);
+						if (!room) return;
+
+						// Reject input if not bound
+						if (!rooms.isBoundSocket(boundRoomId, boundPlayerId, ws))
+							return;
+
 						rooms.pushInput({
 							roomId: boundRoomId,
 							playerId: boundPlayerId,
@@ -297,7 +304,7 @@ export function startPublicWsServer(
 
 		ws.on("close", (code, reason) => {
 			if (boundRoomId && boundPlayerId) {
-				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
+				rooms.onPlayerSocketLost(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
 			} else {
 				rooms.unsubscribeAll(ws);
 			}
@@ -305,7 +312,7 @@ export function startPublicWsServer(
 
 		ws.on("error", () => {
 			if (boundRoomId && boundPlayerId) {
-				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
+				rooms.onPlayerSocketLost(boundRoomId, boundPlayerId, ws, {});
 			} else {
 				rooms.unsubscribeAll(ws);
 			}

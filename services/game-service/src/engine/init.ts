@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:17:53 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/18 09:24:47 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/02 11:47:02 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ export type PlayerState = {
 	alive: boolean;
 	gapTicksLeft: number;		// Leave whole in trail
 	tailSegIndex: number;
-	tailOwnerSeq: number;		// NEW: monotonic sequence number for tail segments
+	tailOwnerSeq: number;		// Sequence number for tail segments
 	color: ColorRGBA;
 };
 
@@ -39,7 +39,7 @@ export type Segment = {
 	x1: number; y1: number;		// start point (previous head position)
 	x2: number; y2: number;		// end point   (new head position)
 	ownerId: string;			// which player created it
-	ownerSeq: number;   // NEW: per-player monotonic sequence
+	ownerSeq: number;			// per-player monotonic sequence
 	color: ColorRGBA;
 	isGap: boolean,
 };
