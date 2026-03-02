@@ -64,9 +64,9 @@ class GameController extends Controller
     {
         $user = $request->user();
 
-        if ($user->games()->where('status', 'active')->exists()) {
-            $activeGame = $user->games()->where('status', 'active')->with('users')->first();
-            return response()->json($activeGame->load('users'));
+        $activeGame = $user->games()->where('status', 'active')->with('users')->first();
+        if ($activeGame !== null) {
+            return response()->json($activeGame);
         }
 
         $open_games = Game::query()->where('status', 'pending')->with('users')->get();
@@ -75,7 +75,7 @@ class GameController extends Controller
         });
 
         if ($applicable->isNotEmpty()) {
-            return response()->json($applicable->first()->load('users'));
+            return response()->json($applicable->first());
         }
 
         $joinable_games = $open_games->filter(function ($game) {
