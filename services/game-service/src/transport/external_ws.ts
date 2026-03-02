@@ -181,7 +181,7 @@ export function startPublicWsServer(
 				: null;
 
 			if (authenticatedUserId && claimedPlayerId && claimedPlayerId !== authenticatedUserId) {
-				console.log("[ws:transport] auth mismatch — closing", { authenticatedUserId, claimedPlayerId });
+				console.warn("[ws:transport] auth mismatch — closing", { authenticatedUserId, claimedPlayerId });
 				safeSendServer(ws, {
 					type: "error",
 					message: "Player ID does not match authenticated user",
@@ -291,7 +291,7 @@ export function startPublicWsServer(
 						assertNever(msg);
 				}
 			} catch (e) {
-				console.log("[ws:transport] message handling error", { type: msg.type, error: e instanceof Error ? e.message : String(e) });
+				console.error("[ws:transport] message handling error", { type: msg.type, error: e instanceof Error ? e.message : String(e) });
 				safeSend(ws, {
 					type: "error",
 					message: e instanceof Error ? e.message : String(e),
@@ -310,7 +310,7 @@ export function startPublicWsServer(
 		});
 
 		ws.on("error", (err) => {
-			console.log("[ws:transport] error", { boundRoomId, boundPlayerId, error: String(err) });
+			console.error("[ws:transport] error", { boundRoomId, boundPlayerId, error: String(err) });
 			if (boundRoomId && boundPlayerId) {
 				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
 			} else {
