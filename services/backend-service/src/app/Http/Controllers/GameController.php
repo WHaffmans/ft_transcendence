@@ -62,13 +62,20 @@ class GameController extends Controller
 
     public function findGame(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->games()->where('status', 'active')->exists()) {
+            $activeGame = $user->games()->where('status', 'active')->with('users')->first();
+            return response()->json($activeGame->load('users'));
+        }
+
         $open_games = Game::query()->where('status', 'pending')->with('users')->get();
-        $applicable = $open_games->filter(function ($game) use ($request) {
-            return $game->users->contains($request->user()->id);
+        $applicable = $open_games->filter(function ($game) use ($user) {
+            return $game->users->contains($user->id);
         });
 
         if ($applicable->isNotEmpty()) {
-            return response()->json($applicable->first());
+            return response()->json($applicable->first()->load('users'));
         }
 
         $joinable_games = $open_games->filter(function ($game) {
@@ -77,13 +84,13 @@ class GameController extends Controller
 
         if (!$joinable_games->isEmpty()) {
             $game = $joinable_games->first();
-            $game->users()->attach($request->user()->id);
+            $game->users()->attach($user->id);
 
             return response()->json($game->load('users'));
         }
 
         $new_game = Game::create(['status' => 'pending']);
-        $new_game->users()->attach($request->user()->id);
+        $new_game->users()->attach($user->id);
 
         return response()->json($new_game->load('users'), 201);
     }
