@@ -1,50 +1,115 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, RequestEvent } from '@sveltejs/kit';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const backendBaseUrl = isProduction 
 	? 'https://backend-service:4443'
 	: 'http://backend-service:4000';
 
+let refreshPromise: Promise<RefreshResult | null> | null = null;
+
+interface RefreshResult {
+	accessToken: string;
+	setCookies: string[];
+}
+
+function cleanResponseHeaders(headers: Headers): Headers {
+	const cleaned = new Headers(headers);
+	cleaned.delete('content-encoding');
+	cleaned.delete('content-length');
+	cleaned.delete('transfer-encoding');
+	return cleaned;
+}
+
+function isProxyPath(pathname: string): boolean {
+	return pathname.startsWith('/api') || pathname.startsWith('/auth') || pathname.startsWith('/storage');
+}
+
+async function refreshAccessToken(refreshToken: string): Promise<RefreshResult | null> {
+	const headers = new Headers();
+	headers.set('host', new URL(backendBaseUrl).host);
+	headers.set('content-type', 'application/json');
+	headers.set('cookie', `refresh_token=${refreshToken}`);
+
+	const response = await fetch(`${backendBaseUrl}/auth/refresh`, {
+		method: 'POST',
+		headers
+	});
+
+	console.log(`[proxy] Refresh token response: ${response.status} ${response.statusText}`);
+
+	if (!response.ok) return null;
+
+	const data = await response.json();
+	return { accessToken: data.access_token, setCookies: response.headers.getSetCookie() };
+}
+
+async function getRefreshResult(refreshToken: string): Promise<RefreshResult | null> {
+	if (!refreshPromise) {
+		refreshPromise = refreshAccessToken(refreshToken).finally(() => {
+			setTimeout(() => { refreshPromise = null; }, 100);
+		});
+	}
+	return refreshPromise;
+}
+
+function createProxyRequest(
+	event: RequestEvent,
+	targetUrl: string,
+	body: ArrayBuffer | undefined,
+	accessToken?: string
+): Promise<Response> {
+	const headers = new Headers(event.request.headers);
+	headers.set('host', new URL(backendBaseUrl).host);
+	if (accessToken) {
+		headers.set('Authorization', `Bearer ${accessToken}`);
+	}
+	return fetch(targetUrl, {
+		method: event.request.method,
+		headers,
+		body,
+		redirect: 'manual'
+	});
+}
+
+function createProxyResponse(backendResponse: Response, extraCookies: string[] = []): Response {
+	const headers = cleanResponseHeaders(backendResponse.headers);
+	for (const cookie of extraCookies) {
+		headers.append('set-cookie', cookie);
+	}
+	return new Response(backendResponse.body, {
+		status: backendResponse.status,
+		statusText: backendResponse.statusText,
+		headers
+	});
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
 
-	if (pathname.startsWith('/api') || pathname.startsWith('/auth') || pathname.startsWith('/storage')) {
-		const targetUrl = `${backendBaseUrl}${pathname}${event.url.search}`;
-		console.log(`[proxy] ${event.request.method} ${targetUrl}`);
-		const headers = new Headers(event.request.headers);
-		headers.set('host', new URL(backendBaseUrl).host);
-
-		const accessToken = event.cookies.get('access_token');
-		if (accessToken && !headers.has('Authorization')) {
-			headers.set('Authorization', `Bearer ${accessToken}`);
-		}
-
-		const requestInit: RequestInit = {
-			method: event.request.method,
-			headers,
-			body: ['GET', 'HEAD'].includes(event.request.method)
-				? undefined
-				: await event.request.arrayBuffer(),
-			redirect: 'manual'
-		};
-
-		const backendResponse = await fetch(targetUrl, requestInit);
-
-		// Node's native fetch auto-decompresses gzip, but leaves the original
-		// Content-Encoding / Content-Length headers intact. Returning those
-		// causes SvelteKit to truncate the (now larger) decompressed body at the
-		// old compressed Content-Length, producing broken JSON for large payloads.
-		const responseHeaders = new Headers(backendResponse.headers);
-		responseHeaders.delete('content-encoding');
-		responseHeaders.delete('content-length');
-		responseHeaders.delete('transfer-encoding');
-
-		return new Response(backendResponse.body, {
-			status: backendResponse.status,
-			statusText: backendResponse.statusText,
-			headers: responseHeaders
-		});
+	if (!isProxyPath(pathname)) {
+		return resolve(event);
 	}
 
-	return resolve(event);
+	const targetUrl = `${backendBaseUrl}${pathname}${event.url.search}`;
+	console.log(`[proxy] ${event.request.method} ${targetUrl}`);
+
+	const body = ['GET', 'HEAD'].includes(event.request.method)
+		? undefined
+		: await event.request.arrayBuffer();
+
+	const accessToken = event.cookies.get('access_token');
+	let response = await createProxyRequest(event, targetUrl, body, accessToken);
+
+	const refreshToken = event.cookies.get('refresh_token');
+	const shouldRefresh = response.status === 401 && pathname !== '/auth/refresh' && refreshToken;
+
+	if (shouldRefresh) {
+		const refreshResult = await getRefreshResult(refreshToken);
+		if (refreshResult) {
+			response = await createProxyRequest(event, targetUrl, body, refreshResult.accessToken);
+			return createProxyResponse(response, refreshResult.setCookies);
+		}
+	}
+
+	return createProxyResponse(response);
 };

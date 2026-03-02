@@ -23,6 +23,9 @@ Route::get('/oauth/initiate', [App\Http\Controllers\Auth\OAuthController::class,
 Route::get('/oauth/callback', [App\Http\Controllers\Auth\OAuthController::class, 'callback'])
     ->name('oauth.callback');
 
+Route::post('/auth/refresh', [App\Http\Controllers\Auth\OAuthController::class, 'refresh'])
+    ->name('auth.refresh');
+
 Route::get('/redirect/{provider}', function ($provider) {
     return Socialite::driver($provider)->redirect();
 })->name('social.redirect');
