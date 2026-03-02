@@ -82,6 +82,9 @@ function createWebSocketStore() {
 
 	const { subscribe, set, update } = store;
 	let ws: WebSocket | null = null;
+	let lastLoggedPhase: string | null = null;
+	let lastLoggedLobbyTimer: number | null = null;
+	let lastLoggedAfkTimer: number | null = null;
 
 
 	/* ========================================================================== */
@@ -94,22 +97,24 @@ function createWebSocketStore() {
 
 		update((s) => ({ ...s, status: "connecting" }));
 		ws = new WebSocket(makeWsUrl());
-		console.log("WS connecting to:", makeWsUrl());
+		console.log("[ws] connecting to:", makeWsUrl());
 
 		ws.onopen = () => {
-			console.log("WS open");
+			console.log("[ws] open");
 			update((s) => ({ ...s, status: "open" }));
 
 			const s = get(store);
 
 			if (s.pendingCreateOrJoin) {
 				const { roomId, seed, player } = s.pendingCreateOrJoin;
+				console.log("[ws] replaying pendingCreateOrJoin", { roomId, playerId: player.playerId });
 				update((x) => ({ ...x, pendingCreateOrJoin: null }));
 				sendClient({ type: "create_or_join_room", roomId, seed, player });
 			}
 
 			if (s.pendingScene) {
 				const { roomId, playerId, scene } = s.pendingScene;
+				console.log("[ws] replaying pendingScene", { roomId, playerId, scene });
 				update((x) => ({ ...x, pendingScene: null }));
 				sendClient({ type: "update_scene", roomId, playerId, scene });
 			}
@@ -125,11 +130,47 @@ function createWebSocketStore() {
 
 			const parsed = ServerMsgSchema.safeParse(raw);
 			if (!parsed.success) {
-				console.log("Dropped non-ServerMsg from WS:", raw, parsed.error.format());
+				console.log("[ws] dropped non-ServerMsg:", raw, parsed.error.format());
 				return;
 			}
 
 			const msg = parsed.data;
+
+			// --- Incoming message logging ---
+			if (msg.type === "state") {
+				const phase = msg.snapshot?.phase ?? null;
+				if (phase !== lastLoggedPhase) {
+					console.log("[ws] recv state phase:", lastLoggedPhase, "→", phase);
+					lastLoggedPhase = phase;
+				}
+			} else if (msg.type === "game_started") {
+				console.log("[ws] recv game_started", { roomId: msg.roomId });
+			} else if (msg.type === "game_finished") {
+				console.log("[ws] recv game_finished", { roomId: msg.roomId, winnerId: msg.winnerId ?? null });
+			} else if (msg.type === "room_closed") {
+				console.log("[ws] recv room_closed", { roomId: msg.roomId, reason: msg.reason });
+			} else if (msg.type === "lobby_timer") {
+				const isStart = lastLoggedLobbyTimer === null && msg.secondsLeft > 0;
+				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+				if (isStart || isStop) {
+					console.log("[ws] recv lobby_timer", { secondsLeft: msg.secondsLeft });
+				}
+				lastLoggedLobbyTimer = isStop ? null : msg.secondsLeft;
+			} else if (msg.type === "afk_timer") {
+				const isStart = lastLoggedAfkTimer === null && msg.secondsLeft > 0;
+				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+				if (isStart || isStop) {
+					console.log("[ws] recv afk_timer", { playerId: msg.playerId, secondsLeft: msg.secondsLeft });
+				}
+				lastLoggedAfkTimer = isStop ? null : msg.secondsLeft;
+			} else if (msg.type === "joined") {
+				console.log("[ws] recv joined", { roomId: msg.roomId, playerId: msg.playerId });
+			} else if (msg.type === "left") {
+				console.log("[ws] recv left", { roomId: msg.roomId, playerId: msg.playerId });
+			} else if (msg.type === "error") {
+				console.log("[ws] recv error", { message: msg.message });
+			}
+
 			update((s) => {
 				const isState = msg.type === "state";
 				const snapshot = isState ? msg.snapshot : null;
@@ -213,13 +254,13 @@ function createWebSocketStore() {
 		};
 
 		ws.onerror = (e) => {
-			console.log("WS error", e);
+			console.log("[ws] error", e);
 			update((s) => ({ ...s, status: "error" }));
-		}
+		};
 
 		ws.onclose = (e) => {
 			const label = WS_CLOSE_LABELS[e.code] ?? "unknown";
-			console.log(`WS close: code=${e.code} (${label}), reason="${e.reason}"`);
+			console.log(`[ws] close: code=${e.code} (${label}), reason="${e.reason}"`);
 			ws = null;
 			update((s) => ({ ...s, status: "disconnected" }));
 		};
@@ -227,23 +268,28 @@ function createWebSocketStore() {
 
 	function sendClient(msg: ClientMsg) {
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			console.log("WS send dropped (not open):", msg);
+			console.log("[ws] send dropped (not open):", msg);
 			return;
 		}
 
 		const parsed = ClientMsgSchema.safeParse(msg);
 		if (!parsed.success) {
-			console.log("WS send dropped (invalid ClientMsg):", msg, parsed.error.format());
+			console.log("[ws] send dropped (invalid ClientMsg):", msg, parsed.error.format());
 			return;
 		}
 
-		console.log("WS send:", parsed.data);
+		// --- Per tick input logging, disabled by default ---
+		// console.log("[ws] send:", parsed.data);
 		ws.send(JSON.stringify(parsed.data));
 	}
 
 	function disconnect() {
+		console.log("[ws] disconnect");
 		ws?.close(WS_CLOSE_NORMAL, "client disconnect");
 		ws = null;
+		lastLoggedPhase = null;
+		lastLoggedLobbyTimer = null;
+		lastLoggedAfkTimer = null;
 
 		set({
 			status: "disconnected",
@@ -311,30 +357,35 @@ function createWebSocketStore() {
 	/* ========================================================================== */
 
 	function createOrJoinRoom(roomId: string, seed: number, player: Player) {
+		console.log("[ws] createOrJoinRoom", { roomId, playerId: player.playerId });
 		update((s) => ({
 			...s,
 			roomId,
 			playerId: player.playerId,
-			playersById: { ...s.playerMetaById, [String(player.playerId)]: player },
 	}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			console.log("[ws] createOrJoinRoom queued (ws not open)");
 			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, player } }));
 			connect();
 			return;
 		}
 
+		console.log("[ws] createOrJoinRoom sending immediately");
 		sendClient({ type: "create_or_join_room", roomId, seed, player });
 	}
 
 	function updatePlayerScene(roomId: string, playerId: string, scene: "lobby" | "game" ) {
+		console.log("[ws] updatePlayerScene", { roomId, playerId, scene });
 		update((s) => ({ ...s, pendingScene: { roomId, playerId, scene } }));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			console.log("[ws] updatePlayerScene queued (ws not open)");
 			connect();
 			return;
 		}
 
+		console.log("[ws] updatePlayerScene sending immediately");
 		sendClient({ type: "update_scene", roomId, playerId, scene });
 		update((s) => ({ ...s, pendingScene: null }));
 	}
@@ -343,16 +394,22 @@ function createWebSocketStore() {
 	function startGame() {
 		const s = get(store);
 
-		if (!s.roomId)
+		if (!s.roomId) {
+			console.log("[ws] startGame aborted (no roomId)");
 			return;
-		if (!ws || ws.readyState !== WebSocket.OPEN)
+		}
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			console.log("[ws] startGame aborted (ws not open)");
 			return;
+		}
 		
+		console.log("[ws] startGame", { roomId: s.roomId });
 		sendClient({ type: "start_game", roomId: s.roomId });
 	}
 
 	function leaveRoom() {
 		const s = get(store);
+		console.log("[ws] leaveRoom", { roomId: s.roomId, playerId: s.playerId });
 
 		if (ws && ws.readyState === WebSocket.OPEN && s.roomId && s.playerId) {
 			sendClient({ type: "leave_room", roomId: s.roomId, playerId: s.playerId });

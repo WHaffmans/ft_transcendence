@@ -75,6 +75,7 @@
 	let lastJoinedKey: string | null = null;
 
 	function joinLobbySession(lobbyId: string, user: User) {
+		console.log("[lobby] joinLobbySession", { lobbyId, userId: user.id });
 		wsStore.setPlayerMeta(String(user.id), {
 			name: user.name,
 			avatar_url: user.avatar_url,
@@ -104,6 +105,7 @@
 		// 1. Auth guard
 		const user = $userStore ?? null;
 		if (!user?.id) {
+			console.log("[lobby] auth guard → redirecting to /dashboard");
 			goto("/dashboard", { replaceState: true });
 			return;
 		}
@@ -155,6 +157,7 @@
 		if (!userId) return;
 
 		if (!ids.includes(userId)) {
+			console.log("[lobby] kicked — player not in playerIds", { userId, ids });
 			didRedirect = true;
 			wsStore.disconnect();
 			toast.info("You were removed from the lobby.");
@@ -173,6 +176,7 @@
 		if (String(closed.roomId) !== String(lobbyId)) return;
 
 		if (didRedirect) return;
+		console.log("[lobby] room closed", { roomId: closed.roomId, reason: closed.reason });
 		didRedirect = true;
 
 		wsStore.leaveRoom();
@@ -208,6 +212,7 @@
 		const target = redirectTarget;
 		if (!target) return;
 
+		console.log("[lobby] redirectTarget → navigating to", target);
 		didRedirect = true;
 		goto(target, { replaceState: true });
 	});
@@ -232,6 +237,7 @@
 
 	function cleanupLobby() {
 		if (didCleanup) return;
+		console.log("[lobby] cleanupLobby");
 		didCleanup = true;
 		wsStore.leaveRoom();
 		wsStore.disconnect();

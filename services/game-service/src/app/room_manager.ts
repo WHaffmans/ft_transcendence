@@ -514,6 +514,8 @@ export class RoomManager {
 
 		this.stopAfkTimer(room, playerId);
 
+		logInfo("afk.timer_started", { roomId, playerId, timeoutMs: AFK_TIMEOUT_MS });
+
 		const deadlineAtMs = Date.now() + AFK_TIMEOUT_MS;
 
 		replaceMapTimeout(room.afkTimeoutById, playerId, AFK_TIMEOUT_MS, () => {
@@ -537,6 +539,8 @@ export class RoomManager {
 		if (!room || room.phase !== "lobby") return;
 		if (!this.getPlayer(room, playerId)) return;
 
+		logInfo("afk.timer_expired", { roomId, playerId });
+
 		this.stopAfkTimer(room, playerId);
 
 		this.broadcast(roomId, { type: "left", roomId, playerId });
@@ -548,7 +552,10 @@ export class RoomManager {
 	 */
 	private stopAfkTimer(room: Room, playerId: string) {
 		const h = room.afkTimeoutById[playerId];
-		if (h) clearTimeout(h);
+		if (h) {
+			logInfo("afk.timer_stopped", { roomId: room.roomId, playerId });
+			clearTimeout(h);
+		}
 		delete room.afkTimeoutById[playerId];
 	}
 
@@ -618,6 +625,7 @@ export class RoomManager {
 			if (room.players.length > 0) {
 				// Promote first remaining player
 				const newHostId = String((room.players[0] as any).playerId);
+				logInfo("room.host_reassigned", { roomId, from: playerId, to: newHostId });
 				room.hostId = newHostId;
 			} else {
 				room.hostId = "";
@@ -1068,6 +1076,8 @@ export class RoomManager {
 		const tickRate = room.config.tickRate;
 		const dtMs = Math.round(1000 / tickRate);
 
+		logInfo("room.game_loop_started", { roomId, tickRate, dtMs });
+
 		room.timer = setInterval(() => {
 			if (room.phase !== "running")
 				return;
@@ -1112,6 +1122,7 @@ export class RoomManager {
 	 */
 	private stopRoomTimer(room: Room) {
 		if (!room.timer) return;
+		logInfo("room.game_loop_stopped", { roomId: room.roomId });
 		clearInterval(room.timer);
 		room.timer = null;
 	}
