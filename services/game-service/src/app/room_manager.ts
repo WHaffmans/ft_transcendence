@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/26 10:14:24 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/03 11:36:37 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 // External
 import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
+import type { GameStateSnapshot } from "@ft/game-ws-protocol";
 
 
 const MIN_PLAYERS = 2;
@@ -46,7 +47,7 @@ type Room = {
 	// Players
 	hostId: string;
 	players: Player[];
-	allPlayers: Player[];					// snapshot of all participants at game start (never mutated by dropPlayer)
+	allPlayers: Player[];								// Immutable player snapshot
 	sceneById: Record<string, PlayerPhase>;
 	inputsById: Record<string, TurnInput>;
 	finishOrder: string[];								// [firstOut, ..., winner]
@@ -62,6 +63,8 @@ type Room = {
 
 	// Internal subscribers
 	subscribers: Set<WebSocket>;
+  	wsByPlayerId: Record<string, WebSocket | null>;
+  	connectedById: Record<string, boolean>;
 };
 
 
@@ -121,12 +124,18 @@ export class RoomManager {
 		return (state.players.find(p => p.id === playerId) ?? null);
 	}
 
-	// TODO: Use This
 	private getRoomOrThrow(roomId: string): Room {
 		const room = this.rooms.get(roomId);
 		if (!room)
 			throw new Error(`Unknown roomId: ${roomId}`);
 		return (room);
+	}
+
+	public isBoundSocket(roomId: string, playerId: string, ws: WebSocket): boolean {
+		const room = this.rooms.get(roomId);
+		if (!room) return false;
+
+		return (room.wsByPlayerId[playerId] === ws);
 	}
 
 
@@ -181,6 +190,8 @@ export class RoomManager {
 			autoStartDeadlineAtMs: null,
 			afkTimeoutById: {},
 			subscribers: new Set(),
+			wsByPlayerId: {},
+			connectedById: {},
 		};
 
 		this.rooms.set(roomId, room);
@@ -224,61 +235,59 @@ export class RoomManager {
 	private addPlayerToRoom(roomId: string, player: Player) {
 		const room = this.getRoomOrThrow(roomId);
 		if (room.phase === "finished") throw new Error(`Room ${roomId} is finished`);
+
+		const pid = player.playerId;
+
+		const isActiveMember = room.players.some(p => p.playerId === pid);
+		const wasParticipant = room.allPlayers.some(p => p.playerId === pid);
+
+		// Joins while in progress
 		if (room.phase === "running" || room.phase === "ready") {
-			const alreadyIn = room.players.some(p => p.playerId === player.playerId);
-			if (!alreadyIn) throw new Error(`Room ${roomId} is already in progress`);
+			if (!isActiveMember && !wasParticipant) {
+				throw new Error(`Room ${roomId} is already in progress`);
+			}
 		}
 
-		const existing = this.getPlayer(room, player.playerId);
-		const wasAlreadyInRoom = !!existing;
-
-		const joinCheck = this.canJoin(room, player.playerId);
-		if (!joinCheck.ok) {
-				logInfo("room.join_rejected", {
-				roomId,
-				playerId: player.playerId,
-				reason: joinCheck.reason,
-				playerCount: room.players.length,
-				max: MAX_PLAYERS,
-			});
-			throw new Error(`Cannot join room ${roomId}: ${joinCheck.reason}`);
+		// New joins
+		if (room.phase === "lobby" && !isActiveMember) {
+			const joinCheck = this.canJoin(room, pid);
+			if (!joinCheck.ok) {
+				logInfo("room.join_rejected", { roomId, playerId: pid, reason: joinCheck.reason });
+				throw new Error(`Cannot join room ${roomId}: ${joinCheck.reason}`);
+			}
 		}
+
+		// Player added only once
+		const idx = room.players.findIndex(p => p.playerId === pid);
+
+		const wasAlreadyInRoom = idx !== -1;
 
 		if (!wasAlreadyInRoom) {
 			room.players.push(player);
-			logInfo("room.player_added", {
-				roomId,
-				playerId: player.playerId,
-				rating_mu: player.rating_mu,
-				rating_sigma: player.rating_sigma,
-				playerCount: room.players.length,
-			});
+			logInfo("room.player_added", { roomId, playerId: pid, playerCount: room.players.length });
 		} else {
-			const idx = room.players.findIndex((p) => p.playerId === player.playerId);
 			room.players[idx] = player;
-			logInfo("room.player_rejoin", { roomId, playerId: player.playerId });
+			logInfo("room.player_rejoin", { roomId, playerId: pid });
 		}
 
-		if (!(player.playerId in room.inputsById)) room.inputsById[player.playerId] = 0;
-		if (!(player.playerId in room.sceneById)) room.sceneById[player.playerId] = "lobby";
+		room.inputsById[pid] ??= 0;
+		room.sceneById[pid] ??= "lobby";
+		room.wsByPlayerId[pid] ??= null;
 
-		if (!wasAlreadyInRoom) {
+		if (room.phase === "lobby" && !wasAlreadyInRoom) {
 			this.resetGame(room);
 		}
 
 		this.executeAutoStartTimer(roomId);
 		this.broadcastState(roomId);
 
-		// Start AFK timer for newly joined not-ready players
-		if (room.phase === "lobby" && room.sceneById[player.playerId] === "lobby") {
-			this.startAfkTimer(roomId, player.playerId);
+		if (room.phase === "lobby" && room.sceneById[pid] === "lobby") {
+			this.startAfkTimer(roomId, pid);
 		}
 	}
 
 	/**
 	 * Will create a room if nonexistent, otherwise join.
-	 * If 'ws' is provided, subscribes it before adding the player
-	 * so the joining client receives broadcasts fired during join.
 	 */
 	public createOrJoinRoom(args: {
 		roomId: string;
@@ -303,7 +312,21 @@ export class RoomManager {
 
 		this.addPlayerToRoom(args.roomId, args.player);
 
-		 const afterCount = room.players.length;
+		if (ws) {
+			const pid = args.player.playerId;
+
+			const prev = room.wsByPlayerId[pid];
+			if (prev && prev !== ws && (prev.readyState === prev.OPEN || prev.readyState === prev.CONNECTING)) {
+				try { 
+					prev.close(1000, "Replaced by reconnect");
+				} catch {}
+				this.unsubscribe(args.roomId, prev);
+			}
+
+			room.wsByPlayerId[pid] = ws;
+		}
+
+		const afterCount = room.players.length;
 
 		logInfo("room.create_or_join", {
 			roomId: args.roomId,
@@ -315,6 +338,18 @@ export class RoomManager {
 			playerCountAfter: afterCount,
 			hostId: room.hostId,
 		});
+
+		if (ws) {
+			const pid = args.player.playerId;
+			const isRejoinDuringGame =
+				(room.phase === "running" || room.phase === "ready") &&
+				room.allPlayers.some((p) => p.playerId === pid);
+
+			safeSend(ws, {
+				type: "state",
+				snapshot: this.makeSnapshot(room, { fullSegments: isRejoinDuringGame }),
+			} satisfies ServerMsg);
+		}
 
 		return (room);
 	}
@@ -514,6 +549,8 @@ export class RoomManager {
 
 		this.stopAfkTimer(room, playerId);
 
+		logInfo("afk.timer_started", { roomId, playerId, timeoutMs: AFK_TIMEOUT_MS });
+
 		const deadlineAtMs = Date.now() + AFK_TIMEOUT_MS;
 
 		replaceMapTimeout(room.afkTimeoutById, playerId, AFK_TIMEOUT_MS, () => {
@@ -537,6 +574,8 @@ export class RoomManager {
 		if (!room || room.phase !== "lobby") return;
 		if (!this.getPlayer(room, playerId)) return;
 
+		logInfo("afk.timer_expired", { roomId, playerId });
+
 		this.stopAfkTimer(room, playerId);
 
 		this.broadcast(roomId, { type: "left", roomId, playerId });
@@ -548,7 +587,10 @@ export class RoomManager {
 	 */
 	private stopAfkTimer(room: Room, playerId: string) {
 		const h = room.afkTimeoutById[playerId];
-		if (h) clearTimeout(h);
+		if (h) {
+			logInfo("afk.timer_stopped", { roomId: room.roomId, playerId });
+			clearTimeout(h);
+		}
 		delete room.afkTimeoutById[playerId];
 	}
 
@@ -606,10 +648,15 @@ export class RoomManager {
 		const idx = room.players.findIndex(p => (p as any).playerId === playerId);
 		if (idx === -1) return;
 
+		const ws = room.wsByPlayerId[playerId];
+		if (ws) this.unsubscribe(roomId, ws);
+		room.wsByPlayerId[playerId] = null;
+
 		this.stopAfkTimer(room, playerId);
 
 		delete room.sceneById[playerId];
 		delete room.inputsById[playerId];
+		delete room.wsByPlayerId[playerId];
 
 		room.players.splice(idx, 1);
 		
@@ -618,6 +665,7 @@ export class RoomManager {
 			if (room.players.length > 0) {
 				// Promote first remaining player
 				const newHostId = String((room.players[0] as any).playerId);
+				logInfo("room.host_reassigned", { roomId, from: playerId, to: newHostId });
 				room.hostId = newHostId;
 			} else {
 				room.hostId = "";
@@ -723,6 +771,35 @@ export class RoomManager {
 		}
 	}
 
+	/**
+	 * Player lost connection
+	 */
+	public onPlayerSocketLost(roomId: string, playerId: string, ws: WebSocket, meta: any) {
+		const room = this.rooms.get(roomId);
+
+		this.unsubscribe(roomId, ws);
+
+		if (!room) {
+			logInfo("room.socket_lost_after_close", { roomId, playerId, reason: meta });
+			return;
+		}
+
+		if (room.wsByPlayerId[playerId] !== ws) {
+			logInfo("room.socket_lost_ignored_not_bound", { roomId, playerId });
+			return;
+		}
+
+		room.wsByPlayerId[playerId] = null;
+
+		logInfo("room.player_offline", {
+			roomId,
+			playerId,
+			phase: room.phase,
+			reason: meta,
+		});
+
+		this.broadcastState(roomId);
+	}
 
 	/**
 	 * Notify API of player leave.
@@ -899,6 +976,7 @@ export class RoomManager {
 		if (room.players.length > MAX_PLAYERS) return;
 
 		room.phase = "ready";
+		room.allPlayers = room.players.map(p => ({ ...p }));
 		this.stopAutoStartTimer(room);
 		this.stopAllAfkTimers(room);
 
@@ -996,12 +1074,19 @@ export class RoomManager {
 	}
 
 	/**
-	 * Make snapshot with correct types
+	 * Make snapshot with correct types.
 	 */
-	private makeSnapshot(room: Room) {
-
+	private makeSnapshot(
+		room: Room,
+		{ fullSegments = false }: { fullSegments?: boolean } = {},
+	): GameStateSnapshot {
 		const segs = room.state.segments;
-		const start = Math.max(0, segs.length - room.config.segmentSendCount);
+		const start = fullSegments
+			? 0
+			: Math.max(0, segs.length - room.config.segmentSendCount);
+
+		const segmentsMode: GameStateSnapshot["segmentsMode"] =
+			fullSegments ? "full" : "delta";
 
 		return {
 			phase: room.phase,
@@ -1033,6 +1118,8 @@ export class RoomManager {
 				color: s.color,
 				isGap: s.isGap,
 			})),
+			segmentsMode,
+			segmentsStartI: start,
 
 			roomId: room.roomId,
 		};
@@ -1067,6 +1154,8 @@ export class RoomManager {
 
 		const tickRate = room.config.tickRate;
 		const dtMs = Math.round(1000 / tickRate);
+
+		logInfo("room.game_loop_started", { roomId, tickRate, dtMs });
 
 		room.timer = setInterval(() => {
 			if (room.phase !== "running")
@@ -1112,6 +1201,7 @@ export class RoomManager {
 	 */
 	private stopRoomTimer(room: Room) {
 		if (!room.timer) return;
+		logInfo("room.game_loop_stopped", { roomId: room.roomId });
 		clearInterval(room.timer);
 		room.timer = null;
 	}

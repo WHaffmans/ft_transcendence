@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/26 10:20:22 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/03 11:36:51 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,34 +17,32 @@ import type { GameConfig } from "../engine/config.js";
 import { DEFAULT_CONFIG } from "../engine/config.js";
 import { RoomManager } from "../app/room_manager.js";
 
-// ---------------------
-// define
-// ---------------------
-
 import {
 	ClientMsgSchema,
 	type ClientMsg,
 	ServerMsgSchema,
 	type ServerMsg,
 	WS_CLOSE_AUTH_FAILURE,
-	WS_CLOSE_ROOM_FULL,
-	WS_CLOSE_INVALID_MSG,
 } from "@ft/game-ws-protocol";
 
-// ---------------------
-// heartbeat
-// ---------------------
+
+/* ====================================================================== */
+/*                              DEFINE                                    */
+/* ====================================================================== */
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
-/** Extends the ws WebSocket with a liveness flag for heartbeat tracking. */
+/**
+ * Extends the ws WebSocket with a liveness flag for heartbeat tracking.
+ */
 interface AliveWebSocket extends WebSocket {
 	isAlive: boolean;
 }
 
-// ---------------------
-// helpers
-// ---------------------
+
+/* ====================================================================== */
+/*                              HELPERS                                   */
+/* ====================================================================== */
 
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
@@ -79,16 +77,17 @@ function normalizeConfig(partial: unknown): GameConfig {
 		}
 	}
 
-	return config;
+	return (config);
 }
 
 function assertNever(x: never): never {
 	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
 }
 
-// ---------------------
-// server
-// ---------------------
+
+/* ====================================================================== */
+/*                              SERVER                                    */
+/* ====================================================================== */
 
 export function startPublicWsServer(
 	opts: { port: number; path?: string; server?: any },
@@ -181,6 +180,7 @@ export function startPublicWsServer(
 				: null;
 
 			if (authenticatedUserId && claimedPlayerId && claimedPlayerId !== authenticatedUserId) {
+				console.warn("[ws:transport] auth mismatch — closing", { authenticatedUserId, claimedPlayerId });
 				safeSendServer(ws, {
 					type: "error",
 					message: "Player ID does not match authenticated user",
@@ -193,6 +193,7 @@ export function startPublicWsServer(
 			try {
 				switch (msg.type) {
 					case "create_or_join_room": {
+						console.log("[ws:transport] recv create_or_join_room", { roomId: msg.roomId, playerId: msg.player.playerId });
 
 						// Check for other room subcription
 						if (boundRoomId && boundRoomId !== msg.roomId) {
@@ -237,6 +238,7 @@ export function startPublicWsServer(
 					}
 
 					case "start_game": {
+						console.log("[ws:transport] recv start_game", { roomId: msg.roomId, boundPlayerId });
 						if (!boundRoomId || !boundPlayerId) {
 							throw new Error("Must join_room first");
 						}
@@ -258,6 +260,7 @@ export function startPublicWsServer(
 					}
 
 					case "leave_room": {
+						console.log("[ws:transport] recv leave_room", { roomId: msg.roomId, playerId: msg.playerId });
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.playerId;
 
@@ -275,6 +278,13 @@ export function startPublicWsServer(
 							throw new Error("Must join_room first");
 						}
 
+						const room = rooms.get(boundRoomId);
+						if (!room) return;
+
+						// Reject input if not bound
+						if (!rooms.isBoundSocket(boundRoomId, boundPlayerId, ws))
+							return;
+
 						rooms.pushInput({
 							roomId: boundRoomId,
 							playerId: boundPlayerId,
@@ -287,6 +297,7 @@ export function startPublicWsServer(
 						assertNever(msg);
 				}
 			} catch (e) {
+				console.error("[ws:transport] message handling error", { type: msg.type, error: e instanceof Error ? e.message : String(e) });
 				safeSend(ws, {
 					type: "error",
 					message: e instanceof Error ? e.message : String(e),
@@ -296,16 +307,18 @@ export function startPublicWsServer(
 		});
 
 		ws.on("close", (code, reason) => {
+			console.log(`[ws:transport] close code=${code} reason="${reason.toString()}"`, { boundRoomId, boundPlayerId });
 			if (boundRoomId && boundPlayerId) {
-				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
+				rooms.onPlayerSocketLost(boundRoomId, boundPlayerId, ws, { code, reason: reason.toString() });
 			} else {
 				rooms.unsubscribeAll(ws);
 			}
 		});
 
-		ws.on("error", () => {
+		ws.on("error", (err) => {
+			console.error("[ws:transport] error", { boundRoomId, boundPlayerId, error: String(err) });
 			if (boundRoomId && boundPlayerId) {
-				rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, {});
+				rooms.onPlayerSocketLost(boundRoomId, boundPlayerId, ws, {});
 			} else {
 				rooms.unsubscribeAll(ws);
 			}

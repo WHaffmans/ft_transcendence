@@ -4,6 +4,7 @@ import { RoomId, PlayerId } from "../common/primitives.js";
 
 export const GamePhaseSchema = z.enum(["lobby", "ready", "running", "finished"]);
 export const PlayerPhaseSchema = z.enum(["lobby", "game"]);
+export const SegmentsModeSchema = z.enum(["delta", "full"]);
 
 export const ColorRGBASchema = z.object({
 	r: z.number().int().min(0).max(255),
@@ -44,9 +45,12 @@ export const GameStateSnapshotSchema = z.object({
 	sceneById: z.record(PlayerId, PlayerPhaseSchema),
 	players: z.array(PlayerStateSchema),
 	segments: z.array(SegmentSchema),
+	segmentsMode: SegmentsModeSchema.default("delta"),
+	segmentsStartI: z.number().int().optional(),
 	roomId: RoomId,
 });
 
 export type GamePhase = z.infer<typeof GamePhaseSchema>;
 export type PlayerPhase = z.infer<typeof PlayerPhaseSchema>;
+export type SegmentsMode = z.infer<typeof SegmentsModeSchema>;
 export type GameStateSnapshot = z.infer<typeof GameStateSnapshotSchema>;

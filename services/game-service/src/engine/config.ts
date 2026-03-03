@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/17 08:04:39 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/02 17:41:45 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,20 +18,20 @@ export type GameConfig = {
 	arenaHeight: number;
 
 	// Movement
-	speed: number;			// units per tick
-	turnSpeedModifier: number;	// multiplier for turn rate based on speed (0..1)
-	turnRate: number;		// radians per tick
+	speed: number;					// units per tick
+	turnSpeedModifier: number;		// multiplier for turn rate based on speed (0..1)
+	turnRate: number;				// radians per tick
 	playerRadius: number;
-	segmentSendCount: number;	// number of segments sent in a snapshot
+	segmentSendCount: number;		// number of segments sent in a snapshot
 
 	// Trail / gaps
-	gapChance: number;		// probability per tick to START a gap (0..1)
+	gapChance: number;				// probability per tick to START a gap (0..1)
 	gapMinTicks: number;
 	gapMaxTicks: number;
 
 	// Spawning
-	spawnPadding: number;		// distance from walls
-	spawnAngle: number;		// radians (random +/-)
+	spawnPadding: number;			// distance from walls
+	spawnAngle: number;				// radians (random +/-)
 };
 
 // Set default values
