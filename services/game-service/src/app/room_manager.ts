@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/02 17:38:48 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/03 11:31:47 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -272,7 +272,6 @@ export class RoomManager {
 
 		room.inputsById[pid] ??= 0;
 		room.sceneById[pid] ??= "lobby";
-		room.connectedById[pid] ??= false;
 		room.wsByPlayerId[pid] ??= null;
 
 		if (room.phase === "lobby" && !wasAlreadyInRoom) {
@@ -325,7 +324,6 @@ export class RoomManager {
 			}
 
 			room.wsByPlayerId[pid] = ws;
-			room.connectedById[pid] = true;
 		}
 
 		const afterCount = room.players.length;
@@ -646,14 +644,12 @@ export class RoomManager {
 		const ws = room.wsByPlayerId[playerId];
 		if (ws) this.unsubscribe(roomId, ws);
 		room.wsByPlayerId[playerId] = null;
-		room.connectedById[playerId] = false;
 
 		this.stopAfkTimer(room, playerId);
 
 		delete room.sceneById[playerId];
 		delete room.inputsById[playerId];
 		delete room.wsByPlayerId[playerId];
-		delete room.connectedById[playerId];
 
 		room.players.splice(idx, 1);
 		
@@ -786,7 +782,6 @@ export class RoomManager {
 		}
 
 		room.wsByPlayerId[playerId] = null;
-		room.connectedById[playerId] = false;
 
 		logInfo("room.player_offline", {
 			roomId,
@@ -1083,7 +1078,7 @@ export class RoomManager {
 			: Math.max(0, segs.length - room.config.segmentSendCount);
 
 		const segmentsMode: GameStateSnapshot["segmentsMode"] =
-    		fullSegments ? "full" : "delta";
+			fullSegments ? "full" : "delta";
 
 		return {
 			phase: room.phase,

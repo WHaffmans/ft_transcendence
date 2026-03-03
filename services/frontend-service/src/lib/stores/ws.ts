@@ -150,7 +150,7 @@ function createWebSocketStore() {
 						isGap: !!seg.isGap,
 					}));
 
-					const mode = (snapshot as any).segmentsMode ?? "delta";
+					const mode = snapshot.segmentsMode ?? "delta";
 
 					if (mode === "full") {
 						segments = incoming;
