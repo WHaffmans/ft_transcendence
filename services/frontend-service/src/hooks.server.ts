@@ -30,17 +30,22 @@ async function refreshAccessToken(refreshToken: string): Promise<RefreshResult |
 	headers.set('content-type', 'application/json');
 	headers.set('cookie', `refresh_token=${refreshToken}`);
 
-	const response = await fetch(`${backendBaseUrl}/auth/refresh`, {
-		method: 'POST',
-		headers
-	});
+	try {
+		const response = await fetch(`${backendBaseUrl}/auth/refresh`, {
+			method: 'POST',
+			headers
+		});
 
-	console.log(`[proxy] Refresh token response: ${response.status} ${response.statusText}`);
+		console.log(`[proxy] Refresh token response: ${response.status} ${response.statusText}`);
 
-	if (!response.ok) return null;
+		if (!response.ok) return null;
 
-	const data = await response.json();
-	return { accessToken: data.access_token, setCookies: response.headers.getSetCookie() };
+		const data = await response.json();
+		return { accessToken: data.access_token, setCookies: response.headers.getSetCookie() };
+	} catch (error) {
+		console.error('[proxy] Failed to refresh access token:', error);
+		return null;
+	}
 }
 
 async function getRefreshResult(refreshToken: string): Promise<RefreshResult | null> {
