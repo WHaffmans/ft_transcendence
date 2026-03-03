@@ -1,24 +1,5 @@
 # Game Service
 
-## TODOs
-
-- [ ] Leave lobby
-- [ ] Only send new trail segments to frontend.
-- [ ] How to standerdise canvas size?
-- [ ] How to authenticate? SSL internal?
-- [ ] Websocket IO?
-- [ ] Switch to http from ws in the treafik document?
-- [x] Get a uuid (game id). From this I will make a link.
-- [x] Use trafeak for the web socket. Now using a socket. Should not expose a port.
-- [x] Send full object to game/uuid page.
-- [x] Use protocol for messaging in web socket.
-- [x] Rating based on OpenSkill. In what order did people die. Send api call to /game/id/finish.
-
----
-<br/>
-
-
-
 ## Setup help
 
 1.  Run compose install:
