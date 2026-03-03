@@ -13,6 +13,20 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
+     * Verify authentication.
+     *
+     * Returns a 200 response with the authenticated user's ID in the X-User-Id header.
+     * Used by the gateway for forward auth.
+     *
+     * @tags Auth
+     * @response 200 scenario="Authenticated" {"message": "Authenticated"}
+     */
+    public function verify(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['message' => 'Authenticated'], 200, ['X-User-Id' => auth()->id()]);
+    }
+
+    /**
      * Display the login form.
      */
     public function loginView()
