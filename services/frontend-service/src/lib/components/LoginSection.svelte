@@ -4,12 +4,11 @@
   import { toast } from "svelte-sonner";
 
   const landingLogo = "/logo.webp";
-  const subtitle = "The Kurve Web Edition";
 
   const handleLogin = async () => {
     const result = await apiStore.login();
     if (result?.success) {
-      toast.success("Welcome!");
+      toast.success("Welcome! Login successful");
       goto("/dashboard", { invalidateAll: true });
     } else {
       toast.error(`Login failed: ${result?.errorDescription || result?.error}`);
@@ -20,12 +19,6 @@
 <section class="flex flex-col items-center w-full max-w-150 shrink-0 px-4">
   <!-- Logo and Subtitle Frame -->
   <header class="relative w-full max-w-150 aspect-[600/327] mb-8">
-    <!-- Subtitle (overlaps under logo) -->
-    <p
-      class="absolute left-4/9 top-19/30 -translate-x-1/2 text-center text-[#888] text-[clamp(14px,3.5vw,24px)] font-medium tracking-[-1.2px] whitespace-nowrap"
-    >
-      {subtitle}
-    </p>
     <!-- Logo Image -->
     <img
       src={landingLogo}

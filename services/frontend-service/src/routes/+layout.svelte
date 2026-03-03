@@ -27,7 +27,50 @@
 	<title>ACHTUNG!</title>
 </svelte:head>
 
-<Toaster />
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    unstyled: true,
+    classes: {
+      toast: `
+        pointer-events-auto
+        flex items-center gap-3
+        rounded-xl
+        px-4 py-3
+        border border-white/10
+        bg-black/35
+        backdrop-blur-md
+        text-white
+        shadow-[0_8px_30px_rgba(0,0,0,0.35)]
+      `,
+      title: "text-white font-semibold leading-tight",
+      description: "text-white/70 leading-snug",
+      icon: "shrink-0 self-center",
+
+      actionButton: `
+        rounded-lg
+        bg-white/10 hover:bg-white/15
+        border border-white/10
+        text-white
+        px-3 py-1.5
+      `,
+      cancelButton: `
+        rounded-lg
+        bg-white/5 hover:bg-white/10
+        border border-white/10
+        text-white/80
+        px-3 py-1.5
+      `,
+      closeButton: `
+        rounded-md
+        bg-white/5 hover:bg-white/10
+        border border-white/10
+        text-white/80
+      `
+    }
+  }}
+/>
+
 
 <!-- Root layout -->
 <div class="relative min-h-screen container-type-inline-size">

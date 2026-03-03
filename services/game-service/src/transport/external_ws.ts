@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/26 10:20:22 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/02 18:19:13 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,34 +17,32 @@ import type { GameConfig } from "../engine/config.js";
 import { DEFAULT_CONFIG } from "../engine/config.js";
 import { RoomManager } from "../app/room_manager.js";
 
-// ---------------------
-// define
-// ---------------------
-
 import {
 	ClientMsgSchema,
 	type ClientMsg,
 	ServerMsgSchema,
 	type ServerMsg,
 	WS_CLOSE_AUTH_FAILURE,
-	WS_CLOSE_ROOM_FULL,
-	WS_CLOSE_INVALID_MSG,
 } from "@ft/game-ws-protocol";
 
-// ---------------------
-// heartbeat
-// ---------------------
+
+/* ====================================================================== */
+/*                              DEFINE                                    */
+/* ====================================================================== */
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
-/** Extends the ws WebSocket with a liveness flag for heartbeat tracking. */
+/**
+ * Extends the ws WebSocket with a liveness flag for heartbeat tracking.
+ */
 interface AliveWebSocket extends WebSocket {
 	isAlive: boolean;
 }
 
-// ---------------------
-// helpers
-// ---------------------
+
+/* ====================================================================== */
+/*                              HELPERS                                   */
+/* ====================================================================== */
 
 function safeSend(ws: WebSocket, obj: unknown) {
 	if (ws.readyState === ws.OPEN)
@@ -79,16 +77,17 @@ function normalizeConfig(partial: unknown): GameConfig {
 		}
 	}
 
-	return config;
+	return (config);
 }
 
 function assertNever(x: never): never {
 	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
 }
 
-// ---------------------
-// server
-// ---------------------
+
+/* ====================================================================== */
+/*                              SERVER                                    */
+/* ====================================================================== */
 
 export function startPublicWsServer(
 	opts: { port: number; path?: string; server?: any },
