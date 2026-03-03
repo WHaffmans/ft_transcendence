@@ -191,9 +191,16 @@ function createWebSocketStore() {
 						isGap: !!seg.isGap,
 					}));
 
-					const merged = mergeSegments(s.segments, s.lastSegI, incoming);
-					segments = merged.segments;
-					lastSegI = merged.lastSegI;
+					const mode = snapshot.segmentsMode ?? "delta";
+
+					if (mode === "full") {
+						segments = incoming;
+						lastSegI = incoming.length ? incoming[incoming.length - 1].i : null;
+					} else {
+						const merged = mergeSegments(s.segments, s.lastSegI, incoming);
+						segments = merged.segments;
+						lastSegI = merged.lastSegI;
+					}
 				}
 
 				// Lobby timer
