@@ -6,8 +6,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
+/**
+ * @tags Avatar
+ */
 class AvatarController extends Controller
 {
+    /**
+     * Upload user avatar.
+     *
+     * Uploads a new avatar image for the specified user. Replaces any existing avatar.
+     * The image is stored in public storage and the user's avatar_url is updated.
+     *
+     * @bodyParam avatar file required The avatar image file (max 2MB). Example: avatar.png
+     *
+     * @response 200 scenario="Success" {"id": 1, "name": "John", "avatar_url": "/storage/avatars/abc123.png"}
+     * @response 422 scenario="Validation error" {"message": "The avatar field is required.", "errors": {"avatar": ["The avatar field is required."]}}
+     */
     public function upload(Request $request, User $user)
     {
         $request->validate([
