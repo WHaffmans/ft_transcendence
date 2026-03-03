@@ -10,10 +10,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @tags Games
+ */
 class GameController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all games.
+     *
+     * Returns a list of all games.
+     *
+     * @response 200 scenario="Success" [{"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}]
      */
     public function index()
     {
@@ -21,7 +28,11 @@ class GameController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Create a new game.
+     *
+     * @bodyParam status string The initial game status. Example: pending
+     *
+     * @response 201 scenario="Created" {"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
      */
     public function store(Request $request)
     {
@@ -31,7 +42,12 @@ class GameController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Get a game.
+     *
+     * Returns a single game with its associated users.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
     public function show(Game $game)
     {
@@ -41,7 +57,12 @@ class GameController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update a game.
+     *
+     * @bodyParam status string The new game status. Example: active
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active"}
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
     public function update(Request $request, Game $game)
     {
@@ -51,7 +72,10 @@ class GameController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete a game.
+     *
+     * @response 204 scenario="Deleted"
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
     public function destroy(Game $game)
     {
@@ -60,6 +84,15 @@ class GameController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * Find or create a game.
+     *
+     * Finds an active or pending game for the authenticated user. If no suitable game
+     * exists, joins an open game with available slots, or creates a new one.
+     *
+     * @response 200 scenario="Existing game found" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
+     * @response 201 scenario="New game created" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
+     */
     public function findGame(Request $request)
     {
         $user = $request->user();
@@ -95,6 +128,15 @@ class GameController extends Controller
         return response()->json($new_game->load('users'), 201);
     }
 
+    /**
+     * Leave a game.
+     *
+     * Removes a user from a pending game. If the user is the last player, the game is deleted.
+     *
+     * @response 200 scenario="Left game" {"id": "uuid", "status": "pending", "users": []}
+     * @response 204 scenario="Game deleted (last player left)"
+     * @response 400 scenario="User not in game" {"message": "User is not part of this game."}
+     */
     public function leaveGame(LeaveGameRequest $request, Game $game)
     {
         $request->validate([
@@ -123,6 +165,14 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
+    /**
+     * Ready a game.
+     *
+     * Marks a game as ready to start. Requires at least 2 players.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "ready", "users": [{"id": 1, "name": "John"}]}
+     * @response 400 scenario="Not enough players" {"message": "Not enough players to start the game."}
+     */
     public function readyGame(Request $request, Game $game)
     {
         // if ($game->status !== 'pending') {
@@ -139,6 +189,13 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
+    /**
+     * Start a game.
+     *
+     * Transitions a game from ready to active status.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
+     */
     public function startGame(Request $request, Game $game)
     {
         // if ($game->status !== 'ready') {
@@ -151,6 +208,14 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
+    /**
+     * Finish a game.
+     *
+     * Marks a game as completed and updates player rankings. Each user's rating
+     * (mu/sigma) and rank are stored on the pivot, and the user's global rating is updated.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "completed", "users": [{"id": 1, "name": "John", "user_game": {"rank": 1, "rating_mu": 25.0, "rating_sigma": 8.0, "diff": 2.5}}]}
+     */
     public function finishGame(FinishGameRequest $request, Game $game)
     {
         // if ($game->status !== 'active') {

@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\InternalAuthMiddleware;
 use App\Http\Controllers\AvatarController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\UserController;
 
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
@@ -12,9 +14,6 @@ Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(func
     Route::post('/games/{game}/ready', [App\Http\Controllers\GameController::class, 'readyGame']);
     Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
     Route::post('/games/{game}/leave', [App\Http\Controllers\GameController::class, 'leaveGame']);
-    Route::get('/test', function () {
-        return response()->json(['message' => 'Internal route accessed via api.php']);
-    });
 });
 
 // External API routes (require authentication)
@@ -25,31 +24,13 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
     Route::apiResource('games', App\Http\Controllers\GameController::class);
 
-    Route::get('/user', function (Request $request) {
-        return app(\App\Http\Controllers\UserController::class)->show($request->user());
-    });
+    Route::get('/user', [UserController::class, 'me']);
 });
 
-// External API route to verify authentication (for frontend)
-Route::get('/verify', fn() => response()->json(['message' => 'Authenticated'], 200, ['X-User-Id' => auth()->id()]))->middleware(['cookie.passport', 'auth:api']);
+Route::get('/verify', [App\Http\Controllers\Auth\AuthController::class, 'verify'])->middleware(['cookie.passport', 'auth:api']);
 
 Route::post('users/{user}/avatar', [AvatarController::class, 'upload'])->middleware('auth:api');
-Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['store']);
+Route::apiResource('users', UserController::class)->except(['store']);
 
-Route::get('leaderboard', function (Request $request) {
-    return App\Models\User::query()
-        ->orderBy('rating', 'desc')
-        ->take(5)
-        ->get();
-});
-
-Route::get('online-users', function () {
-    $sessionConnection = config('session.connection');
-
-    return DB::connection($sessionConnection)
-        ->table(config('session.table'))
-        ->whereNotNull('user_id')
-        ->where('last_activity', '>=', now()->subMinutes(5)->getTimestamp())
-        ->distinct()
-        ->count('user_id');
-});
+Route::get('leaderboard', [LeaderboardController::class, 'index']);
+Route::get('online-users', [UserController::class, 'onlineCount']);
