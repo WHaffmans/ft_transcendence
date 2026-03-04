@@ -456,7 +456,6 @@
 
   .stage {
     --overlay-blur: 1px;
-    position: relative;
   }
 
   .overlayLayer {
