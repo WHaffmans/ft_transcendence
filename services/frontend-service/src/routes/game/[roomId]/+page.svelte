@@ -57,7 +57,7 @@
   const winnerAvatar = $derived.by(() => (winnerId ? avatarUrl(String(winnerId)) : null));
 
   const isWsOpen = $derived($wsStore.status === "open");
-  const effectiveRoomId = $derived(($page.params.id ?? null) ?? ($wsStore.roomId ? String($wsStore.roomId) : null));
+  const effectiveRoomId = $derived(($page.params.roomId ?? null) ?? ($wsStore.roomId ? String($wsStore.roomId) : null));
 
   const showReconnectOverlay = $derived.by(() => {
     if (showFinishedOverlay) return false;
@@ -191,8 +191,6 @@
   function tryReconnectNow() {
     if (!navigator.onLine) return;
     if (!effectiveRoomId) return;
-
-    lastEnsureKey = null;
     wsStore.forceDisconnect("manual_reconnect");
     ensureJoinedFromGameRoute(effectiveRoomId);
   }
@@ -277,7 +275,6 @@
 
       if ($wsStore.status === "connecting" || $wsStore.status === "open") return;
 
-      lastEnsureKey = null;
       ensureJoinedFromGameRoute(roomId);
 
       scheduleReconnect(roomId);
@@ -316,8 +313,6 @@
   /* ====================================================================== */
   /*                                  REJOIN                                */
   /* ====================================================================== */
-
-  let lastEnsureKey: string | null = null;
 
   function ensureJoinedFromGameRoute(roomId: string) {
     const user = $userStore ?? null;
@@ -461,6 +456,7 @@
 
   .stage {
     --overlay-blur: 1px;
+    position: relative;
   }
 
   .overlayLayer {
@@ -493,13 +489,6 @@
     display: flex;
     align-items: flex-start;
     gap: 18px;
-  }
-
-  .overlayLayer {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    pointer-events: none;
   }
 
   .overlayLayer :global(.reconnectOverlay),

@@ -66,11 +66,6 @@ function resumeKey(roomId: string) {
   return `ft:room:${roomId}:resume`;
 }
 
-function saveResumeToken(roomId: string, token: string) {
-  if (!browser) return;
-  localStorage.setItem(resumeKey(roomId), token);
-}
-
 function loadResumeToken(roomId: string) {
   if (!browser) return null;
   return localStorage.getItem(resumeKey(roomId));
@@ -111,7 +106,7 @@ function createWebSocketStore() {
 	let lastLoggedLobbyTimer: number | null = null;
 	let lastLoggedAfkTimer: number | null = null;
 
-	function logIncomming(msg: ServerMsg) {
+	function logIncoming(msg: ServerMsg) {
 		if (msg.type === "state") {
 			const phase = msg.snapshot?.phase ?? null;
 			if (phase !== lastLoggedPhase) {
@@ -205,7 +200,7 @@ function createWebSocketStore() {
 			}
 
 			const msg = parsed.data;
-			logIncomming(msg);
+			logIncoming(msg);
 
 			update((s) => {
 				const isState = msg.type === "state";
@@ -244,13 +239,14 @@ function createWebSocketStore() {
 				let pendingScene = s.pendingScene;
 
 				if (msg.type === "joined") {
-					resumeToken = msg.resumeToken;
-					saveResumeToken(msg.roomId, msg.resumeToken);
-
 					if (pendingScene && ws && ws.readyState === WebSocket.OPEN) {
 						const { roomId, playerId, scene } = pendingScene;
 
-						if (roomId === msg.roomId && playerId === msg.playerId) {
+						const isCurrentSession =
+							s.roomId === msg.roomId &&
+							s.playerId === msg.playerId;
+
+						if (isCurrentSession && roomId === msg.roomId && playerId === msg.playerId) {
 							console.log("[ws] sending pendingScene after joined", { roomId, playerId, scene });
 							sendClient({ type: "update_scene", roomId, playerId, scene });
 							pendingScene = null;
@@ -475,13 +471,17 @@ function createWebSocketStore() {
 	) {
 		console.log("[ws] updatePlayerScene", { roomId, playerId, scene });
 
-		update((s) => ({ ...s, pendingScene: { roomId, playerId, scene } }));
-
+		// If we cannot send right now, queue it.
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			update((s) => ({ ...s, pendingScene: { roomId, playerId, scene } }));
 			console.log("[ws] updatePlayerScene queued (ws not open)");
 			connect();
 			return;
 		}
+
+  		// If we can send immediately, don't leave stale pending state behind.
+		update((s) => ({ ...s, pendingScene: null }));
+
 		console.log("[ws] updatePlayerScene sending immediately");
 		sendClient({ type: "update_scene", roomId, playerId, scene });
 	}

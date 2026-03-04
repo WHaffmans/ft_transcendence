@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/04 16:03:08 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 16:21:16 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ import { replaceTimeout, replaceInterval, replaceMapTimeout } from "./timers.js"
 import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 
 // External
-import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED, PlayerId } from "@ft/game-ws-protocol";
+import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 import type { GameStateSnapshot } from "@ft/game-ws-protocol";
 
@@ -367,6 +367,7 @@ export class RoomManager {
 				}
 
 				room.wsByPlayerId[pid] = ws;
+				room.connectedById[pid] = true;
 			}
 		} catch (err) {
 			if (ws && subscribed)
@@ -406,8 +407,7 @@ export class RoomManager {
 			resumeToken = token;
 			room.resumeTokenByPlayerId[pid] = token;
 		} else {
-			resumeToken =
-			room.resumeTokenByPlayerId[pid] ??
+			resumeToken = room.resumeTokenByPlayerId[pid] ??
 			this.issueResumeToken(room, pid);
 		}
 
