@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 09:13:34 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 09:20:45 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 16:33:16 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@ import { GameConfig } from "./config.js";
 import type { ColorRGBA } from "./init.js";
 import { PlayerState } from "./init.js";
 import { Rng } from "./rng.js";
+
+const SPAWN_MARGIN = 100;
 
 function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
 	const c = v * s;
@@ -49,8 +51,11 @@ function playerColor(index: number, total: number): ColorRGBA {
 export function spawnPlayers(config: GameConfig, rng: Rng, playerIds: string[]): PlayerState[] {
 	const ids = [...playerIds].sort();
 
-	const margin = config.playerRadius * 6;
+	const margin = Math.max(config.playerRadius * 6, SPAWN_MARGIN);
 	const minDist = config.playerRadius * 10;
+
+	const safeMarginX = Math.min(margin, (config.arenaWidth - config.playerRadius * 2) / 2);
+	const safeMarginY = Math.min(margin, (config.arenaHeight - config.playerRadius * 2) / 2);
 
 	const randIn = (min: number, max: number) => min + rng.nextFloat() * (max - min);
 
@@ -69,8 +74,8 @@ export function spawnPlayers(config: GameConfig, rng: Rng, playerIds: string[]):
 		let x = 0, y = 0;
 
 		for (let attempt = 0; attempt < 50; attempt++) {
-			x = randIn(margin, config.arenaWidth - margin);
-			y = randIn(margin, config.arenaHeight - margin);
+			x = randIn(safeMarginX, config.arenaWidth - safeMarginX);
+			y = randIn(safeMarginY, config.arenaHeight - safeMarginY);
 			if (isFarEnough(x, y)) break;
 		}
 

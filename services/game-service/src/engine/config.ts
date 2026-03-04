@@ -28,10 +28,6 @@ export type GameConfig = {
 	gapChance: number;				// probability per tick to START a gap (0..1)
 	gapMinTicks: number;
 	gapMaxTicks: number;
-
-	// Spawning
-	spawnPadding: number;			// distance from walls
-	spawnAngle: number;				// radians (random +/-)
 };
 
 // Set default values
