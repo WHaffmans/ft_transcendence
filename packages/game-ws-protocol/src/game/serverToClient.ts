@@ -18,6 +18,7 @@ export const JoinedMsgSchema = z.object({
 	type: z.literal("joined"),
 	roomId: RoomId,
 	playerId: PlayerId,
+	resumeToken: z.string(),
 });
 
 export const LeftMsgSchema = z.object({

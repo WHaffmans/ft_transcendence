@@ -21,7 +21,6 @@ const MAX_WS_MESSAGES = 50;
 type Player = z.infer<typeof PlayerSchema>;
 type PlayerMeta = { name: string; avatar_url?: string };
 type StateMsg = Extract<ServerMsg, { type: "state" }>;
-// type LobbyTimerMsg = Extract<ServerMsg, { type: "lobby_timer" }>;
 
 type WSStoreState = {
 	status: "disconnected" | "connecting" | "open" | "error";
@@ -47,6 +46,7 @@ type WSStoreState = {
 	winnerId: string | null;
 	lastRoomClosed: { roomId: string; reason: string } | null;
 	afkTimer: { secondsLeft: number; deadlineAtMs: number } | null;
+	resumeToken: string | null;
 	pendingCreateOrJoin: { roomId: string; seed: number; player: Player } | null;
 	pendingScene: { roomId: string; playerId: string; scene: "lobby" | "game" } | null;
 };
@@ -55,6 +55,30 @@ function makeWsUrl() {
 	if (!browser) return "";
 	const proto = window.location.protocol === "https:" ? "wss" : "ws";
 	return `${proto}://${window.location.host}/ws`;
+}
+
+
+/* ========================================================================== */
+/*                                  RESUME KEY                                */
+/* ========================================================================== */
+
+function resumeKey(roomId: string) {
+  return `ft:room:${roomId}:resume`;
+}
+
+function saveResumeToken(roomId: string, token: string) {
+  if (!browser) return;
+  localStorage.setItem(resumeKey(roomId), token);
+}
+
+function loadResumeToken(roomId: string) {
+  if (!browser) return null;
+  return localStorage.getItem(resumeKey(roomId));
+}
+
+function clearResumeToken(roomId: string) {
+  if (!browser) return;
+  localStorage.removeItem(resumeKey(roomId));
 }
 
 
@@ -76,6 +100,7 @@ function createWebSocketStore() {
 		winnerId: null as string | null,
 		lastRoomClosed: null,
 		afkTimer: null,
+		resumeToken: null,
 		pendingCreateOrJoin: null,
 		pendingScene: null,
 	});
@@ -86,6 +111,42 @@ function createWebSocketStore() {
 	let lastLoggedLobbyTimer: number | null = null;
 	let lastLoggedAfkTimer: number | null = null;
 
+	function logIncomming(msg: ServerMsg) {
+		if (msg.type === "state") {
+			const phase = msg.snapshot?.phase ?? null;
+			if (phase !== lastLoggedPhase) {
+				console.log("[ws] recv state phase:", lastLoggedPhase, "→", phase);
+				lastLoggedPhase = phase;
+			}
+		} else if (msg.type === "game_started") {
+			console.log("[ws] recv game_started", { roomId: msg.roomId });
+		} else if (msg.type === "game_finished") {
+			console.log("[ws] recv game_finished", { roomId: msg.roomId, winnerId: msg.winnerId ?? null });
+		} else if (msg.type === "room_closed") {
+			console.log("[ws] recv room_closed", { roomId: msg.roomId, reason: msg.reason });
+		} else if (msg.type === "lobby_timer") {
+			const isStart = lastLoggedLobbyTimer === null && msg.secondsLeft > 0;
+			const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+			if (isStart || isStop) {
+				console.log("[ws] recv lobby_timer", { secondsLeft: msg.secondsLeft });
+			}
+			lastLoggedLobbyTimer = isStop ? null : msg.secondsLeft;
+		} else if (msg.type === "afk_timer") {
+			const isStart = lastLoggedAfkTimer === null && msg.secondsLeft > 0;
+			const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
+			if (isStart || isStop) {
+				console.log("[ws] recv afk_timer", { playerId: msg.playerId, secondsLeft: msg.secondsLeft });
+			}
+			lastLoggedAfkTimer = isStop ? null : msg.secondsLeft;
+		} else if (msg.type === "joined") {
+			console.log("[ws] recv joined", { roomId: msg.roomId, playerId: msg.playerId });
+		} else if (msg.type === "left") {
+			console.log("[ws] recv left", { roomId: msg.roomId, playerId: msg.playerId });
+		} else if (msg.type === "error") {
+			console.log("[ws] recv error", { message: msg.message });
+		}
+	}
+
 
 	/* ========================================================================== */
 	/*                                TRANSPORT                                   */
@@ -93,6 +154,13 @@ function createWebSocketStore() {
 
 	function connect() {
 		if (!browser) return;
+
+		if (!navigator.onLine) {
+			console.log("[ws] connect skipped (navigator.offline)");
+			update((s) => ({ ...s, status: "disconnected" }));
+			return;
+		}
+
 		if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
 		update((s) => ({ ...s, status: "connecting" }));
@@ -107,16 +175,18 @@ function createWebSocketStore() {
 
 			if (s.pendingCreateOrJoin) {
 				const { roomId, seed, player } = s.pendingCreateOrJoin;
-				console.log("[ws] replaying pendingCreateOrJoin", { roomId, playerId: player.playerId });
-				update((x) => ({ ...x, pendingCreateOrJoin: null }));
-				sendClient({ type: "create_or_join_room", roomId, seed, player });
-			}
 
-			if (s.pendingScene) {
-				const { roomId, playerId, scene } = s.pendingScene;
-				console.log("[ws] replaying pendingScene", { roomId, playerId, scene });
-				update((x) => ({ ...x, pendingScene: null }));
-				sendClient({ type: "update_scene", roomId, playerId, scene });
+				console.log("[ws] replaying pendingCreateOrJoin", { roomId, playerId: player.playerId });
+				
+				const token = loadResumeToken(roomId);
+				update((x) => ({ ...x, pendingCreateOrJoin: null }));
+				sendClient({
+					type: "create_or_join_room",
+					roomId,
+					seed,
+					player,
+					...(token ? { resumeToken: token } : {}),
+				});
 			}
 		};
 
@@ -135,41 +205,7 @@ function createWebSocketStore() {
 			}
 
 			const msg = parsed.data;
-
-			// --- Incoming message logging ---
-			if (msg.type === "state") {
-				const phase = msg.snapshot?.phase ?? null;
-				if (phase !== lastLoggedPhase) {
-					console.log("[ws] recv state phase:", lastLoggedPhase, "→", phase);
-					lastLoggedPhase = phase;
-				}
-			} else if (msg.type === "game_started") {
-				console.log("[ws] recv game_started", { roomId: msg.roomId });
-			} else if (msg.type === "game_finished") {
-				console.log("[ws] recv game_finished", { roomId: msg.roomId, winnerId: msg.winnerId ?? null });
-			} else if (msg.type === "room_closed") {
-				console.log("[ws] recv room_closed", { roomId: msg.roomId, reason: msg.reason });
-			} else if (msg.type === "lobby_timer") {
-				const isStart = lastLoggedLobbyTimer === null && msg.secondsLeft > 0;
-				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
-				if (isStart || isStop) {
-					console.log("[ws] recv lobby_timer", { secondsLeft: msg.secondsLeft });
-				}
-				lastLoggedLobbyTimer = isStop ? null : msg.secondsLeft;
-			} else if (msg.type === "afk_timer") {
-				const isStart = lastLoggedAfkTimer === null && msg.secondsLeft > 0;
-				const isStop  = msg.secondsLeft <= 0 && msg.deadlineAtMs === 0;
-				if (isStart || isStop) {
-					console.log("[ws] recv afk_timer", { playerId: msg.playerId, secondsLeft: msg.secondsLeft });
-				}
-				lastLoggedAfkTimer = isStop ? null : msg.secondsLeft;
-			} else if (msg.type === "joined") {
-				console.log("[ws] recv joined", { roomId: msg.roomId, playerId: msg.playerId });
-			} else if (msg.type === "left") {
-				console.log("[ws] recv left", { roomId: msg.roomId, playerId: msg.playerId });
-			} else if (msg.type === "error") {
-				console.log("[ws] recv error", { message: msg.message });
-			}
+			logIncomming(msg);
 
 			update((s) => {
 				const isState = msg.type === "state";
@@ -203,6 +239,25 @@ function createWebSocketStore() {
 					}
 				}
 
+				// On join success
+				let resumeToken = s.resumeToken;
+				let pendingScene = s.pendingScene;
+
+				if (msg.type === "joined") {
+					resumeToken = msg.resumeToken;
+					saveResumeToken(msg.roomId, msg.resumeToken);
+
+					if (pendingScene && ws && ws.readyState === WebSocket.OPEN) {
+						const { roomId, playerId, scene } = pendingScene;
+
+						if (roomId === msg.roomId && playerId === msg.playerId) {
+							console.log("[ws] sending pendingScene after joined", { roomId, playerId, scene });
+							sendClient({ type: "update_scene", roomId, playerId, scene });
+							pendingScene = null;
+						}
+					}
+				}
+
 				// Lobby timer
 				let lobbyTimer = s.lobbyTimer;
 
@@ -223,8 +278,14 @@ function createWebSocketStore() {
 				// Room closed
 				let lastRoomClosed = s.lastRoomClosed;
 				if (msg.type === "room_closed") {
+					clearResumeToken(msg.roomId);
 					lastRoomClosed = { roomId: msg.roomId, reason: msg.reason };
-				}	
+				}
+
+				// Game finished
+				if (msg.type === "game_finished") {
+					clearResumeToken(msg.roomId);
+				}
 
 				// AFK timer
 				let afkTimer = s.afkTimer;
@@ -249,6 +310,8 @@ function createWebSocketStore() {
 					lobbyTimer,
 					lastRoomClosed,
 					afkTimer,
+					resumeToken,
+					pendingScene,
 
 					winnerId:
 						msg.type === "game_finished"
@@ -285,8 +348,6 @@ function createWebSocketStore() {
 			return;
 		}
 
-		// --- Per tick input logging, disabled by default ---
-		// console.log("[ws] send:", parsed.data);
 		ws.send(JSON.stringify(parsed.data));
 	}
 
@@ -311,9 +372,25 @@ function createWebSocketStore() {
 			winnerId: null,
 			lastRoomClosed: null,
 			afkTimer: null,
+			resumeToken: null,
 			pendingCreateOrJoin: null,
 			pendingScene: null,
 		});
+	}
+
+	function forceDisconnect(reason = "forced") {
+		console.log("[ws] forceDisconnect", { reason });
+
+		try {
+			if (ws) {
+			try { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null as any; } catch {}
+			try { ws.close(1000, reason); } catch {}
+			ws = null;
+			}
+		} finally {
+			update((s) => ({ ...s, status: "disconnected" }));
+			connect();
+		}
 	}
 
 	function mergeSegments(
@@ -365,25 +442,39 @@ function createWebSocketStore() {
 
 	function createOrJoinRoom(roomId: string, seed: number, player: Player) {
 		console.log("[ws] createOrJoinRoom", { roomId, playerId: player.playerId });
+
+		const token = loadResumeToken(roomId);
+
 		update((s) => ({
 			...s,
 			roomId,
 			playerId: player.playerId,
-	}));
+			pendingCreateOrJoin: { roomId, seed, player },
+		}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
 			console.log("[ws] createOrJoinRoom queued (ws not open)");
-			update((s) => ({ ...s, pendingCreateOrJoin: { roomId, seed, player } }));
 			connect();
 			return;
 		}
 
 		console.log("[ws] createOrJoinRoom sending immediately");
-		sendClient({ type: "create_or_join_room", roomId, seed, player });
+		sendClient({
+			type: "create_or_join_room",
+			roomId,
+			seed,
+			player,
+			...(token ? { resumeToken: token } : {}),
+		});
 	}
 
-	function updatePlayerScene(roomId: string, playerId: string, scene: "lobby" | "game" ) {
+	function updatePlayerScene(
+		roomId: string,
+		playerId: string,
+		scene: "lobby" | "game"
+	) {
 		console.log("[ws] updatePlayerScene", { roomId, playerId, scene });
+
 		update((s) => ({ ...s, pendingScene: { roomId, playerId, scene } }));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -391,12 +482,9 @@ function createWebSocketStore() {
 			connect();
 			return;
 		}
-
 		console.log("[ws] updatePlayerScene sending immediately");
 		sendClient({ type: "update_scene", roomId, playerId, scene });
-		update((s) => ({ ...s, pendingScene: null }));
 	}
-	
 	
 	function startGame() {
 		const s = get(store);
@@ -417,6 +505,8 @@ function createWebSocketStore() {
 	function leaveRoom() {
 		const s = get(store);
 		console.log("[ws] leaveRoom", { roomId: s.roomId, playerId: s.playerId });
+
+		if (s.roomId) clearResumeToken(s.roomId);
 
 		if (ws && ws.readyState === WebSocket.OPEN && s.roomId && s.playerId) {
 			sendClient({ type: "leave_room", roomId: s.roomId, playerId: s.playerId });
@@ -489,6 +579,7 @@ function createWebSocketStore() {
 		getSceneById,
 		getHostId,
 		setPlayerMeta,
+		forceDisconnect,
 	};
 }
 

@@ -6,11 +6,12 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/03 11:36:37 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 12:59:05 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import type WebSocket from "ws";
+import crypto from "node:crypto";
 
 // Game
 import { initGame } from "../engine/init.js";
@@ -26,7 +27,7 @@ import { replaceTimeout, replaceInterval, replaceMapTimeout } from "./timers.js"
 import type { TimeoutHandle, IntervalHandle } from "./timers.js";
 
 // External
-import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED } from "@ft/game-ws-protocol";
+import { ServerMsgSchema, type ServerMsg, WS_CLOSE_ROOM_CLOSED, PlayerId } from "@ft/game-ws-protocol";
 import type { GamePhase, PlayerPhase, Player } from "@ft/game-ws-protocol";
 import type { GameStateSnapshot } from "@ft/game-ws-protocol";
 
@@ -65,6 +66,14 @@ type Room = {
 	subscribers: Set<WebSocket>;
   	wsByPlayerId: Record<string, WebSocket | null>;
   	connectedById: Record<string, boolean>;
+	resumeTokenByPlayerId: Record<string, string>;
+	playerIdByResumeToken: Record<string, string>;
+};
+
+type JoinResult = {
+	room: Room;
+	playerId: string;
+	resumeToken: string;
 };
 
 
@@ -192,6 +201,8 @@ export class RoomManager {
 			subscribers: new Set(),
 			wsByPlayerId: {},
 			connectedById: {},
+			resumeTokenByPlayerId: {},
+			playerIdByResumeToken: {},
 		};
 
 		this.rooms.set(roomId, room);
@@ -273,6 +284,7 @@ export class RoomManager {
 		room.inputsById[pid] ??= 0;
 		room.sceneById[pid] ??= "lobby";
 		room.wsByPlayerId[pid] ??= null;
+		room.resumeTokenByPlayerId[pid] ??= this.issueResumeToken(room, pid);
 
 		if (room.phase === "lobby" && !wasAlreadyInRoom) {
 			this.resetGame(room);
@@ -294,7 +306,8 @@ export class RoomManager {
 		player: Player;
 		seed: number;
 		config: GameConfig;
-	}, ws?: WebSocket): Room {
+		resumeToken?: string;
+	}, ws?: WebSocket): JoinResult {
 
 		const existedBefore = this.rooms.has(args.roomId);
 
@@ -307,19 +320,42 @@ export class RoomManager {
 
 		if (ws) this.subscribe(args.roomId, ws);
 
+		// Resolve identity
+		let effectivePlayer: Player = args.player;
+		const token = args.resumeToken;
+			if (token) {
+			const tokenPid = room.playerIdByResumeToken?.[token];
+
+			if (tokenPid) {
+				// Resume token wins
+				if (tokenPid !== args.player.playerId) {
+					logInfo("room.resume_token_overrode_playerId", {
+						roomId: args.roomId,
+						claimed: args.player.playerId,
+						tokenPid,
+					});
+				}
+				effectivePlayer = { ...args.player, playerId: tokenPid };
+			} else {
+				// If game is already in progress, unknown token should not be allowed
+				if (room.phase === "running" || room.phase === "ready") {
+					throw new Error("Invalid resume token");
+				}
+			}
+		}
+
 		const beforeCount = room.players.length;
-		const alreadyMember = !!this.getPlayer(room, args.player.playerId);
+		const alreadyMember = !!this.getPlayer(room, effectivePlayer.playerId);
 
-		this.addPlayerToRoom(args.roomId, args.player);
+		this.addPlayerToRoom(args.roomId, effectivePlayer);
 
+		// Bind socket to player
 		if (ws) {
-			const pid = args.player.playerId;
+			const pid = effectivePlayer.playerId;
 
 			const prev = room.wsByPlayerId[pid];
 			if (prev && prev !== ws && (prev.readyState === prev.OPEN || prev.readyState === prev.CONNECTING)) {
-				try { 
-					prev.close(1000, "Replaced by reconnect");
-				} catch {}
+				try { prev.close(1000, "Replaced by reconnect"); } catch {}
 				this.unsubscribe(args.roomId, prev);
 			}
 
@@ -330,7 +366,7 @@ export class RoomManager {
 
 		logInfo("room.create_or_join", {
 			roomId: args.roomId,
-			playerId: args.player.playerId,
+			playerId: effectivePlayer.playerId,
 			created: !existedBefore,
 			alreadyMember,
 			phase: room.phase,
@@ -339,6 +375,7 @@ export class RoomManager {
 			hostId: room.hostId,
 		});
 
+		// Full segement?
 		if (ws) {
 			const pid = args.player.playerId;
 			const isRejoinDuringGame =
@@ -351,7 +388,32 @@ export class RoomManager {
 			} satisfies ServerMsg);
 		}
 
-		return (room);
+		const pid = effectivePlayer.playerId;
+		let resumeToken: string;
+		if (token && room.playerIdByResumeToken?.[token] === pid) {
+			resumeToken = token;
+			room.resumeTokenByPlayerId[pid] = token;
+		} else {
+			resumeToken =
+			room.resumeTokenByPlayerId[pid] ??
+			this.issueResumeToken(room, pid);
+		}
+
+		return { room, playerId: pid, resumeToken };
+	}
+
+	private issueResumeToken(room: Room, playerId: string): string {
+		const token = crypto.randomUUID();
+
+		// Ensure maps exist
+		room.playerIdByResumeToken ??= {};
+		room.resumeTokenByPlayerId ??= {};
+
+		// Keep both directions in sync
+		room.playerIdByResumeToken[token] = playerId;
+		room.resumeTokenByPlayerId[playerId] = token;
+
+		return (token);
 	}
 
 

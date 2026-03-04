@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/03 11:36:51 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 09:57:39 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,15 +207,27 @@ export function startPublicWsServer(
 
 						boundRoomId = msg.roomId;
 						boundPlayerId = msg.player.playerId;
-
-						rooms.createOrJoinRoom({
-							roomId: boundRoomId,
+						const joinArgs = {
+							roomId: msg.roomId,
 							player: msg.player,
 							seed,
 							config,
-						}, ws);
+							...(msg.resumeToken !== undefined ? { resumeToken: msg.resumeToken } : {}),
+						};
 
-						safeSendServer(ws, { type: "joined", roomId: boundRoomId, playerId: boundPlayerId } satisfies ServerMsg);
+						const { room, playerId: effectivePlayerId, resumeToken } = rooms.createOrJoinRoom(joinArgs, ws);
+
+						boundPlayerId = effectivePlayerId;
+
+						safeSendServer(
+							ws,
+							{
+								type: "joined",
+								roomId: room.roomId,
+								playerId: effectivePlayerId,
+								resumeToken,
+							} satisfies ServerMsg,
+						);
 						return;
 					}
 

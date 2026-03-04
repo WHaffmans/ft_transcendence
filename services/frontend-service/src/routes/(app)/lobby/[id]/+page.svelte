@@ -88,10 +88,7 @@
 		};
 
 		wsStore.createOrJoinRoom(lobbyId, 0, player);
-		const phase = liveRoomState?.phase ?? null;
-		if (phase === null || phase === "lobby") {
-			wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
-  		}
+		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
 	}
 
 
@@ -120,10 +117,12 @@
 
 		// 3. Join WS session
 		if (!lobbyId) return;
-		const joinKey = `${lobbyId}:${playerId}`;
+		const shouldEnsure = $wsStore.status !== "open";
+		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;
 		if (lastJoinedKey !== joinKey) {
 			lastJoinedKey = joinKey;
-			joinLobbySession(lobbyId, user);
+			if (shouldEnsure) joinLobbySession(lobbyId, user);
+			else if (!liveRoomState) joinLobbySession(lobbyId, user);
 		}
 	});
 
