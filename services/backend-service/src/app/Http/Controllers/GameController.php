@@ -205,7 +205,7 @@ class GameController extends Controller
 
         $results = $request->input('users', []);
         foreach ($results as $result) {
-            $user = User::find($result['user_id'])->first();
+            $user = User::find((int) $result['user_id']);
             if ($user) {
                 // Calculate rating difference: (new_rating - old_rating)
                 $old_rating = $user->rating_mu - (3 * $user->rating_sigma);
