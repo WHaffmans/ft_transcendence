@@ -14,7 +14,7 @@ class StoreGameRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['nullable', 'string', 'in:pending,ready,active,completed'],
+            'status' => ['string', 'in:pending,ready,active,completed'],
         ];
     }
 }
