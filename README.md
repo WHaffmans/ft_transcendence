@@ -644,7 +644,7 @@ This section provides an overview of all implemented features, including a short
 
 # Modules
 
-> TOTAL POINTS: **18**
+> TOTAL POINTS: **17**
 
 This section outlines the module-based scoring structure of the project. The evaluation system is divided into **major** and **minor** modules, where each major module is worth 2 points and each minor module is worth 1 point.
 
@@ -721,15 +721,11 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 ### Module 7: DevOps
 
-> POINTS: **3**
+> POINTS: **2**
 
 - `2` **Backend microservices (loosely coupled | clear interfaces | single responsibility).** <br/>
   Improved scalability and maintainability by separating concerns into independent services with well-defined interfaces. <br/>
   *Contributors: Willem Haffmans, Quinten Mennen.*
-
-- `1` **Health checks and status indicator (monitoring | backups | disaster recovery).** <br/>
-  Ensured service observability through health monitoring, a live status indicator, and automated backup and restore tooling. <br/>
-  *Contributors: Willem Haffmans.*
 
 <br/>
 
