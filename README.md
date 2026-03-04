@@ -51,12 +51,14 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
   - [Database System](#database-system)
   - [Game Engine](#game-engine)
 - [Database Schema](#database-schema)
+- [API Documentation](#api-documentation)
 - [Features](#features)
 - [Modules](#modules)
 - [Sources](#sources)
   - [Artwork](#artwork)
   - [Rating System](#rating-system)
   - [Collision Detection & Optimisation](#collision-detection--optimisation)
+  - [Development Tools & AI Assistance](#development-tools--ai-assistance)
 
 <br/>
 
@@ -530,6 +532,300 @@ Join table linking users to games, plus per-game results and rating info.
 
 
 
+# API Documentation
+
+## Public
+
+### Base URL
+
+```json
+http://localhost:8080/auth/api
+```
+
+The backend exposes a REST API for authentication, games, and users.
+All responses are JSON.
+
+<br/>
+
+
+## Authentication
+
+| Method | Endpoint  | Description                              |
+| ------ | --------- | ---------------------------------------- |
+| POST   | `/logout` | Log out the currently authenticated user |
+
+
+### Logout
+
+```json
+POST /logout
+```
+
+Logs out the currently authenticated user.
+
+```json
+{
+  "message": "Logged out"
+}
+```
+
+**Errors**
+
+| Code | Description     |
+| ---- | --------------- |
+| 401  | Unauthenticated |
+
+
+<br/>
+
+
+## Games
+
+Game endpoints manage the lifecycle of multiplayer matches.
+
+| Method | Endpoint               | Description                      |
+| ------ | ---------------------- | -------------------------------- |
+| GET    | `/games`               | List all games                   |
+| POST   | `/games`               | Create a new game                |
+| GET    | `/games/find`          | Find a game available to join    |
+| GET    | `/games/{game}`        | Get game details                 |
+| PUT    | `/games/{game}`        | Update a game                    |
+| DELETE | `/games/{game}`        | Delete a game                    |
+| POST   | `/games/{game}/start`  | Start a game                     |
+| POST   | `/games/{game}/finish` | Finish a game and submit results |
+
+<br/>
+
+
+### Find Active Game
+
+```json
+GET /games/find
+```
+
+Returns a game that the user can join or is currently part of.
+
+<br/>
+
+
+### List Games
+
+```json
+GET /games
+```
+
+Returns all games.
+
+<br/>
+
+
+
+### Create Game
+
+```json
+POST /games
+```
+
+**Response**
+
+```json
+{
+  "id": "uuid",
+  "status": "string"
+}
+```
+
+<br/>
+
+
+
+### Get Game
+
+```json
+GET /games/{game}
+```
+
+Retrieve a specific game.
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| game      | UUID | Game ID     |
+
+<br/>
+
+
+### Start Game
+
+```json
+POST /games/{game}/start
+```
+
+Starts a game.
+
+<br/>
+
+
+
+### Finish Game
+
+```json
+POST /games/{game}/finish
+```
+
+Finishes a game and submits the final player rankings.
+
+**Request Body**
+
+```json
+{
+  "users": [
+    {
+      "user_id": 1,
+      "rank": 1,
+      "rating_mu": 25.0,
+      "rating_sigma": 8.3
+    }
+  ]
+}
+```
+
+<br/>
+
+
+### Update Game
+
+```json
+PUT /games/{game}
+```
+
+Updates game data.
+
+<br/>
+
+
+### Delete Game
+
+```json
+DELETE /games/{game}
+```
+
+Deletes a game.
+
+<br/>
+
+
+## Users
+
+User endpoints manage player profiles.
+
+| Method | Endpoint        | Description     |
+| ------ | --------------- | --------------- |
+| GET    | `/users`        | List all users  |
+| GET    | `/users/{user}` | Retrieve a user |
+| PUT    | `/users/{user}` | Update a user   |
+| DELETE | `/users/{user}` | Delete a user   |
+
+<br/>
+
+
+### List Users
+
+```json
+GET /users
+```
+
+Returns all users.
+
+<br/>
+
+
+### Get User
+
+```json
+GET /users/{user}
+```
+
+Retrieve a specific user.
+
+| Parameter | Type    | Description |
+| --------- | ------- | ----------- |
+| user      | integer | User ID     |
+
+
+<br/>
+
+
+### Update User
+
+```Json
+PUT /users/{user}
+```
+
+Updates user information.
+
+<br/>
+
+
+### Delete User
+
+```json
+DELETE /users/{user}
+```
+
+Removes a user.
+
+<br/>
+
+
+## Data Models
+
+### Game
+
+```json
+{
+  "id": "string",
+  "status": "string",
+  "created_at": "datetime",
+  "updated_at": "datetime"
+}
+```
+<br/>
+
+
+### User
+
+```json
+{
+  "id": 1,
+  "name": "string",
+  "email": "string",
+  "avatar_url": "string | null",
+  "rating_mu": 25,
+  "rating_sigma": 8.3
+}
+```
+
+<br/>
+
+
+## Common Errors
+
+| Code | Description        |
+| ---- | ------------------ |
+| 401  | Unauthenticated    |
+| 404  | Resource not found |
+| 422  | Validation error   |
+
+
+<br/>
+
+---
+
+<br/>
+<br/>
+
+
+
 # Features
 
 This section provides an overview of all implemented features, including a short description and the primary contributors responsible for each part.
@@ -769,6 +1065,17 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 - Amanatides, J., & Woo, A. (1987).  
   *A Fast Voxel Traversal Algorithm for Ray Tracing.*
+
+<br/>
+
+### Development Tools & AI Assistance
+
+During development we used several AI-assisted tools as supplementary resources.  
+**GitHub Copilot** was used primarily for code suggestions and lightweight code reviews during implementation.
+
+**ChatGPT** and **Claude** were occasionally consulted for conceptual guidance, debugging ideas, documentation suggestions, and general software engineering questions (e.g., architectural considerations, algorithm explanations, and formatting improvements for documentation).
+
+All generated suggestions were reviewed, tested, and adapted by the team before being incorporated into the project. No AI-generated code was included without verification and integration with the project’s architecture and coding standards.
 
 <br/>
 
