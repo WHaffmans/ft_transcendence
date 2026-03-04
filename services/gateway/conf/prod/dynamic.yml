@@ -26,6 +26,14 @@ http:
         - websecure
       tls: {}
 
+    scramble-docs:
+      rule: "PathPrefix(`/docs/api`)"
+      service: backend-service
+      priority: 20
+      entryPoints:
+        - websecure
+      tls: {}
+
     game-ws:
       rule: "PathPrefix(`/ws`)"
       service: game-service

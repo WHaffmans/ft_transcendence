@@ -6,6 +6,9 @@ use App\Http\Requests\UploadAvatarRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
+/**
+ * @tags Avatar
+ */
 class AvatarController extends Controller
 {
     /**

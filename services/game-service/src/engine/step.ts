@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/02/10 10:42:13 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 18:04:37 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ export function step(
 	};
 
 	const rng = makeRng(state.rngState);
+	const deathsThisTick: string[] = [];
 
 	// Loop through players
 	for (const p of next.players) {
@@ -73,11 +74,12 @@ export function step(
 		if (p.x < 0 || p.x > config.arenaWidth || p.y < 0 || p.y > config.arenaHeight) {
 			p.alive = false;
 			recordDeath(next, p.id);
+			deathsThisTick.push(p.id);
 			continue;
 		}
 		
 		// Collision
-		const effectiveRadius = config.playerRadius * 2;
+		const effectiveRadius = config.playerRadius;
 		const hit = checkCollisionThisTick(
 			next.spatial,
 			next.segments,
@@ -92,10 +94,10 @@ export function step(
 			5,
 		);
 
-
 		if (hit) {
 			p.alive = false;
 			recordDeath(next, p.id);
+			deathsThisTick.push(p.id);
 			continue;
 		}
 
@@ -128,9 +130,14 @@ export function step(
 	let winnerId: string | null = null;
 
 	if (alive.length === 1) {
-		const [only] = alive;
-		if (only) {
-			winnerId = only.id;
+		winnerId = alive[0]!.id;
+		next.winnerId = winnerId;
+	
+	// Avoid deadlock, simultanious deaths
+	} else if (alive.length === 0) {
+		deathsThisTick.sort();
+		if (deathsThisTick.length > 0) {
+			winnerId = deathsThisTick[deathsThisTick.length - 1]!; // survived longest this tick
 			next.winnerId = winnerId;
 		}
 	}

@@ -12,10 +12,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @tags Games
+ */
 class GameController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all games.
+     *
+     * Returns a list of all games.
+     *
+     * @response 200 scenario="Success" [{"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}]
      */
     public function index(): \Illuminate\Http\JsonResponse
     {
@@ -37,7 +44,12 @@ class GameController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Get a game.
+     *
+     * Returns a single game with its associated users.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
     public function show(Game $game): \Illuminate\Http\JsonResponse
     {
@@ -62,7 +74,10 @@ class GameController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete a game.
+     *
+     * @response 204 scenario="Deleted"
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
     public function destroy(Game $game): \Illuminate\Http\JsonResponse
     {
@@ -71,6 +86,15 @@ class GameController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * Find or create a game.
+     *
+     * Finds an active or pending game for the authenticated user. If no suitable game
+     * exists, joins an open game with available slots, or creates a new one.
+     *
+     * @response 200 scenario="Existing game found" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
+     * @response 201 scenario="New game created" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
+     */
     public function findGame(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = $request->user();
@@ -117,6 +141,10 @@ class GameController extends Controller
      */
     public function leaveGame(LeaveGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+        ]);
+
         if ($game->status !== "pending") {
             return response()->json(null, status: 200);
         }
@@ -139,27 +167,18 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function readyGame(Game $game): \Illuminate\Http\JsonResponse
+    /**
+     * Start a game.
+     *
+     * Transitions a game from ready to active status.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
+     */
+    public function startGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
-        // if ($game->status !== 'pending') {
-        //     return response()->json(['message' => 'Game is not in pending state.'], 400);
-        // }
-
-        if ($game->users->count() < 2) {
-            return response()->json(['message' => 'Not enough players to start the game.'], 400);
+        if ($game->status !== 'pending') {
+            return response()->json(['message' => 'Game must be in pending state to start.'], 400);
         }
-
-        $game->status = 'ready';
-        $game->save();
-
-        return response()->json($game->load('users'));
-    }
-
-    public function startGame(Game $game): \Illuminate\Http\JsonResponse
-    {
-        // if ($game->status !== 'ready') {
-        //     return response()->json(['message' => 'Game must be in ready state to start.'], 400);
-        // }
 
         $game->status = 'active';
         $game->save();
@@ -167,11 +186,19 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
+    /**
+     * Finish a game.
+     *
+     * Marks a game as completed and updates player rankings. Each user's rating
+     * (mu/sigma) and rank are stored on the pivot, and the user's global rating is updated.
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "completed", "users": [{"id": 1, "name": "John", "user_game": {"rank": 1, "rating_mu": 25.0, "rating_sigma": 8.0, "diff": 2.5}}]}
+     */
     public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
-        // if ($game->status !== 'active') {
-        //     return response()->json(['message' => 'Game must be active to finish.'], 400);
-        // }
+        if ($game->status !== 'active') {
+            return response()->json(['message' => 'Game must be active to finish.'], 400);
+        }
 
         $game->status = 'completed';
         $game->save();
