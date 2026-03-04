@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/03/04 16:39:15 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 17:46:41 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG: GameConfig = {
 	speed: 4.0,
 	turnSpeedModifier: 0.65,
 	turnRate: 0.1,
-	playerRadius: 4,
+	playerRadius: 2,
 	segmentSendCount: 15,
 
 	gapChance: 0.03,
