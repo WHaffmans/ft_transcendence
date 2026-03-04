@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/04 12:59:05 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 16:03:08 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -318,8 +318,6 @@ export class RoomManager {
 			hostId: args.player.playerId,
 		});
 
-		if (ws) this.subscribe(args.roomId, ws);
-
 		// Resolve identity
 		let effectivePlayer: Player = args.player;
 		const token = args.resumeToken;
@@ -347,19 +345,33 @@ export class RoomManager {
 		const beforeCount = room.players.length;
 		const alreadyMember = !!this.getPlayer(room, effectivePlayer.playerId);
 
-		this.addPlayerToRoom(args.roomId, effectivePlayer);
+		let subscribed = false;
 
-		// Bind socket to player
-		if (ws) {
-			const pid = effectivePlayer.playerId;
+		try {
+			this.addPlayerToRoom(args.roomId, effectivePlayer);
 
-			const prev = room.wsByPlayerId[pid];
-			if (prev && prev !== ws && (prev.readyState === prev.OPEN || prev.readyState === prev.CONNECTING)) {
-				try { prev.close(1000, "Replaced by reconnect"); } catch {}
-				this.unsubscribe(args.roomId, prev);
+			if (ws) {
+				this.subscribe(args.roomId, ws);
+				subscribed = true;
+
+				const pid = effectivePlayer.playerId;
+
+				const prev = room.wsByPlayerId[pid];
+				if (
+					prev &&
+					prev !== ws &&
+					(prev.readyState === prev.OPEN || prev.readyState === prev.CONNECTING)
+				) {
+					try { prev.close(1000, "Replaced by reconnect"); } catch {}
+					this.unsubscribe(args.roomId, prev);
+				}
+
+				room.wsByPlayerId[pid] = ws;
 			}
-
-			room.wsByPlayerId[pid] = ws;
+		} catch (err) {
+			if (ws && subscribed)
+				this.unsubscribe(args.roomId, ws);
+			throw err;
 		}
 
 		const afterCount = room.players.length;
@@ -377,7 +389,7 @@ export class RoomManager {
 
 		// Full segement?
 		if (ws) {
-			const pid = args.player.playerId;
+			const pid = effectivePlayer.playerId;
 			const isRejoinDuringGame =
 				(room.phase === "running" || room.phase === "ready") &&
 				room.allPlayers.some((p) => p.playerId === pid);
