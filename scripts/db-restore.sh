@@ -64,12 +64,12 @@ if [ "$AUTO_MODE" = true ]; then
         -p"${DB_PASSWORD}" \
         -N -B \
         -e "SELECT (
-            (SELECT COUNT(*) FROM ${DB_DATABASE}.users) + 
-            (SELECT COUNT(*) FROM ${DB_DATABASE}.games) + 
+            (SELECT COUNT(*) FROM ${DB_DATABASE}.users) +
+            (SELECT COUNT(*) FROM ${DB_DATABASE}.games) +
             (SELECT COUNT(*) FROM ${DB_DATABASE}.user_game)
         ) AS total_rows;" \
         2>/dev/null || echo "0")
-    
+
     if [ "$DATA_CHECK" -gt 0 ]; then
         printf "${BLUE}→${RESET} Database already contains data (${DATA_CHECK} rows in users/games/user_game), skipping restore\n"
         exit 0
@@ -97,8 +97,15 @@ if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T mariadb mysql \
     -p"${DB_PASSWORD}" \
     "${DB_DATABASE}" \
     < "$DUMP_FILE" 2>/dev/null; then
-    
     printf "${GREEN}✓${RESET} Database restored successfully from dumps/latest.sql\n"
+    # Run migrations after restore
+    printf "${BLUE}→${RESET} Running migrations...\n"
+    if docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service php artisan migrate --force; then
+        printf "${GREEN}✓${RESET} Migrations completed successfully\n"
+    else
+        printf "${RED}✗${RESET} Migration failed\n"
+        exit 1
+    fi
 else
     printf "${RED}✗${RESET} Failed to restore database\n"
     exit 1
@@ -113,19 +120,19 @@ fi
 # Restore avatar files if backup exists
 if [ -f "$AVATAR_DUMP" ]; then
     printf "${BLUE}→${RESET} Restoring avatar files...\n"
-    
+
     # Ensure the avatars directory exists in the container
     if ! docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service mkdir -p /var/www/html/storage/app/public/avatars 2>/dev/null; then
         printf "${RED}✗${RESET} Failed to create avatars directory in backend-service container\n"
         exit 1
     fi
-    
+
     # Extract the tar archive into the container
     if cat "$AVATAR_DUMP" | docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service tar -xzf - -C /var/www/html/storage/app/public 2>/dev/null; then
         # Fix permissions
         docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service chown -R www-data:www-data /var/www/html/storage/app/public/avatars 2>/dev/null
         docker compose -f "$PROJECT_ROOT/$COMPOSE_FILE" exec -T backend-service chmod -R 755 /var/www/html/storage/app/public/avatars 2>/dev/null
-        
+
         AVATAR_SIZE=$(du -h "$AVATAR_DUMP" | cut -f1)
         printf "${GREEN}✓${RESET} Avatar files restored from dumps/avatars.tar.gz (${AVATAR_SIZE})\n"
     else

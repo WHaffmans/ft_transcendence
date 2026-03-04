@@ -17,7 +17,7 @@ class GameFactory extends Factory
 	 */
 	public function definition(): array
 	{
-		$status = $this->faker->randomElement([ 'ready', 'active', 'completed']);
+		$status = $this->faker->randomElement([ 'active', 'completed']);
 
 		return [
 			'status' => $status,
