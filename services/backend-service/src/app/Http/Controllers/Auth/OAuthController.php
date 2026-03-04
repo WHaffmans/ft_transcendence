@@ -113,15 +113,13 @@ class OAuthController extends Controller
             ->withCookies($cookies);
     }
 
-    public function refresh(Request $request)
+    public function refresh(Request $request): \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
     {
         $refreshToken = $request->cookie('refresh_token');
         if (!$refreshToken) {
             Log::warning('Refresh attempt without refresh_token cookie');
             return response()->json(['message' => 'No refresh token'], 401);
         }
-
-        Log::info('Attempting token refresh', ['refresh_token_length' => strlen($refreshToken)]);
 
         $internalRequest = Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
@@ -140,7 +138,7 @@ class OAuthController extends Controller
             return response()->json(['message' => 'Token refresh failed'], 401);
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $newRefresh = $tokenData['refresh_token'] ?? null;
 
