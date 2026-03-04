@@ -413,9 +413,9 @@ TrueSkill is a Bayesian skill rating algorithm originally developed by Microsoft
 
 # Database Schema
 
-## Diagram showing database tables and their relation
-
-<br/>
+<h3 align="center">
+    Diagram showing platform architecture
+</h3>
 
 ```mermaid
 erDiagram
