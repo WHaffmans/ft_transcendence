@@ -17,6 +17,7 @@ export const CreateRoomMsgSchema = z.object({
 	seed: z.number().int(),
 	config: z.unknown().optional(),
 	player: PlayerSchema,
+	resumeToken: z.string().optional(),
 });
 
 /**

@@ -78,12 +78,14 @@
   }
 
   .overlayCard {
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.65);
+    border: 4px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
     color: white;
     padding: 14px 18px;
-    border-radius: 12px;
     font: 14px system-ui;
     letter-spacing: 0.2px;
+    z-index: 2;
   }
 
   .overlayCard--finished {
