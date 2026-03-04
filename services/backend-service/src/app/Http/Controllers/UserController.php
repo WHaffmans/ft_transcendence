@@ -91,9 +91,6 @@ class UserController extends Controller
      *
      * @response 200 scenario="Success" {"id": 1, "name": "John", "email": "john@example.com"}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
-     *
-     * @response 200 scenario="Success" {"id": 1, "name": "John", "email": "john@example.com"}
-     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
