@@ -35,7 +35,7 @@ export type GameConfig = {
 
 // Set default values
 export const DEFAULT_CONFIG: GameConfig = {
-	tickRate: 1,
+	tickRate: 30,
 
 	arenaWidth: 800,
 	arenaHeight: 800,
