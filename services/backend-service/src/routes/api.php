@@ -11,7 +11,6 @@ use App\Http\Controllers\UserController;
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
     Route::post('/games/{game}/start', [App\Http\Controllers\GameController::class, 'startGame']);
-    // Route::post('/games/{game}/ready', [App\Http\Controllers\GameController::class, 'readyGame']);
     Route::post('/games/{game}/finish', [App\Http\Controllers\GameController::class, 'finishGame']);
     Route::post('/games/{game}/leave', [App\Http\Controllers\GameController::class, 'leaveGame']);
 });

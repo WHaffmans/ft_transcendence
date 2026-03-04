@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('games', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->enum('status', ['pending',  'active', 'completed'])->default('pending');
+            $table->enum('status', ['pending',  'active', 'completed', 'ready', 'cancelled'])->default('pending');
             $table->timestamps();
-
         });
     }
 
