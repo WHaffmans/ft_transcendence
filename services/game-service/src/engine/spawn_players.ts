@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 09:13:34 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/04 16:33:16 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 18:00:39 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,6 @@ import { GameConfig } from "./config.js";
 import type { ColorRGBA } from "./init.js";
 import { PlayerState } from "./init.js";
 import { Rng } from "./rng.js";
-
-const SPAWN_MARGIN = 100;
 
 function hsvToRgba(h: number, s: number, v: number): ColorRGBA {
 	const c = v * s;
@@ -51,7 +49,7 @@ function playerColor(index: number, total: number): ColorRGBA {
 export function spawnPlayers(config: GameConfig, rng: Rng, playerIds: string[]): PlayerState[] {
 	const ids = [...playerIds].sort();
 
-	const margin = Math.max(config.playerRadius * 6, SPAWN_MARGIN);
+	const margin = Math.max(config.playerRadius * 6, config.spawnPadding);
 	const minDist = config.playerRadius * 10;
 
 	const safeMarginX = Math.min(margin, (config.arenaWidth - config.playerRadius * 2) / 2);
