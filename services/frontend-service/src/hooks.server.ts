@@ -12,6 +12,20 @@ interface RefreshResult {
 	setCookies: string[];
 }
 
+function extractCookieValue(setCookies: string[], name: string): string | null {
+	for (const cookie of setCookies) {
+		const definition = cookie.split(';')[0] ?? '';
+		const eqIdx = definition.indexOf('=');
+		if (eqIdx === -1)
+			continue;
+		const cookieName = definition.slice(0, eqIdx).trim();
+		const cookieValue = definition.slice(eqIdx + 1).trim();
+		if (cookieName === name)
+			return cookieValue;
+	}
+	return null;
+}
+
 function cleanResponseHeaders(headers: Headers): Headers {
 	const cleaned = new Headers(headers);
 	cleaned.delete('content-encoding');
@@ -40,8 +54,10 @@ async function refreshAccessToken(refreshToken: string): Promise<RefreshResult |
 
 		if (!response.ok) return null;
 
-		const data = await response.json();
-		return { accessToken: data.access_token, setCookies: response.headers.getSetCookie() };
+		const setCookies = response.headers.getSetCookie();
+		const accessToken = extractCookieValue(setCookies, 'access_token');
+		if (!accessToken) return null;
+		return { accessToken, setCookies };
 	} catch (error) {
 		console.error('[proxy] Failed to refresh access token:', error);
 		return null;

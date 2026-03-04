@@ -159,7 +159,7 @@ class OAuthController extends Controller
             $refreshCookie = cookie('refresh_token', $newRefresh, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        $response = response()->json(['access_token' => $accessToken])->withCookie($accessCookie);
+        $response = response()->noContent()->withCookie($accessCookie);
         if (isset($refreshCookie)) {
             $response = $response->withCookie($refreshCookie);
         }
