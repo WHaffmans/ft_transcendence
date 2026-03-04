@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/04 09:57:39 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 15:53:48 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,6 +216,24 @@ export function startPublicWsServer(
 						};
 
 						const { room, playerId: effectivePlayerId, resumeToken } = rooms.createOrJoinRoom(joinArgs, ws);
+
+						// Check auth
+						if (authenticatedUserId && effectivePlayerId !== authenticatedUserId) {
+							console.warn("[ws:transport] auth mismatch after createOrJoinRoom — closing", {
+								authenticatedUserId,
+								claimedPlayerId: msg.player.playerId,
+								effectivePlayerId,
+								roomId: room.roomId,
+							});
+
+							try { rooms.unsubscribe(room.roomId, ws); } catch { }
+							try { rooms.onPlayerSocketLost(room.roomId, effectivePlayerId, ws, { code: WS_CLOSE_AUTH_FAILURE, reason: "effective playerId mismatch" }); } catch { }
+
+							ws.close(WS_CLOSE_AUTH_FAILURE, "Effective playerId mismatch");
+							boundRoomId = null;
+							boundPlayerId = null;
+							return;
+						}
 
 						boundPlayerId = effectivePlayerId;
 
