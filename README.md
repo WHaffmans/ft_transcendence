@@ -940,7 +940,7 @@ This section provides an overview of all implemented features, including a short
 
 # Modules
 
-> TOTAL POINTS: **16**
+> TOTAL POINTS: **17**
 
 This section outlines the module-based scoring structure of the project. The evaluation system is divided into **major** and **minor** modules, where each major module is worth 2 points and each minor module is worth 1 point.
 
@@ -951,7 +951,7 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 ### Module 1: Web
 
-> POINTS: **8**
+> POINTS: **9**
 
 - `2` **Frontend framework (SvelteKit) & Backend framework (Laravel).** <br/>
   Enabled reactive, high-performance UI updates on the frontend and a robust, structured REST API with ORM-based persistence on the backend. <br/>
@@ -972,6 +972,10 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 - `1` **Custom-made design system 10 components (fonts | icons | colors | typography).** <br/>
   Created a consistent and scalable visual identity across the entire frontend. <br/>
+  *Contributors: Ferry Ras, Hein Smolder.*
+
+- `1` **Server-Side Rendering (SSR | performance | SEO).** <br/>
+  Enabled server-rendered pages and server-side data loading for faster initial content delivery and search engine visibility. <br/>
   *Contributors: Ferry Ras, Hein Smolder.*
 
 <br/>
