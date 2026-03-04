@@ -29,7 +29,7 @@ class GameController extends Controller
      *
      * @response 201 scenario="Created" {"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
      */
-    public function store(StoreGameRequest $request)
+    public function store(StoreGameRequest $request): \Illuminate\Http\JsonResponse
     {
         $game = Game::create($request->validated());
 
@@ -54,7 +54,7 @@ class GameController extends Controller
      * @response 200 scenario="Success" {"id": "uuid", "status": "active"}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
-    public function update(UpdateGameRequest $request, Game $game)
+    public function update(UpdateGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
         $game->update($request->validated());
 
