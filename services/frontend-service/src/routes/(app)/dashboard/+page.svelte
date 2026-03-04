@@ -4,22 +4,16 @@
   import StatCard from "$lib/components/dashboard/StatCard.svelte";
   import RatingChart from "$lib/components/dashboard/RatingChart.svelte";
   import LastMatch from "$lib/components/dashboard/LastMatch.svelte";
-  import { afterNavigate, goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
 
   let { data } = $props();
-
-  afterNavigate(({ from }) => {
-    if (from && from.url.pathname !== '/dashboard') {
-      invalidateAll();
-    }
-  });
 
   function handleFindMatch() {
     if (!data.user) {
       toast.error("You must be logged in to find a game.");
       return;
     }
-    
+
     fetch("/api/games/find", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -34,7 +28,11 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Enter') handleFindMatch(); }} />
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key === "Enter") handleFindMatch();
+  }}
+/>
 
 <svelte:head>
   <title>ACHTUNG – Dashboard</title>
@@ -51,7 +49,8 @@
           Ready to Curve?
         </h2>
         <p class="mb-10 text-sm font-bold text-neutral-400">
-          Global Server • {data.totalPlayers ?? 0} Players Ranked • {data.onlineUsersCount ?? 0} Online
+          Global Server • {data.totalPlayers ?? 0} Players Ranked • {data.onlineUsersCount ??
+            0} Online
         </p>
 
         <button

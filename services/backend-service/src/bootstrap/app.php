@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             CreateFreshApiToken::class,
         ]);
         $middleware->trustProxies('*', Request::HEADER_X_FORWARDED_TRAEFIK);
+        $middleware->validateCsrfTokens(except: [
+            'auth/refresh',
+        ]);
         $middleware->encryptCookies([
             'access_token',
             'refresh_token',

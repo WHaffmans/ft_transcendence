@@ -153,7 +153,7 @@ class GameControllerTest extends TestCase
         $activeGame->users()->attach($user1->id);
 
         // Create a finished game
-        $finishedGame = Game::create(['status' => 'finished']);
+        $finishedGame = Game::create(['status' => 'completed']);
 
         // User2 tries to find a game - should create a new one, not join existing non-pending games
         $response = $this->actingAs($user2)->postJson('/api/games/find');

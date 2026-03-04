@@ -50,7 +50,7 @@ export function pushOrExtendSegment(
 		};
 	}
 
-	// get player-specific monotonic sequence number for this new segment
+	// get player-specific sequence number for this new segment
 	p.tailOwnerSeq += 1;
 	
 	const i = segments.length;
