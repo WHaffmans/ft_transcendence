@@ -165,23 +165,6 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    //unused
-    public function readyGame(Request $request, Game $game)
-    {
-        // if ($game->status !== 'pending') {
-        //     return response()->json(['message' => 'Game is not in pending state.'], 400);
-        // }
-
-        if ($game->users->count() < 2) {
-            return response()->json(['message' => 'Not enough players to start the game.'], 400);
-        }
-
-        $game->status = 'ready';
-        $game->save();
-
-        return response()->json($game->load('users'));
-    }
-
     /**
      * Start a game.
      *
