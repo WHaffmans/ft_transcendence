@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 11:12:05 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/03/04 17:46:41 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/04 18:04:28 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,8 @@ export type GameConfig = {
 	gapMinTicks: number;
 	gapMaxTicks: number;
 
-	// Spawning
-	spawnPadding: number;			// distance from walls
-	spawnAngle: number;				// radians (random +/-)
+	spawnPadding: number;
+	spawnAngle: number;
 };
 
 // Set default values
@@ -51,6 +50,6 @@ export const DEFAULT_CONFIG: GameConfig = {
 	gapMinTicks: 2,
 	gapMaxTicks: 8,
 
-	spawnPadding: 120,
+	spawnPadding: 100,
 	spawnAngle: 0.35,
 };

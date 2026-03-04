@@ -19,17 +19,16 @@ Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(func
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
-    // Keep these for external API usage (if needed)
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
     Route::apiResource('games', App\Http\Controllers\GameController::class);
 
     Route::get('/user', [UserController::class, 'me']);
+    Route::post('users/{user}/avatar', [AvatarController::class, 'upload']);
+    Route::apiResource('users', UserController::class)->except(['store']);
+    Route::get('online-users', [UserController::class, 'onlineCount']);
 });
-
+// Forward auth route for gateway (no CSRF, returns 200 with X-User-Id header if authenticated)
 Route::get('/verify', [App\Http\Controllers\Auth\AuthController::class, 'verify'])->middleware(['cookie.passport', 'auth:api']);
 
-Route::post('users/{user}/avatar', [AvatarController::class, 'upload'])->middleware('auth:api');
-Route::apiResource('users', UserController::class)->except(['store']);
-
+// Public API routes (no authentication required)
 Route::get('leaderboard', [LeaderboardController::class, 'index']);
-Route::get('online-users', [UserController::class, 'onlineCount']);
