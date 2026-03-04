@@ -28,7 +28,14 @@ class CookiePassportAuth
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $request->headers->set('Authorization', 'Bearer ' . $request->cookie('access_token'));
+        $access_token = $request->cookie('access_token');
+        if (!$access_token) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        if (is_array($access_token)){
+            $access_token = last($access_token);
+        }
+        $request->headers->set('Authorization', 'Bearer ' . $access_token);
 
         return $next($request);
     }

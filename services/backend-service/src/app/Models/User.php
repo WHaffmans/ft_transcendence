@@ -4,11 +4,27 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string|null $avatar_url
+ * @property string|null $provider
+ * @property string|null $provider_id
+ * @property float $rating_mu
+ * @property float $rating_sigma
+ * @property string|null $password
+ * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class User extends Authenticatable implements OAuthenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -58,7 +74,10 @@ class User extends Authenticatable implements OAuthenticatable
         ];
     }
 
-    public function games()
+    /**
+     * @return BelongsToMany<Game, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'user_game'>
+     */
+    public function games(): BelongsToMany
     {
         return $this->belongsToMany(Game::class, 'user_game')
             ->withPivot('rating_mu', 'rating_sigma', 'rating', 'rank', 'diff')

@@ -8,7 +8,7 @@ use App\Models\User;
 
 class AvatarController extends Controller
 {
-    public function upload(Request $request, User $user)
+    public function upload(Request $request, User $user): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'avatar' => 'required|image|max:2048', // 2MB max

@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OAuthController extends Controller
 {
-    public function initiate(Request $request)
+    public function initiate(Request $request): \Illuminate\Http\RedirectResponse
     {
         $clientId = config('services.oauth.client_id');
         if (!$clientId) {
@@ -38,7 +38,7 @@ class OAuthController extends Controller
         return redirect()->to(url('/oauth/authorize') . '?' . $query);
     }
 
-    public function callback(Request $request)
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
         $frontendUrl = config('app.frontend_url', '/');
         // Ensure frontend_url has a protocol
@@ -68,7 +68,6 @@ class OAuthController extends Controller
         $code = (string) $request->input('code');
 
         if (!$code) {
-            dd('NO CODE');
             abort(400, 'Missing authorization code.');
         }
 
@@ -88,7 +87,7 @@ class OAuthController extends Controller
             return redirect($frontendUrl . '/callback?error=token_exchange_failed');
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $refreshToken = $tokenData['refresh_token'] ?? null;
 

@@ -15,7 +15,7 @@ class GameController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): \Illuminate\Http\JsonResponse
     {
         return response()->json(Game::all());
     }
@@ -23,7 +23,7 @@ class GameController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         $game = Game::create($request->all());
 
@@ -33,7 +33,7 @@ class GameController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Game $game)
+    public function show(Game $game): \Illuminate\Http\JsonResponse
     {
         $game = $game->load('users');
 
@@ -43,7 +43,7 @@ class GameController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Game $game)
+    public function update(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
         $game->update($request->all());
 
@@ -53,14 +53,14 @@ class GameController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Game $game)
+    public function destroy(Game $game): \Illuminate\Http\JsonResponse
     {
         $game->delete();
 
         return response()->json(null, 204);
     }
 
-    public function findGame(Request $request)
+    public function findGame(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = $request->user();
 
@@ -95,7 +95,7 @@ class GameController extends Controller
         return response()->json($new_game->load('users'), 201);
     }
 
-    public function leaveGame(LeaveGameRequest $request, Game $game)
+    public function leaveGame(LeaveGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
@@ -123,7 +123,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function readyGame(Request $request, Game $game)
+    public function readyGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
         // if ($game->status !== 'pending') {
         //     return response()->json(['message' => 'Game is not in pending state.'], 400);
@@ -139,7 +139,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function startGame(Request $request, Game $game)
+    public function startGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
         // if ($game->status !== 'ready') {
         //     return response()->json(['message' => 'Game must be in ready state to start.'], 400);
@@ -151,7 +151,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function finishGame(FinishGameRequest $request, Game $game)
+    public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
         // if ($game->status !== 'active') {
         //     return response()->json(['message' => 'Game must be active to finish.'], 400);
@@ -162,7 +162,7 @@ class GameController extends Controller
 
         $results = $request->input('users', []);
         foreach ($results as $result) {
-            $user = User::find($result['user_id']);
+            $user = User::find($result['user_id'])->first();
             if ($user) {
                 // Calculate rating difference: (new_rating - old_rating)
                 $old_rating = $user->rating_mu - (3 * $user->rating_sigma);

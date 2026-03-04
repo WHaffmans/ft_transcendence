@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passport\Token;
 
 class AuthController extends Controller
 {
     /**
      * Display the login form.
      */
-    public function loginView()
+    public function loginView(): \Illuminate\Contracts\View\View
     {
         return view('auth.login');
     }
@@ -23,7 +24,7 @@ class AuthController extends Controller
     /**
      * Handle login attempt.
      */
-    public function login(Request $request)
+    public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'string', 'email'],
@@ -45,7 +46,7 @@ class AuthController extends Controller
     /**
      * Display the registration form.
      */
-    public function registerView()
+    public function registerView(): \Illuminate\Contracts\View\View
     {
         return view('auth.register');
     }
@@ -53,7 +54,7 @@ class AuthController extends Controller
     /**
      * Handle registration.
      */
-    public function register(Request $request)
+    public function register(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -76,10 +77,17 @@ class AuthController extends Controller
     /**
      * Log the user out.
      */
-    public function logout(Request $request)
+    public function logout(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->user()->token()->revoke();
-
+        /**
+         * @var User $user
+         */
+        $user = $request->user();
+        $user->tokens()->each(function (Token $token) {
+            $token->revoke();
+            $token->refreshToken?->revoke();
+        });
+        
         $domain = config('session.domain');
         return response()->json(['message' => 'Logged out'])->withCookie(
             cookie()->forget('access_token', '/', $domain)
