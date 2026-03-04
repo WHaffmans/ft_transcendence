@@ -106,9 +106,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let response = await createProxyRequest(event, targetUrl, body, accessToken);
 
 	const refreshToken = event.cookies.get('refresh_token');
-	const shouldRefresh = response.status === 401 && pathname !== '/auth/refresh' && refreshToken;
 
-	if (shouldRefresh) {
+	if (refreshToken && response.status === 401 && pathname !== '/auth/refresh') {
 		const refreshResult = await getRefreshResult(refreshToken);
 		if (refreshResult) {
 			response = await createProxyRequest(event, targetUrl, body, refreshResult.accessToken);
