@@ -25,6 +25,9 @@ class GameController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
+        $request->validate([
+            'status' => 'required|string|in:pending,ready,active,completed',
+        ]);
         $game = Game::create($request->all());
 
         return response()->json($game, 201);
@@ -45,6 +48,9 @@ class GameController extends Controller
      */
     public function update(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
+        $request->validate([
+            'status' => 'required|string|in:pending,ready,active,completed',
+        ]);
         $game->update($request->all());
 
         return response()->json($game);
@@ -123,7 +129,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function readyGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
+    public function readyGame(Game $game): \Illuminate\Http\JsonResponse
     {
         // if ($game->status !== 'pending') {
         //     return response()->json(['message' => 'Game is not in pending state.'], 400);
@@ -139,7 +145,7 @@ class GameController extends Controller
         return response()->json($game->load('users'));
     }
 
-    public function startGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
+    public function startGame(Game $game): \Illuminate\Http\JsonResponse
     {
         // if ($game->status !== 'ready') {
         //     return response()->json(['message' => 'Game must be in ready state to start.'], 400);

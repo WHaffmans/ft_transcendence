@@ -43,7 +43,11 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): \Illuminate\Http\JsonResponse
     {
-        // TODO: validate input
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'avatar_url' => 'sometimes|url|max:255',
+        ]);
         $user->update($request->all());
 
         return response()->json($user);
