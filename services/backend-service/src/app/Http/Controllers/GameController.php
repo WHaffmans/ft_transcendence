@@ -26,9 +26,13 @@ class GameController extends Controller
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'status' => 'required|string|in:pending,ready,active,completed',
+            'status' => 'sometimes|string|in:pending,ready,active,completed',
         ]);
-        $game = Game::create($request->all());
+        $data = $request->all();
+        if (!array_key_exists('status', $data)) {
+            $data['status'] = 'pending';
+        }
+        $game = Game::create($data);
 
         return response()->json($game, 201);
     }
