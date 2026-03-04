@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinishGameRequest;
 use App\Http\Requests\LeaveGameRequest;
+use App\Http\Requests\StoreGameRequest;
+use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -21,18 +23,15 @@ class GameController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Create a new game.
+     *
+     * @bodyParam status string The initial game status. Example: pending
+     *
+     * @response 201 scenario="Created" {"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
      */
-    public function store(Request $request): \Illuminate\Http\JsonResponse
+    public function store(StoreGameRequest $request)
     {
-        $request->validate([
-            'status' => 'sometimes|string|in:pending,ready,active,completed',
-        ]);
-        $data = $request->all();
-        if (!array_key_exists('status', $data)) {
-            $data['status'] = 'pending';
-        }
-        $game = Game::create($data);
+        $game = Game::create($request->validated());
 
         return response()->json($game, 201);
     }
@@ -48,14 +47,16 @@ class GameController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update a game.
+     *
+     * @bodyParam status string The new game status. Example: active
+     *
+     * @response 200 scenario="Success" {"id": "uuid", "status": "active"}
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
-    public function update(Request $request, Game $game): \Illuminate\Http\JsonResponse
+    public function update(UpdateGameRequest $request, Game $game)
     {
-        $request->validate([
-            'status' => 'required|string|in:pending,ready,active,completed',
-        ]);
-        $game->update($request->all());
+        $game->update($request->validated());
 
         return response()->json($game);
     }
@@ -105,12 +106,17 @@ class GameController extends Controller
         return response()->json($new_game->load('users'), 201);
     }
 
+    /**
+     * Leave a game.
+     *
+     * Removes a user from a pending game. If the user is the last player, the game is deleted.
+     *
+     * @response 200 scenario="Left game" {"id": "uuid", "status": "pending", "users": []}
+     * @response 204 scenario="Game deleted (last player left)"
+     * @response 400 scenario="User not in game" {"message": "User is not part of this game."}
+     */
     public function leaveGame(LeaveGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
-        
         if ($game->status !== "pending") {
             return response()->json(null, status: 200);
         }

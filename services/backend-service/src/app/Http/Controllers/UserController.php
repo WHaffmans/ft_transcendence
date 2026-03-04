@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -30,9 +31,9 @@ class UserController extends Controller
     public function show(User $user): \Illuminate\Http\JsonResponse
     {
 
-        $limit = request()->query('limit', 20);
+        $limit = max(1, min((int) request()->query('limit', 20), 100));
         $user = $user->load(['games' => function ($query) use ($limit) {
-            $query->limit($limit); // Limit to 10 games
+            $query->limit($limit);
         }]);
 
         return response()->json($user);
@@ -40,15 +41,13 @@ class UserController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * 
+     * @response 200 scenario="Success" {"id": 1, "name": "John", "email": "john@example.com"}
+     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
      */
-    public function update(Request $request, User $user): \Illuminate\Http\JsonResponse
+    public function update(UpdateUserRequest $request, User $user): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-            'avatar_url' => 'sometimes|url|max:255',
-        ]);
-        $user->update($request->all());
+        $user->update($request->validated());
 
         return response()->json($user);
     }
