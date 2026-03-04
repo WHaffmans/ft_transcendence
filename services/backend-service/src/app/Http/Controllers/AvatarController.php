@@ -19,7 +19,7 @@ class AvatarController extends Controller
      * @response 200 scenario="Success" {"id": 1, "name": "John", "avatar_url": "/storage/avatars/abc123.png"}
      * @response 422 scenario="Validation error" {"message": "The avatar field is required.", "errors": {"avatar": ["The avatar field is required."]}}
      */
-    public function upload(UploadAvatarRequest $request, User $user)
+    public function upload(UploadAvatarRequest $request, User $user): \Illuminate\Http\JsonResponse
     {
         // Delete old avatar if it was a file (not an external URL)
         if ($user->avatar_url && str_starts_with($user->avatar_url, '/storage/avatars/')) {

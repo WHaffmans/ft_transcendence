@@ -13,6 +13,9 @@ class UpdateUserRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array{avatar_url: string[], email: array<string|\Illuminate\Validation\Rules\Unique>, name: string[], password: array<Password|string>}
+     */
     public function rules(): array
     {
         return [

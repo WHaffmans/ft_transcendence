@@ -11,6 +11,9 @@ class UploadAvatarRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array{avatar: string[]}
+     */
     public function rules(): array
     {
         return [

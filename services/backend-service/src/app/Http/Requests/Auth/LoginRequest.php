@@ -11,6 +11,9 @@ class LoginRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array{email: string[], password: string[]}
+     */
     public function rules(): array
     {
         return [

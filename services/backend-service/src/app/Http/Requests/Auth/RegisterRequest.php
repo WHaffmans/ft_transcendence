@@ -12,6 +12,9 @@ class RegisterRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array{email: string[], name: string[], password: array<Password|string>}
+     */
     public function rules(): array
     {
         return [

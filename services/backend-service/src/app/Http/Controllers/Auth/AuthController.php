@@ -19,7 +19,7 @@ class AuthController extends Controller
      */
     public function loginView(): \Illuminate\Contracts\View\View
     {
-        return view('auth.login');
+        return view('auth.login'); // @phpstan-ignore argument.type
     }
 
     /**
@@ -46,7 +46,7 @@ class AuthController extends Controller
      */
     public function registerView(): \Illuminate\Contracts\View\View
     {
-        return view('auth.register');
+        return view('auth.register'); // @phpstan-ignore argument.type
     }
 
     /**
@@ -81,7 +81,7 @@ class AuthController extends Controller
             $token->revoke();
             $token->refreshToken?->revoke();
         });
-        
+
         $domain = config('session.domain');
         return response()->json(['message' => 'Logged out'])->withCookie(
             cookie()->forget('access_token', '/', $domain)

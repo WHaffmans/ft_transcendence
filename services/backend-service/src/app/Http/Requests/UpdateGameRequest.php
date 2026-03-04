@@ -11,6 +11,9 @@ class UpdateGameRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array{status: string[]}
+     */
     public function rules(): array
     {
         return [
