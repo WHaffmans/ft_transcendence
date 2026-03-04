@@ -5,7 +5,7 @@ const backendBaseUrl = isProduction
 	? 'https://backend-service:4443'
 	: 'http://backend-service:4000';
 
-let refreshPromise: Promise<RefreshResult | null> | null = null;
+const refreshPromises = new Map<string, Promise<RefreshResult | null>>();
 
 interface RefreshResult {
 	accessToken: string;
@@ -49,12 +49,17 @@ async function refreshAccessToken(refreshToken: string): Promise<RefreshResult |
 }
 
 async function getRefreshResult(refreshToken: string): Promise<RefreshResult | null> {
-	if (!refreshPromise) {
-		refreshPromise = refreshAccessToken(refreshToken).finally(() => {
-			setTimeout(() => { refreshPromise = null; }, 100);
-		});
+	const existing = refreshPromises.get(refreshToken);
+	if (existing) {
+		return existing;
 	}
-	return refreshPromise;
+
+	const promise = refreshAccessToken(refreshToken).finally(() => {
+		setTimeout(() => { refreshPromises.delete(refreshToken); }, 100);
+	});
+
+	refreshPromises.set(refreshToken, promise);
+	return promise;
 }
 
 function createProxyRequest(
