@@ -70,7 +70,7 @@ function createProxyRequest(
 ): Promise<Response> {
 	const headers = new Headers(event.request.headers);
 	headers.set('host', new URL(backendBaseUrl).host);
-	if (accessToken) {
+	if (accessToken && !headers.has('Authorization')) {
 		headers.set('Authorization', `Bearer ${accessToken}`);
 	}
 	return fetch(targetUrl, {
