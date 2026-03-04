@@ -41,7 +41,7 @@ class UserController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * 
+     *
      * @response 200 scenario="Success" {"id": 1, "name": "John", "email": "john@example.com"}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
      */
