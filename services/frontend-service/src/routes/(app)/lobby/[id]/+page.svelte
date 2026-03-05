@@ -98,24 +98,16 @@
 
 	$effect(() => {
 		const lobbyId = data.lobbyId;
-		
-		// 1. Auth guard
-		const user = $userStore ?? null;
-		if (!user?.id) {
-			console.log("[lobby] auth guard → redirecting to /dashboard");
-			goto("/dashboard", { replaceState: true });
-			return;
-		}
+		const user = data.user;
 		const playerId = String(user.id);
 
-
-		// 2. Load REST record once per lobbyId
+		// 1. Load REST record once per lobbyId
 		if (lobbyId && lastLoadedLobbyId !== lobbyId) {
 			lastLoadedLobbyId = lobbyId;
 			loadGameRecord(lobbyId);
 		}
 
-		// 3. Join WS session
+		// 2. Join WS session
 		if (!lobbyId) return;
 		const shouldEnsure = $wsStore.status !== "open";
 		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;

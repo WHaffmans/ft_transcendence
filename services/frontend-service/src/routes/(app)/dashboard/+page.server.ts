@@ -1,4 +1,3 @@
-import { redirect } from '@sveltejs/kit';
 import type { ServerLoad } from '@sveltejs/kit';
 import type { RatingPoint, LastMatchData, LastMatchPlayer, User } from '$lib/types/types';
 
@@ -73,9 +72,7 @@ function buildLastMatchData(match: Match, userId: number): LastMatchData {
 export const load = (async ({ fetch, parent }) => {
     const { user } = await parent();
 
-    if (!user) {
-        throw redirect(302, '/');
-    }
+    // Auth is enforced by (app)/+layout.server.ts — user is guaranteed non-null here.
 
     // user.games[] comes from the layout (limited to 20, sorted desc)
     const userGames: UserGame[] = user.games ?? [];
