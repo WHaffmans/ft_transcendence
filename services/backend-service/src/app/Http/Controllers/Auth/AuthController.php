@@ -21,6 +21,7 @@ class AuthController extends Controller
      * Used by the gateway for forward auth.
      *
      * @tags Auth
+     *
      * @response 200 scenario="Authenticated" {"message": "Authenticated"}
      */
     public function verify(): \Illuminate\Http\JsonResponse
@@ -43,7 +44,7 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        if (!Auth::attempt($validated, $request->boolean('remember'))) {
+        if (! Auth::attempt($validated, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => __('The provided credentials do not match our records.'),
             ]);
@@ -97,10 +98,11 @@ class AuthController extends Controller
         });
 
         $domain = config('session.domain');
+
         return response()->json(['message' => 'Logged out'])->withCookie(
             cookie()->forget('access_token', '/', $domain)
         )->withCookie(
-                cookie()->forget('refresh_token', '/', $domain)
-            );
+            cookie()->forget('refresh_token', '/', $domain)
+        );
     }
 }

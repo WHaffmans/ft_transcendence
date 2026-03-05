@@ -1,12 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\InternalAuthMiddleware;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\InternalAuthMiddleware;
+use Illuminate\Support\Facades\Route;
 
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {

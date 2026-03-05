@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UploadAvatarRequest;
-use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @tags Avatar
@@ -31,7 +31,7 @@ class AvatarController extends Controller
         }
 
         $path = $request->file('avatar')->store('avatars', 'public');
-        $user->avatar_url = '/storage/' . $path;
+        $user->avatar_url = '/storage/'.$path;
         $user->save();
 
         return response()->json($user);

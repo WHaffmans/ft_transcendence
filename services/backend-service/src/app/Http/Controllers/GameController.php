@@ -7,8 +7,6 @@ use App\Http\Requests\LeaveGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 /**
  * @tags Games
@@ -61,7 +59,7 @@ class GameController extends Controller
             return $game->users->count() < 4;
         });
 
-        if (!$joinable_games->isEmpty()) {
+        if (! $joinable_games->isEmpty()) {
             $game = $joinable_games->first();
             $game->users()->attach($user->id);
 
@@ -89,7 +87,7 @@ class GameController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        if ($game->status !== "pending") {
+        if ($game->status !== 'pending') {
             return response()->json(null, status: 200);
         }
 
