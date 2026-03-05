@@ -20,7 +20,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
-    Route::apiResource('games', App\Http\Controllers\GameController::class);
+    Route::apiResource('games', App\Http\Controllers\GameController::class)->only('show');
 
     Route::get('/user', [UserController::class, 'me']);
     Route::post('users/{user}/avatar', [AvatarController::class, 'upload']);

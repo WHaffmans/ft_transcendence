@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinishGameRequest;
 use App\Http\Requests\LeaveGameRequest;
-use App\Http\Requests\StoreGameRequest;
-use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,32 +15,6 @@ use Illuminate\Support\Facades\Log;
  */
 class GameController extends Controller
 {
-    /**
-     * List all games.
-     *
-     * Returns a list of all games.
-     *
-     * @response 200 scenario="Success" [{"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}]
-     */
-    public function index(): \Illuminate\Http\JsonResponse
-    {
-        return response()->json(Game::all());
-    }
-
-    /**
-     * Create a new game.
-     *
-     * @bodyParam status string The initial game status. Example: pending
-     *
-     * @response 201 scenario="Created" {"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
-     */
-    public function store(StoreGameRequest $request): \Illuminate\Http\JsonResponse
-    {
-        $game = Game::create($request->validated());
-
-        return response()->json($game, 201);
-    }
-
     /**
      * Get a game.
      *
@@ -56,34 +28,6 @@ class GameController extends Controller
         $game = $game->load('users');
 
         return response()->json($game);
-    }
-
-    /**
-     * Update a game.
-     *
-     * @bodyParam status string The new game status. Example: active
-     *
-     * @response 200 scenario="Success" {"id": "uuid", "status": "active"}
-     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
-     */
-    public function update(UpdateGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
-    {
-        $game->update($request->validated());
-
-        return response()->json($game);
-    }
-
-    /**
-     * Delete a game.
-     *
-     * @response 204 scenario="Deleted"
-     * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
-     */
-    public function destroy(Game $game): \Illuminate\Http\JsonResponse
-    {
-        $game->delete();
-
-        return response()->json(null, 204);
     }
 
     /**
