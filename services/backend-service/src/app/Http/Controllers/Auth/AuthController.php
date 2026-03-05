@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passport\Token;
 
 class AuthController extends Controller
 {
@@ -29,20 +31,17 @@ class AuthController extends Controller
     /**
      * Display the login form.
      */
-    public function loginView()
+    public function loginView(): \Illuminate\Contracts\View\View
     {
-        return view('auth.login');
+        return view('auth.login'); // @phpstan-ignore argument.type
     }
 
     /**
      * Handle login attempt.
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         if (!Auth::attempt($validated, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
@@ -59,21 +58,17 @@ class AuthController extends Controller
     /**
      * Display the registration form.
      */
-    public function registerView()
+    public function registerView(): \Illuminate\Contracts\View\View
     {
-        return view('auth.register');
+        return view('auth.register'); // @phpstan-ignore argument.type
     }
 
     /**
      * Handle registration.
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -90,9 +85,16 @@ class AuthController extends Controller
     /**
      * Log the user out.
      */
-    public function logout(Request $request)
+    public function logout(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->user()->token()->revoke();
+        /**
+         * @var User $user
+         */
+        $user = $request->user();
+        $user->tokens()->each(function (Token $token) {
+            $token->revoke();
+            $token->refreshToken?->revoke();
+        });
 
         $domain = config('session.domain');
         return response()->json(['message' => 'Logged out'])->withCookie(

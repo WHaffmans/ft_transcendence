@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinishGameRequest;
 use App\Http\Requests\LeaveGameRequest;
+use App\Http\Requests\StoreGameRequest;
+use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -22,7 +24,7 @@ class GameController extends Controller
      *
      * @response 200 scenario="Success" [{"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}]
      */
-    public function index()
+    public function index(): \Illuminate\Http\JsonResponse
     {
         return response()->json(Game::all());
     }
@@ -34,9 +36,9 @@ class GameController extends Controller
      *
      * @response 201 scenario="Created" {"id": "uuid", "status": "pending", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
      */
-    public function store(Request $request)
+    public function store(StoreGameRequest $request): \Illuminate\Http\JsonResponse
     {
-        $game = Game::create($request->all());
+        $game = Game::create($request->validated());
 
         return response()->json($game, 201);
     }
@@ -49,7 +51,7 @@ class GameController extends Controller
      * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
-    public function show(Game $game)
+    public function show(Game $game): \Illuminate\Http\JsonResponse
     {
         $game = $game->load('users');
 
@@ -64,9 +66,9 @@ class GameController extends Controller
      * @response 200 scenario="Success" {"id": "uuid", "status": "active"}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
-    public function update(Request $request, Game $game)
+    public function update(UpdateGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
-        $game->update($request->all());
+        $game->update($request->validated());
 
         return response()->json($game);
     }
@@ -77,7 +79,7 @@ class GameController extends Controller
      * @response 204 scenario="Deleted"
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\Game]"}
      */
-    public function destroy(Game $game)
+    public function destroy(Game $game): \Illuminate\Http\JsonResponse
     {
         $game->delete();
 
@@ -93,7 +95,7 @@ class GameController extends Controller
      * @response 200 scenario="Existing game found" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
      * @response 201 scenario="New game created" {"id": "uuid", "status": "pending", "users": [{"id": 1, "name": "John"}]}
      */
-    public function findGame(Request $request)
+    public function findGame(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = $request->user();
 
@@ -137,7 +139,7 @@ class GameController extends Controller
      * @response 204 scenario="Game deleted (last player left)"
      * @response 400 scenario="User not in game" {"message": "User is not part of this game."}
      */
-    public function leaveGame(LeaveGameRequest $request, Game $game)
+    public function leaveGame(LeaveGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
@@ -172,7 +174,7 @@ class GameController extends Controller
      *
      * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
      */
-    public function startGame(Request $request, Game $game)
+    public function startGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
         if ($game->status !== 'pending') {
             return response()->json(['message' => 'Game must be in pending state to start.'], 400);
@@ -192,7 +194,7 @@ class GameController extends Controller
      *
      * @response 200 scenario="Success" {"id": "uuid", "status": "completed", "users": [{"id": 1, "name": "John", "user_game": {"rank": 1, "rating_mu": 25.0, "rating_sigma": 8.0, "diff": 2.5}}]}
      */
-    public function finishGame(FinishGameRequest $request, Game $game)
+    public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
         if ($game->status !== 'active') {
             return response()->json(['message' => 'Game must be active to finish.'], 400);
@@ -203,7 +205,7 @@ class GameController extends Controller
 
         $results = $request->input('users', []);
         foreach ($results as $result) {
-            $user = User::find($result['user_id']);
+            $user = User::find((int) $result['user_id']);
             if ($user) {
                 // Calculate rating difference: (new_rating - old_rating)
                 $old_rating = $user->rating_mu - (3 * $user->rating_sigma);

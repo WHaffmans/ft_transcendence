@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Game extends Model
 {
+    /**
+     * @use \Illuminate\Database\Eloquent\Factories\HasFactory<\Database\Factories\GameFactory>
+     */
     use HasUuids, HasFactory;
 
     public $table = 'games';
@@ -22,7 +25,10 @@ class Game extends Model
         'status',
     ];
 
-    public function users()
+    /**
+     * @return BelongsToMany<User, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'user_game'>
+     */
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_game')
             ->withPivot('rating_mu', 'rating_sigma', 'rating', 'rank', 'diff')

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\UploadAvatarRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
@@ -22,12 +22,8 @@ class AvatarController extends Controller
      * @response 200 scenario="Success" {"id": 1, "name": "John", "avatar_url": "/storage/avatars/abc123.png"}
      * @response 422 scenario="Validation error" {"message": "The avatar field is required.", "errors": {"avatar": ["The avatar field is required."]}}
      */
-    public function upload(Request $request, User $user)
+    public function upload(UploadAvatarRequest $request, User $user): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
-            'avatar' => 'required|image|max:2048', // 2MB max
-        ]);
-
         // Delete old avatar if it was a file (not an external URL)
         if ($user->avatar_url && str_starts_with($user->avatar_url, '/storage/avatars/')) {
             $oldPath = str_replace('/storage/', '', $user->avatar_url);

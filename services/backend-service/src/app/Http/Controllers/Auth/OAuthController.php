@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OAuthController extends Controller
 {
-    public function initiate(Request $request)
+    public function initiate(Request $request): \Illuminate\Http\RedirectResponse
     {
         $clientId = config('services.oauth.client_id');
         if (!$clientId) {
@@ -39,7 +39,7 @@ class OAuthController extends Controller
         return redirect()->to(url('/oauth/authorize') . '?' . $query);
     }
 
-    public function callback(Request $request)
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
         $frontendUrl = config('app.frontend_url', '/');
         // Ensure frontend_url has a protocol
@@ -69,7 +69,6 @@ class OAuthController extends Controller
         $code = (string) $request->input('code');
 
         if (!$code) {
-            dd('NO CODE');
             abort(400, 'Missing authorization code.');
         }
 
@@ -89,7 +88,7 @@ class OAuthController extends Controller
             return redirect($frontendUrl . '/callback?error=token_exchange_failed');
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $refreshToken = $tokenData['refresh_token'] ?? null;
 
@@ -114,15 +113,13 @@ class OAuthController extends Controller
             ->withCookies($cookies);
     }
 
-    public function refresh(Request $request)
+    public function refresh(Request $request): \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
     {
         $refreshToken = $request->cookie('refresh_token');
         if (!$refreshToken) {
             Log::warning('Refresh attempt without refresh_token cookie');
             return response()->json(['message' => 'No refresh token'], 401);
         }
-
-        Log::info('Attempting token refresh', ['refresh_token_length' => strlen($refreshToken)]);
 
         $internalRequest = Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
@@ -141,7 +138,7 @@ class OAuthController extends Controller
             return response()->json(['message' => 'Token refresh failed'], 401);
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $newRefresh = $tokenData['refresh_token'] ?? null;
 
