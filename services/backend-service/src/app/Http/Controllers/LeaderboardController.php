@@ -22,7 +22,7 @@ class LeaderboardController extends Controller
         $users = User::query()
             ->orderBy('rating', 'desc')
             ->take(5)
-            ->get();
+            ->get(['id', 'name', 'rating']);
 
         return response()->json($users);
     }
