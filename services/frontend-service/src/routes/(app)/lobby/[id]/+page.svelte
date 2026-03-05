@@ -4,10 +4,10 @@
 	import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
 	import { wsStore } from "$lib/stores/ws";
 	import { userStore } from "$lib/stores/user";
-	import type { Game, User } from "$lib/types/types";
+	import type { User } from "$lib/types/types";
 	import type { GamePhase } from "@ft/game-ws-protocol";
-	import { onMount, onDestroy } from "svelte";
-	import { goto, beforeNavigate } from "$app/navigation";
+	import { onDestroy } from "svelte";
+	import { goto, beforeNavigate, invalidate } from "$app/navigation";
 	import { toast } from "svelte-sonner";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
@@ -19,26 +19,7 @@
 	/*                           REST / GAME RECORD                           */
 	/* ====================================================================== */
 
-	let gameRecord = $state<Game | null>(null);
-	let lastLoadedLobbyId: string | null = null;
-
-	async function loadGameRecord(lobbyId: string) {
-		try {
-			const res = await fetch(`/api/games/${lobbyId}`, {
-				method: "GET",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-			});
-			if (res.status === 404) {
-				gameRecord = null;
-				return;
-			}
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			gameRecord = await res.json();
-		} catch (err) {
-			console.error("loadGameRecord failed:", err);
-		}
-	}
+	const gameRecord = $derived(data.gameRecord);
 
 	const userDirectory = $derived.by(() => {
 		const map = new Map<string, User>();
@@ -101,13 +82,7 @@
 		const user = data.user;
 		const playerId = String(user.id);
 
-		// 1. Load REST record once per lobbyId
-		if (lobbyId && lastLoadedLobbyId !== lobbyId) {
-			lastLoadedLobbyId = lobbyId;
-			loadGameRecord(lobbyId);
-		}
-
-		// 2. Join WS session
+		// Join WS session
 		if (!lobbyId) return;
 		const shouldEnsure = $wsStore.status !== "open";
 		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;
@@ -120,9 +95,6 @@
 
 	let lastRosterKey = "";
 	$effect(() => {
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
 		const ids = roomPlayerIdsLive.map(String).sort();
 		const key = ids.join(",");
 		if (key === lastRosterKey) return;
@@ -132,7 +104,8 @@
 		// Don't re-fetch if the lobby is empty (player was kicked/left)
 		if (ids.length === 0) return;
 
-		loadGameRecord(lobbyId);
+		// Re-run the +page.ts load to refresh the game record
+		invalidate('app:gameRecord');
 	});
 
 	/**
@@ -206,18 +179,6 @@
 		console.log("[lobby] redirectTarget → navigating to", target);
 		didRedirect = true;
 		goto(target, { replaceState: true });
-	});
-
-	onMount(async () => {
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
-		if (lastLoadedLobbyId !== lobbyId) {
-			lastLoadedLobbyId = lobbyId;
-			await loadGameRecord(lobbyId);
-		}
-		// After loading, the derived `redirectTarget` will recompute
-		// and the effect above will handle the redirect if needed.
 	});
 
 	/* ====================================================================== */
