@@ -96,12 +96,21 @@ init:
 	@printf "$(GREEN)Initialization complete!$(RESET)\n"
 	@printf "\n"
 	@printf "$(BOLD)Next steps:$(RESET)\n"
-	@printf "  1. Run $(GREEN)make up$(RESET) to start the application\n"
+	@printf "  1. Start the application with $(GREEN)make up$(RESET)\n"
+	@printf "\n"
+	@printf "Run $(GREEN)make up$(RESET) now? [Y/n]: "; \
+	read -r run_now; \
+	if [ -z "$$run_now" ] || [ "$$run_now" = "y" ] || [ "$$run_now" = "Y" ]; then \
+		printf "$(BLUE)→$(RESET) Starting services...\n"; \
+		$(MAKE) up; \
+	else \
+		printf "$(YELLOW)→$(RESET) Skipping startup. Run $(GREEN)make up$(RESET) when you're ready.\n"; \
+	fi
 	@read -r mode_check < .mode 2>/dev/null || mode_check="dev"; \
 	if [ "$$mode_check" = "prod" ]; then \
-		printf "  2. Visit $(CYAN)https://transcendence.duinvoetje.nl$(RESET)\n"; \
+		printf "\n$(CYAN)Visit: https://transcendence.duinvoetje.nl$(RESET)\n"; \
 	else \
-		printf "  2. Visit $(CYAN)http://localhost:8080$(RESET)\n"; \
+		printf "\n$(CYAN)Visit: https://localhost:8080$(RESET)\n"; \
 	fi
 	@printf "\n"
 
