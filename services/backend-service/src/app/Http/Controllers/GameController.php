@@ -115,6 +115,7 @@ class GameController extends Controller
      * Transitions a game from ready to active status.
      *
      * @response 200 scenario="Success" {"id": "uuid", "status": "active", "users": [{"id": 1, "name": "John"}]}
+     * 
      */
     public function startGame(Request $request, Game $game): \Illuminate\Http\JsonResponse
     {
@@ -135,6 +136,7 @@ class GameController extends Controller
      * (mu/sigma) and rank are stored on the pivot, and the user's global rating is updated.
      *
      * @response 200 scenario="Success" {"id": "uuid", "status": "completed", "users": [{"id": 1, "name": "John", "user_game": {"rank": 1, "rating_mu": 25.0, "rating_sigma": 8.0, "diff": 2.5}}]}
+     * @response 400 scenario="Invalid game state" {"message": "Game must be active to finish."}
      */
     public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
@@ -142,10 +144,17 @@ class GameController extends Controller
             return response()->json(['message' => 'Game must be active to finish.'], 400);
         }
 
+        $results = $request->input('users', []);
+        $resultUserIds = collect($results)->pluck('user_id')->filter();
+        if ($resultUserIds->isEmpty()) {
+            $game->delete();
+
+            return response()->json(null, 204);
+        }
+
         $game->status = 'completed';
         $game->save();
 
-        $results = $request->input('users', []);
         foreach ($results as $result) {
             $user = User::find((int) $result['user_id']);
             if ($user) {
@@ -167,6 +176,8 @@ class GameController extends Controller
                 ]);
             }
         }
+
+        $game->users()->wherePivotNotIn('user_id', $resultUserIds)->detach();
 
         return response()->json($game->load('users'));
     }
