@@ -24,7 +24,7 @@
 </script>
 
 <svelte:head>
-	<title>ACHTUNG!</title>
+	<title>ACHTUNG</title>
 </svelte:head>
 
 <Toaster
