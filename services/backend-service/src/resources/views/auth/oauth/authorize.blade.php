@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Authorize {{ $client->name }}</title>
+    <title>Authorize {{ $client->name }} · ACHTUNG</title>
     <style>
         * {
             margin: 0;
@@ -15,38 +15,73 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #0a0e1a;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 1rem;
         }
 
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            height: 52px;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 10;
+        }
+
+        .topbar-brand {
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
         .card {
-            background: #ffffff;
+            background: rgba(20, 25, 40, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.6);
             max-width: 420px;
             width: 100%;
             overflow: hidden;
         }
 
         .card-header {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: center;
+            padding: 2rem 1.75rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .card-header h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        .card-header p {
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
         .card-body {
-            padding: 1.5rem;
+            padding: 1.5rem 1.75rem;
         }
 
         .client-info {
@@ -55,44 +90,49 @@
         }
 
         .client-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 16px;
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 1.5rem;
-            color: white;
+            margin: 0 auto 0.875rem;
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: #ffffff;
         }
 
         .client-name {
             font-size: 1.125rem;
             font-weight: 600;
-            color: #1e293b;
+            color: #ffffff;
             margin-bottom: 0.25rem;
         }
 
         .authorization-message {
-            color: #64748b;
-            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 0.8rem;
             line-height: 1.5;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .scopes {
-            background: #f8fafc;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1.5rem;
         }
 
         .scopes-title {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #64748b;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.4);
             margin-bottom: 0.75rem;
         }
 
@@ -100,78 +140,94 @@
             display: flex;
             align-items: center;
             padding: 0.5rem 0;
-            color: #334155;
+            color: rgba(255, 255, 255, 0.75);
             font-size: 0.875rem;
         }
 
         .scope-item:not(:last-child) {
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .scope-icon {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             margin-right: 0.75rem;
-            color: #22c55e;
+            color: #00ff88;
+            flex-shrink: 0;
         }
 
         .actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.625rem;
+        }
+
+        .actions form {
+            flex: 1;
+            display: flex;
         }
 
         .btn {
             flex: 1;
-            padding: 0.75rem 1rem;
+            padding: 0.7rem 1rem;
             border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             cursor: pointer;
             border: none;
             transition: all 0.15s ease;
         }
 
         .btn-cancel {
-            background: #f1f5f9;
-            color: #475569;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .btn-cancel:hover {
-            background: #e2e8f0;
+            border-color: rgba(255, 255, 255, 0.35);
+            color: #ffffff;
         }
 
         .btn-authorize {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
+            background: #ffffff;
+            color: #0a0e1a;
         }
 
         .btn-authorize:hover {
-            opacity: 0.9;
+            background: #e8e8e8;
             transform: translateY(-1px);
         }
 
         .user-info {
             text-align: center;
             padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
             margin-top: 1rem;
         }
 
         .user-info p {
             font-size: 0.75rem;
-            color: #94a3b8;
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .user-info strong {
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.55);
+            font-weight: 600;
         }
     </style>
 </head>
 
 <body>
+    <div class="topbar">
+        <span class="topbar-brand">Achtung</span>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <h1>Authorization Request</h1>
+            <p>Review permissions before continuing</p>
         </div>
 
         <div class="card-body">

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import LoadingRing from "$lib/components/LoadingRing.svelte";
 
   let isProcessing = true;
   let error = "";
@@ -30,7 +31,6 @@
           window.location.origin,
         );
         setTimeout(() => window.close(), 100);
-
       }
     } else {
       goto("/", { replaceState: true });
@@ -38,13 +38,11 @@
   });
 </script>
 
-<div class="min-h-screen bg-gray-900 flex items-center justify-center">
-  <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+<div class="min-h-screen bg-slate-950 flex items-center justify-center">
+  <div class="p-8 rounded-lg shadow-lg text-center">
     {#if isProcessing}
       <div class="flex flex-col items-center">
-        <div
-          class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
-        ></div>
+        <LoadingRing size={20} class="mb-4" />
         <h2 class="text-white text-xl font-semibold mb-2">
           Processing login...
         </h2>
