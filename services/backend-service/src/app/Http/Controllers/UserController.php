@@ -103,6 +103,7 @@ class UserController extends Controller
      * Delete a user.
      *
      * @response 204 scenario="Deleted"
+     * @response 403 scenario="Forbidden" {"message": "Forbidden."}
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
      */
     public function destroy(Request $request, User $user): JsonResponse
