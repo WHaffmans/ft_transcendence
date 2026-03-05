@@ -12,13 +12,15 @@ class Game extends Model
     /**
      * @use \Illuminate\Database\Eloquent\Factories\HasFactory<\Database\Factories\GameFactory>
      */
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     public $table = 'games';
 
     // Explicitly set primary key configuration
     protected $primaryKey = 'id';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [

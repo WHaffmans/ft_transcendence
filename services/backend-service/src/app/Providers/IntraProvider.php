@@ -46,7 +46,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
     /**
      * {@inheritdoc}
      *
-     * @param array<string> $scopes
+     * @param  array<string>  $scopes
      */
     protected function formatScopes(array $scopes, $scopeSeperator = ' '): string
     {
@@ -56,7 +56,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
     /**
      * {@inheritdoc}
      *
-     * @param array{id: int, first_name: string, displayname: string, email: string, image: array{link: string}|null} $user
+     * @param  array{id: int, first_name: string, displayname: string, email: string, image: array{link: string}|null}  $user
      */
     protected function mapUserToObject(array $user)
     {
@@ -65,7 +65,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
             'nickname' => $user['first_name'],
             'name' => $user['displayname'],
             'email' => $user['email'],
-            'avatar' => !empty($user['image']) ? $user['image']['link'] : null,
+            'avatar' => ! empty($user['image']) ? $user['image']['link'] : null,
         ]);
     }
 
@@ -80,7 +80,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
         return [
             RequestOptions::HEADERS => [
                 'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
             ],
         ];
     }
