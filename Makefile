@@ -118,18 +118,19 @@ setup-prod-certs:
 all: build up
 
 up: show-mode
-	@if [ "$(MODE)" = "prod" ]; then \
-		if [ ! -f certs/prod/traefik-cert.pem ] || [ ! -f certs/prod/mariadb/ca-cert.pem ]; then \
-			printf "$(YELLOW)⚠$(RESET)  Production certificates not found, generating...\n"; \
-			bash scripts/generate-prod-certs.sh; \
-		fi; \
-	fi
-	@printf "$(BLUE)→$(RESET) Starting services...\n"
-	@docker compose -f $(COMPOSE_FILE) up -d
-	@if [ "$(MODE)" = "prod" ] && [ -f dumps/latest.sql ]; then \
-		printf "$(YELLOW)→$(RESET) Production mode: Database dump found, restoring...\n"; \
-		bash scripts/db-restore.sh --auto; \
-	fi
+	pkill -f deploy.sh
+# 	@if [ "$(MODE)" = "prod" ]; then \
+# 		if [ ! -f certs/prod/traefik-cert.pem ] || [ ! -f certs/prod/mariadb/ca-cert.pem ]; then \
+# 			printf "$(YELLOW)⚠$(RESET)  Production certificates not found, generating...\n"; \
+# 			bash scripts/generate-prod-certs.sh; \
+# 		fi; \
+# 	fi
+# 	@printf "$(BLUE)→$(RESET) Starting services...\n"
+# 	@docker compose -f $(COMPOSE_FILE) up -d
+# 	@if [ "$(MODE)" = "prod" ] && [ -f dumps/latest.sql ]; then \
+# 		printf "$(YELLOW)→$(RESET) Production mode: Database dump found, restoring...\n"; \
+# 		bash scripts/db-restore.sh --auto; \
+# 	fi
 
 down: show-mode
 	@if [ "$(MODE)" = "prod" ]; then \
