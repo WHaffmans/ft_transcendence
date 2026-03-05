@@ -390,7 +390,8 @@ MariaDB is an open-source relational database management system (RDBMS).
 
 **`Collision Detection`**
 
-A self-written collision detection system designed specifically for a deterministic, state-machine–driven multiplayer game engine.
+A self-written collision detection system designed specifically for a deterministic, state-machine–driven multiplayer game engine. See the game-engine docs: [Game-Engine README](services/game-service/README.md)
+
 
 - Minimising complexity of player collision detection. A broad-phase uses a spatial grid to minimise potential collision candidates, and DDA grid traversal to find nearby player segments. A narrow-phase performs exact distance checks on minimal candidates. Minimising complexity is necessary for the `state-machine`-like game engine.
 
@@ -1069,6 +1070,8 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 - Amanatides, J., & Woo, A. (1987).  
   *A Fast Voxel Traversal Algorithm for Ray Tracing.*
+
+See collision documentation: [Game-Engine README](services/game-service/README.md)
 
 <br/>
 
