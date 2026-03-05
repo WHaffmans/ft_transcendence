@@ -105,8 +105,12 @@ class UserController extends Controller
      * @response 204 scenario="Deleted"
      * @response 404 scenario="Not found" {"message": "No query results for model [App\\Models\\User]"}
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        if ($request->user()->id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $user->delete();
 
         return response()->json(null, 204);
