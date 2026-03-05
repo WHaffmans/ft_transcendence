@@ -287,11 +287,6 @@
 
 </script>
 
-
-<svelte:head>
-	<title>Lobby - ACHTUNG</title>
-</svelte:head>
-
 <section class="relative overflow-hidden">
 	<!-- Main content -->
 	<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:justify-start">

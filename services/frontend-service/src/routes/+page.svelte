@@ -10,10 +10,6 @@
   let game = {};
 </script>
 
-<svelte:head>
-  <title>Achtung - Landing Page</title>
-</svelte:head>
-
 <!-- Main page content -->
 <div class="relative z-10 flex flex-1 items-center justify-center px-8">
   <!-- Width constrainment -->

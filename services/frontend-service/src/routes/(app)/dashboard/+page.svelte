@@ -34,10 +34,6 @@
   }}
 />
 
-<svelte:head>
-  <title>ACHTUNG – Dashboard</title>
-</svelte:head>
-
 <!-- Dashboard page content -->
 <section class="flex flex-col gap-6 lg:flex-row">
   <!-- Left column -->
