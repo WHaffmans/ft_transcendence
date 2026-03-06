@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 09:51:45 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 10:49:10 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ import {
 
 import {
 	ClientMsgSchema,
+	RoomId,
 	type ClientMsg,
 } from "@ft/game-ws-protocol";
 
@@ -167,6 +168,17 @@ export function startPublicWsServer(
 				getBound: () => ({ roomId: boundRoomId, playerId: boundPlayerId }),
 				setBound: (roomId, playerId) => { boundRoomId = roomId; boundPlayerId = playerId; },
 			};
+
+			console.log("[ws:transport] connection headers", {
+				xUserId: req.headers["x-user-id"],
+				secWebSocketKey: req.headers["sec-websocket-key"],
+			});
+
+			console.log("[ws:transport] incoming message", {
+				type: msg.type,
+				boundRoomId,
+				authenticatedUserId,
+			});
 			
 			// Handle messages
 			try {

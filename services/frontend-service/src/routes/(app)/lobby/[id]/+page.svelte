@@ -94,18 +94,34 @@
 		if (didCleanup) return;
 
 		const lobbyId = data.lobbyId;
-		const user = data.user;
+		const user = $userStore ?? null;
+
+		if (!user?.id) {
+			console.log("[lobby] auth guard → redirecting to /dashboard");
+			goto("/dashboard", { replaceState: true });
+			return;
+		}
+
+		if (!lobbyId) return;
+
 		const playerId = String(user.id);
 
-		// Join WS session
-		if (!lobbyId) return;
-		const shouldEnsure = $wsStore.status !== "open";
-		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;
-		if (lastJoinedKey !== joinKey) {
-			lastJoinedKey = joinKey;
-			if (shouldEnsure) joinLobbySession(lobbyId, user);
-			else if (!liveRoomState) joinLobbySession(lobbyId, user);
+		if (lastLoadedLobbyId !== lobbyId) {
+			lastLoadedLobbyId = lobbyId;
+			loadGameRecord(lobbyId);
 		}
+
+		const alreadyBound =
+			$wsStore.roomId === lobbyId &&
+			$wsStore.playerId === playerId;
+
+		if (alreadyBound) return;
+
+		const joinKey = `${lobbyId}:${playerId}`;
+		if (lastJoinedKey === joinKey) return;
+
+		lastJoinedKey = joinKey;
+		joinLobbySession(lobbyId, user);
 	});
 
 	let lastRosterKey = "";
