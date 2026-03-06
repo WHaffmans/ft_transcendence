@@ -120,30 +120,37 @@
 		// Don't re-fetch if the lobby is empty (player was kicked/left)
 		if (ids.length === 0) return;
 
+		// Don't re-fetch if we're leaving the lobby (phase changed to ready/running).
+		// invalidate() would start an async load that blocks goto() navigation.
+		const phase = liveRoomState?.phase ?? null;
+		if (phase && phase !== "lobby") return;
+
 		// Re-run the +page.ts load to refresh the game record
 		invalidate('app:gameRecord');
 	});
 
-	/**
-	 * Detect when the current player is kicked (no longer in playerIds)
-	 */
-	$effect(() => {
-		if (didRedirect) return;
 
-		const ids = roomPlayerIdsLive;
-		if (ids.length === 0) return; // no state yet
+	// REDUNDANT CODE -- TOTO CLEANUP
+	// /**
+	//  * Detect when the current player is kicked (no longer in playerIds)
+	//  */
+	// $effect(() => {
+	// 	if (didRedirect) return;
 
-		const userId = String($userStore?.id ?? "");
-		if (!userId) return;
+	// 	const ids = roomPlayerIdsLive;
+	// 	if (ids.length === 0) return; // no state yet
 
-		if (!ids.includes(userId)) {
-			console.log("[lobby] kicked — player not in playerIds", { userId, ids });
-			didRedirect = true;
-			wsStore.disconnect();
-			toast.info("You were removed from the lobby.");
-			goto("/dashboard", { replaceState: true });
-		}
-	});
+	// 	const userId = String($userStore?.id ?? "");
+	// 	if (!userId) return;
+
+	// 	if (!ids.includes(userId)) {
+	// 		console.log("[lobby] kicked — player not in playerIds", { userId, ids });
+	// 		didRedirect = true;
+	// 		wsStore.disconnect();
+	// 		toast.info("You were removed from the lobby.");
+	// 		goto("/dashboard", { replaceState: true });
+	// 	}
+	// });
 
 	/**
 	 * Room closed
