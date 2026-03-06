@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:07:36 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 09:20:15 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 10:48:44 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,19 +36,18 @@ function isAuthenticatedPlayerMatch(
 	return (playerId === authenticatedUserId);
 }
 
-function closeForAuthFailure(
-	ws: WebSocket,
-	reason: string,
-	details?: Record<string, unknown>,
-) {
-	console.warn("[ws:transport] auth mismatch — closing", details);
+function closeForAuthFailure(ws: WebSocket, authenticatedUserId: string, claimedPlayerId: string) {
+	console.warn("[ws:transport] auth mismatch — closing", {
+		authenticatedUserId,
+		claimedPlayerId,
+	});
 
 	safeSendServer(ws, {
 		type: "error",
-		message: reason,
+		message: "Player ID does not match authenticated user",
 	} satisfies ServerMsg);
 
-	ws.close(WS_CLOSE_AUTH_FAILURE, reason);
+	ws.close(WS_CLOSE_AUTH_FAILURE, "Player ID mismatch");
 }
 
 export function getAuthenticatedUserId(req: IncomingMessage): string | null {
@@ -67,7 +66,7 @@ export function getAuthenticatedUserId(req: IncomingMessage): string | null {
 		console.log(`public WS: client connected (userId=${authenticatedUserId})`);
 	}
 
-	return authenticatedUserId;
+	return (authenticatedUserId);
 }
 
 export function verifyClaimedPlayerAuth(
@@ -77,12 +76,12 @@ export function verifyClaimedPlayerAuth(
 ): boolean {
 	const claimedPlayerId = getClaimedPlayerId(msg);
 
-	if (!isAuthenticatedPlayerMatch(authenticatedUserId, claimedPlayerId)) {
-		closeForAuthFailure(ws, "Player ID mismatch", {
-			authenticatedUserId,
-			claimedPlayerId,
-			type: msg.type,
-		});
+	if (
+		authenticatedUserId &&
+		claimedPlayerId &&
+		!isAuthenticatedPlayerMatch(authenticatedUserId, claimedPlayerId)
+	) {
+		closeForAuthFailure(ws, authenticatedUserId, claimedPlayerId);
 		return (false);
 	}
 

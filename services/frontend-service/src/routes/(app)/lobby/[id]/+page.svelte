@@ -98,32 +98,34 @@
 
 	$effect(() => {
 		const lobbyId = data.lobbyId;
-		
-		// 1. Auth guard
 		const user = $userStore ?? null;
+
 		if (!user?.id) {
 			console.log("[lobby] auth guard → redirecting to /dashboard");
 			goto("/dashboard", { replaceState: true });
 			return;
 		}
+
+		if (!lobbyId) return;
+
 		const playerId = String(user.id);
 
-
-		// 2. Load REST record once per lobbyId
-		if (lobbyId && lastLoadedLobbyId !== lobbyId) {
+		if (lastLoadedLobbyId !== lobbyId) {
 			lastLoadedLobbyId = lobbyId;
 			loadGameRecord(lobbyId);
 		}
 
-		// 3. Join WS session
-		if (!lobbyId) return;
-		const shouldEnsure = $wsStore.status !== "open";
-		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;
-		if (lastJoinedKey !== joinKey) {
-			lastJoinedKey = joinKey;
-			if (shouldEnsure) joinLobbySession(lobbyId, user);
-			else if (!liveRoomState) joinLobbySession(lobbyId, user);
-		}
+		const alreadyBound =
+			$wsStore.roomId === lobbyId &&
+			$wsStore.playerId === playerId;
+
+		if (alreadyBound) return;
+
+		const joinKey = `${lobbyId}:${playerId}`;
+		if (lastJoinedKey === joinKey) return;
+
+		lastJoinedKey = joinKey;
+		joinLobbySession(lobbyId, user);
 	});
 
 	let lastRosterKey = "";

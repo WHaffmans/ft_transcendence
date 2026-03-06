@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:23:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 09:48:42 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 10:58:08 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,8 +76,7 @@ export function handleCreateOrJoinRoom(
 		...(msg.resumeToken !== undefined ? { resumeToken: msg.resumeToken } : {}),
 	};
 
-	const { room, playerId: effectivePlayerId, resumeToken } =
-		rooms.createOrJoinRoom(joinArgs, ws);
+	const { room, playerId: effectivePlayerId, resumeToken } = rooms.createOrJoinRoom(joinArgs, ws);
 
     // Check auth
 	if (authenticatedUserId && effectivePlayerId !== authenticatedUserId) {
@@ -139,11 +138,6 @@ export function handleStartGame(
 	const { rooms } = ctx;
 	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
 
-	console.log("[ws:transport] recv start_game", {
-		roomId: msg.roomId,
-		boundPlayerId,
-	});
-
 	if (!boundRoomId || !boundPlayerId) {
 		throw new Error("Must join_room first");
 	}
@@ -166,7 +160,7 @@ export function handleStartGame(
 		type: "game_started",
 		roomId: boundRoomId,
 	} satisfies ServerMsg);
-	rooms.startRoom(boundPlayerId);
+	rooms.startRoom(boundRoomId);
 }
 
 
@@ -180,11 +174,6 @@ export function handleLeaveRoom(
 ) {
 	const { ws, rooms } = ctx;
 	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
-
-	console.log("[ws:transport] recv leave_room", {
-		roomId: msg.roomId,
-		playerId: msg.playerId,
-	});
 
 	if (!boundRoomId || !boundPlayerId) {
 		throw new Error("Must join_room first");
