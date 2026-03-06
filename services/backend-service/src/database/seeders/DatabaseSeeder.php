@@ -104,9 +104,6 @@ class DatabaseSeeder extends Seeder
         // Create 20 random games
         Game::factory()->count(20)->create();
 
-        // Create one pending game
-        $pendingGame = Game::create([
-            'status' => 'pending',
-        ]);
+
     }
 }
