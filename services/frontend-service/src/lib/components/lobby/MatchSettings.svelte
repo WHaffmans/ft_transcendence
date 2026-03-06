@@ -140,8 +140,6 @@
   /* ====================================================================== */
 
   function leaveRoom() {
-    if (!game) return;
-
     if (onLeave) {
       onLeave();
     } else {
