@@ -445,7 +445,15 @@ function createWebSocketStore() {
 			...s,
 			roomId,
 			playerId: player.playerId,
+			latestState: null,
+			segments: [],
+			lastSegI: null,
+			lobbyTimer: null,
+			winnerId: null,
+			lastRoomClosed: null,
+			afkTimer: null,
 			pendingCreateOrJoin: { roomId, seed, player },
+			pendingScene: null,
 		}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
