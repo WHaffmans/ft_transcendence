@@ -977,7 +977,7 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 - `1` **Server-Side Rendering (SSR | performance | SEO).** <br/>
   Enabled server-rendered pages and server-side data loading for faster initial content delivery and search engine visibility. <br/>
-  *Contributors: Ferry Ras, Hein Smolder.*
+  *Contributors: Ferry Ras, Hein Smolder, Quinten Mennen.*
 
 <br/>
 
