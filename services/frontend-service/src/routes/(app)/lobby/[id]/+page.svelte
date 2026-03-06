@@ -130,28 +130,6 @@
 	});
 
 
-	// REDUNDANT CODE -- TOTO CLEANUP
-	// /**
-	//  * Detect when the current player is kicked (no longer in playerIds)
-	//  */
-	// $effect(() => {
-	// 	if (didRedirect) return;
-
-	// 	const ids = roomPlayerIdsLive;
-	// 	if (ids.length === 0) return; // no state yet
-
-	// 	const userId = String($userStore?.id ?? "");
-	// 	if (!userId) return;
-
-	// 	if (!ids.includes(userId)) {
-	// 		console.log("[lobby] kicked — player not in playerIds", { userId, ids });
-	// 		didRedirect = true;
-	// 		wsStore.disconnect();
-	// 		toast.info("You were removed from the lobby.");
-	// 		goto("/dashboard", { replaceState: true });
-	// 	}
-	// });
-
 	/**
 	 * Room closed
 	*/
