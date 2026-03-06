@@ -82,36 +82,38 @@ function clearResumeToken(roomId: string) {
 /* ========================================================================== */
 
 /** State tied to a specific room session — cleared on join, leave, disconnect. */
-const ROOM_SESSION_DEFAULTS: Pick<
+function roomSessionDefaults(): Pick<
 	WSStoreState,
 	| "latestState" | "segments" | "lastSegI" | "lobbyTimer"
 	| "winnerId" | "lastRoomClosed" | "afkTimer" | "pendingScene"
-> = {
-	latestState: null,
-	segments: [],
-	lastSegI: null,
-	lobbyTimer: null,
-	winnerId: null,
-	lastRoomClosed: null,
-	afkTimer: null,
-	pendingScene: null,
-};
+> {
+	return {
+		latestState: null,
+		segments: [],
+		lastSegI: null,
+		lobbyTimer: null,
+		winnerId: null,
+		lastRoomClosed: null,
+		afkTimer: null,
+		pendingScene: null,
+	};
+}
 
-const INITIAL_STATE: WSStoreState = {
-	status: "disconnected",
-	messages: [],
-	roomId: null,
-	playerId: null,
-	playerMetaById: {},
-	resumeToken: null,
-	pendingCreateOrJoin: null,
-	...ROOM_SESSION_DEFAULTS,
-};
+function initialState(): WSStoreState {
+	return {
+		status: "disconnected",
+		messages: [],
+		roomId: null,
+		playerId: null,
+		playerMetaById: {},
+		resumeToken: null,
+		pendingCreateOrJoin: null,
+		...roomSessionDefaults(),
+	};
+}
 
 function createWebSocketStore() {
-	const store = writable<WSStoreState>({
-		...INITIAL_STATE,
-	});
+	const store = writable<WSStoreState>(initialState());
 
 	const { subscribe, set, update } = store;
 	let ws: WebSocket | null = null;
@@ -368,7 +370,7 @@ function createWebSocketStore() {
 		lastLoggedLobbyTimer = null;
 		lastLoggedAfkTimer = null;
 
-		set({ ...INITIAL_STATE });
+		set(initialState());
 	}
 
 	function forceDisconnect(reason = "forced") {
@@ -440,7 +442,7 @@ function createWebSocketStore() {
 
 		update((s) => ({
 			...s,
-			...ROOM_SESSION_DEFAULTS,
+			...roomSessionDefaults(),
 			roomId,
 			playerId: player.playerId,
 			pendingCreateOrJoin: { roomId, seed, player },
@@ -512,7 +514,7 @@ function createWebSocketStore() {
 
 		update((x) => ({
 			...x,
-			...ROOM_SESSION_DEFAULTS,
+			...roomSessionDefaults(),
 			roomId: null,
 			playerId: null,
 			playerMetaById: {},
