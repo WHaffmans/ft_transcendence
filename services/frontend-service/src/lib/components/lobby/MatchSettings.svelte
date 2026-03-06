@@ -11,6 +11,7 @@
     lobbyId: string;
     playerId: string;
     sceneById: Record<string, string>;
+    onLeave?: () => void;
   }
 
   type Notice = { title: string; body: string };
@@ -21,6 +22,7 @@
     lobbyId,
     playerId,
     sceneById,
+    onLeave,
   }: Props = $props();
 
   let isTooSmall = $state(false);
@@ -140,9 +142,13 @@
   function leaveRoom() {
     if (!game) return;
 
-    wsStore.leaveRoom();
-    wsStore.disconnect();
-    goto("/");
+    if (onLeave) {
+      onLeave();
+    } else {
+      wsStore.leaveRoom();
+      wsStore.disconnect();
+      goto("/");
+    }
   }
 </script>
 

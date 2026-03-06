@@ -72,12 +72,28 @@
 		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
 	}
 
+	/* ====================================================================== */
+	/*                                CLEANUP                                 */
+	/* ====================================================================== */
+
+	let didCleanup = false;
+	let isClientNavigation = false;
+
+	function cleanupLobby() {
+		if (didCleanup) return;
+		console.log("[lobby] cleanupLobby");
+		didCleanup = true;
+		wsStore.leaveRoom();
+		wsStore.disconnect();
+	}
 
 	/* ====================================================================== */
 	/*                                TRIGGERS                                */
 	/* ====================================================================== */
 
 	$effect(() => {
+		if (didCleanup) return;
+
 		const lobbyId = data.lobbyId;
 		const user = data.user;
 		const playerId = String(user.id);
@@ -185,29 +201,28 @@
 	/*                       CLEANUP ON NAVIGATE AWAY                         */
 	/* ====================================================================== */
 
-	let didCleanup = false;
-
-	function cleanupLobby() {
-		if (didCleanup) return;
-		console.log("[lobby] cleanupLobby");
-		didCleanup = true;
-		wsStore.leaveRoom();
-		wsStore.disconnect();
-	}
-
 	beforeNavigate(({ to }) => {
+		// `to` is null when leaving the app (refresh, close tab, external link).
+		// In that case let the socket die naturally — onPlayerSocketLost on the
+		// game-service keeps the player in the room for reconnection.
+		if (!to) return;
+
+		isClientNavigation = true;
+
 		if (didRedirect) return;  // already handled (kicked, room closed, etc.)
 
 		// Don't clean up when transitioning to the game page (legitimate redirect)
-		const dest = to?.url?.pathname ?? "";
+		const dest = to.url?.pathname ?? "";
 		if (dest.startsWith("/game/")) return;
 
 		cleanupLobby();
 	});
 
 	onDestroy(() => {
-		// Safety net for cases beforeNavigate doesn't cover (e.g. full page unload)
-		if (!didRedirect) cleanupLobby();
+		// Only clean up during SvelteKit client navigations.
+		// On full page reload the socket dies naturally and onPlayerSocketLost
+		// on the game-service keeps the player in the room for reconnection.
+		if (!didRedirect && isClientNavigation) cleanupLobby();
 	});
 
 
@@ -266,6 +281,10 @@
 				lobbyId={data.lobbyId}
 				playerId={String($userStore?.id ?? '')}
 				sceneById={sceneByIdLive}
+				onLeave={() => {
+					cleanupLobby();
+					goto('/dashboard', { replaceState: true });
+				}}
 			/>
 		</div>
 	</div>
