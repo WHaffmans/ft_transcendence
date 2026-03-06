@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   types_ws.ts                                        :+:    :+:            */
+/*   ws_types.ts                                        :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:40:27 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 09:42:14 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 12:36:59 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import type WebSocket from "ws";
-import { RoomManager } from "../app/room_manager.js";
+import { RoomManager } from "../../app/room_manager.js";
 import type { IncomingMessage } from "http";
 
 /**
