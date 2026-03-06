@@ -6,23 +6,33 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/04 15:53:48 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 09:51:45 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 import type { IncomingMessage } from "http";
-import type { GameConfig } from "../engine/config.js";
-import { DEFAULT_CONFIG } from "../engine/config.js";
 import { RoomManager } from "../app/room_manager.js";
+import { safeSend } from "./send_ws.js";
+import { WsContext } from "./types_ws.js";
+
+import {
+	getAuthenticatedUserId,
+	verifyClaimedPlayerAuth,
+} from "./authenticate_ws.js";
+
+import {
+	handleCreateOrJoinRoom,
+	handleUpdateScene,
+	handleStartGame,
+	handleLeaveRoom,
+	handleInput,
+} from "./handler_ws.js";
 
 import {
 	ClientMsgSchema,
 	type ClientMsg,
-	ServerMsgSchema,
-	type ServerMsg,
-	WS_CLOSE_AUTH_FAILURE,
 } from "@ft/game-ws-protocol";
 
 
@@ -44,44 +54,50 @@ interface AliveWebSocket extends WebSocket {
 /*                              HELPERS                                   */
 /* ====================================================================== */
 
-function safeSend(ws: WebSocket, obj: unknown) {
-	if (ws.readyState === ws.OPEN)
-		ws.send(JSON.stringify(obj));
-}
-
-function safeSendServer(ws: WebSocket, msg: ServerMsg) {
-	if (ws.readyState !== ws.OPEN) return;
-	
-	const parsed = ServerMsgSchema.safeParse(msg);
-	if (!parsed.success) {
-		console.error("BUG: invalid ServerMsg being sent", parsed.error.format(), msg);
-		return;
-	}
-	ws.send(JSON.stringify(parsed.data));
-}
-
-function normalizeConfig(partial: unknown): GameConfig {
-	const p =
-		partial && typeof partial === "object" && partial !== null
-			? (partial as Partial<GameConfig>)
-			: undefined;
-
-	const config: GameConfig = {
-		...DEFAULT_CONFIG,
-		...(p ?? {}),
-	};
-
-	for (const [k, v] of Object.entries(config)) {
-		if (typeof v === "number" && !Number.isFinite(v)) {
-			throw new Error(`Invalid config: ${k} is ${v}`);
-		}
-	}
-
-	return (config);
-}
-
 function assertNever(x: never): never {
-	throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
+    throw new Error(`Unhandled message: ${JSON.stringify(x)}`);
+}
+
+
+/* ====================================================================== */
+/*                              HEARTBREAK                                */
+/* ====================================================================== */
+
+function attachHeartbeat(ws: WebSocket) {
+	const alive = ws as AliveWebSocket;
+	alive.isAlive = true;
+
+	ws.on("pong", () => {
+		alive.isAlive = true;
+	});
+}
+
+/**
+ * Heartbreak
+ * `ping` all client HEARTBEAT_INTERVAL_MS. Close connection if client
+ * does not respond with `pong`. Avoid zombie from silent network drop.
+ */
+function startHeartbeat(wss: WebSocketServer) {
+	const interval = setInterval(() => {
+		for (const client of wss.clients) {
+			const alive = client as AliveWebSocket;
+
+			if (!alive.isAlive) {
+				console.log("heartbeat: terminating unresponsive client");
+				alive.terminate();
+				continue;
+			}
+
+			alive.isAlive = false;
+			alive.ping();
+		}
+	}, HEARTBEAT_INTERVAL_MS);
+
+	wss.on("close", () => {
+		clearInterval(interval);
+	});
+
+	return (interval);
 }
 
 
@@ -106,48 +122,15 @@ export function startPublicWsServer(
 	}
 
 	const wss: WebSocketServer = new WebSocketServer(wsOptions);
+	startHeartbeat(wss);
 
-	// ── Heartbeat ──────────────────────────────────────────────────────────
-	// Every HEARTBEAT_INTERVAL_MS, ping all clients.  If a client has not
-	// responded with a pong since the last cycle, terminate the connection
-	// (it is likely a zombie from a silent network drop).
-	const heartbeat = setInterval(() => {
-		for (const client of wss.clients) {
-			const alive = client as AliveWebSocket;
-			if (!alive.isAlive) {
-				console.log("heartbeat: terminating unresponsive client");
-				alive.terminate();
-				continue;
-			}
-			alive.isAlive = false;
-			alive.ping();
-		}
-	}, HEARTBEAT_INTERVAL_MS);
-
-	wss.on("close", () => {
-		clearInterval(heartbeat);
-	});
-
-	// ── Connection handler ─────────────────────────────────────────────────
 	wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
 
-		// -- Heartbeat bookkeeping --
-		const alive = ws as AliveWebSocket;
-		alive.isAlive = true;
-		ws.on("pong", () => { alive.isAlive = true; });
+		// Heartbeat bookkeeping
+		attachHeartbeat(ws);
 
-		// -- Auth: extract user id set by gateway's forwardAuth middleware --
-		const headerVal = req.headers["x-user-id"];
-		const authenticatedUserId: string | null =
-			typeof headerVal === "string" ? headerVal
-			: Array.isArray(headerVal) ? headerVal[0] ?? null
-			: null;
-
-		if (!authenticatedUserId) {
-			console.warn("public WS: client connected WITHOUT X-User-Id header (direct connection or gateway misconfiguration)");
-		} else {
-			console.log(`public WS: client connected (userId=${authenticatedUserId})`);
-		}
+		// Get auth from request header
+		const authenticatedUserId = getAuthenticatedUserId(req);
 
 		let boundRoomId: string | null = null;
 		let boundPlayerId: string | null = null;
@@ -172,157 +155,32 @@ export function startPublicWsServer(
 
 			const msg: ClientMsg = parsed.data;
 
-			// -- Auth: verify playerId matches the authenticated user --
-			// Extract playerId from whichever field the message uses.
-			const claimedPlayerId =
-				"player" in msg ? String(msg.player.playerId)
-				: "playerId" in msg ? String(msg.playerId)
-				: null;
-
-			if (authenticatedUserId && claimedPlayerId && claimedPlayerId !== authenticatedUserId) {
-				console.warn("[ws:transport] auth mismatch — closing", { authenticatedUserId, claimedPlayerId });
-				safeSendServer(ws, {
-					type: "error",
-					message: "Player ID does not match authenticated user",
-				} satisfies ServerMsg);
-				ws.close(WS_CLOSE_AUTH_FAILURE, "Player ID mismatch");
+			// Authenticate user
+			if (!verifyClaimedPlayerAuth(ws, authenticatedUserId, msg))
 				return;
-			}
 
+			const ctx: WsContext = {
+				ws,
+				req,
+				rooms,
+				authenticatedUserId,
+				getBound: () => ({ roomId: boundRoomId, playerId: boundPlayerId }),
+				setBound: (roomId, playerId) => { boundRoomId = roomId; boundPlayerId = playerId; },
+			};
+			
 			// Handle messages
 			try {
 				switch (msg.type) {
-					case "create_or_join_room": {
-						console.log("[ws:transport] recv create_or_join_room", { roomId: msg.roomId, playerId: msg.player.playerId });
-
-						// Check for other room subcription
-						if (boundRoomId && boundRoomId !== msg.roomId) {
-							try { rooms.unsubscribe(boundRoomId, ws); } catch { }
-							boundRoomId = null;
-							boundPlayerId = null;
-						}
-
-						const config = normalizeConfig(msg.config);
-						const seed = msg.seed;
-
-						boundRoomId = msg.roomId;
-						boundPlayerId = msg.player.playerId;
-						const joinArgs = {
-							roomId: msg.roomId,
-							player: msg.player,
-							seed,
-							config,
-							...(msg.resumeToken !== undefined ? { resumeToken: msg.resumeToken } : {}),
-						};
-
-						const { room, playerId: effectivePlayerId, resumeToken } = rooms.createOrJoinRoom(joinArgs, ws);
-
-						// Check auth
-						if (authenticatedUserId && effectivePlayerId !== authenticatedUserId) {
-							console.warn("[ws:transport] auth mismatch after createOrJoinRoom — closing", {
-								authenticatedUserId,
-								claimedPlayerId: msg.player.playerId,
-								effectivePlayerId,
-								roomId: room.roomId,
-							});
-
-							try { rooms.unsubscribe(room.roomId, ws); } catch { }
-							try { rooms.onPlayerSocketLost(room.roomId, effectivePlayerId, ws, { code: WS_CLOSE_AUTH_FAILURE, reason: "effective playerId mismatch" }); } catch { }
-
-							ws.close(WS_CLOSE_AUTH_FAILURE, "Effective playerId mismatch");
-							boundRoomId = null;
-							boundPlayerId = null;
-							return;
-						}
-
-						boundPlayerId = effectivePlayerId;
-
-						safeSendServer(
-							ws,
-							{
-								type: "joined",
-								roomId: room.roomId,
-								playerId: effectivePlayerId,
-								resumeToken,
-							} satisfies ServerMsg,
-						);
-						return;
-					}
-
-					case "update_scene": {
-						if (!boundRoomId || !boundPlayerId) {
-							throw new Error("Must join_room first");
-						}
-						if (msg.roomId !== boundRoomId || msg.playerId !== boundPlayerId) {
-							throw new Error("update_scene: room/player mismatch");
-						}
-
-						boundRoomId = msg.roomId;
-						boundPlayerId = msg.playerId;
-
-						rooms.broadcastState(boundRoomId);
-						rooms.updatePlayerScene(boundRoomId, boundPlayerId, msg.scene);
-						rooms.broadcastState(boundRoomId);
-						rooms.willUpdateRoomPhase(boundRoomId);
-						return;
-					}
-
-					case "start_game": {
-						console.log("[ws:transport] recv start_game", { roomId: msg.roomId, boundPlayerId });
-						if (!boundRoomId || !boundPlayerId) {
-							throw new Error("Must join_room first");
-						}
-						if (msg.roomId !== boundRoomId) {
-							throw new Error("start_game: room mismatch");
-						}
-
-						const room = rooms.get(boundRoomId);
-						if (!room) throw new Error(`Unknown roomId: ${boundRoomId}`);
-
-						if (room.phase !== "ready") {
-							throw new Error(`Room is not ready (phase=${room.phase})`);
-						}
-
-						rooms.setRoomToRunning(boundRoomId);
-						rooms.broadcast(boundRoomId, { type: "game_started", roomId: boundRoomId} satisfies ServerMsg);
-						rooms.startRoom(msg.roomId);
-						return;
-					}
-
-					case "leave_room": {
-						console.log("[ws:transport] recv leave_room", { roomId: msg.roomId, playerId: msg.playerId });
-						boundRoomId = msg.roomId;
-						boundPlayerId = msg.playerId;
-
-						rooms.onPlayerDisconnected(boundRoomId, boundPlayerId, ws, "Player exit");
-						rooms.broadcast(msg.roomId, { type: "left", roomId: boundRoomId, playerId: boundPlayerId} satisfies ServerMsg);
-						rooms.unsubscribe(boundRoomId, ws);
-
-						boundRoomId = null;
-						boundPlayerId = null;
-						return;
-					}
-
-					case "input": {
-						if (!boundRoomId || !boundPlayerId) {
-							throw new Error("Must join_room first");
-						}
-
-						const room = rooms.get(boundRoomId);
-						if (!room) return;
-
-						// Reject input if not bound
-						if (!rooms.isBoundSocket(boundRoomId, boundPlayerId, ws))
-							return;
-
-						rooms.pushInput({
-							roomId: boundRoomId,
-							playerId: boundPlayerId,
-							turn: msg.turn,
-						});
-						return;
-					}
-
+					case "create_or_join_room":
+						return (handleCreateOrJoinRoom(ctx, msg));
+					case "update_scene":
+						return (handleUpdateScene(ctx, msg));
+					case "start_game":
+						return (handleStartGame(ctx, msg));
+					case "leave_room":
+						return (handleLeaveRoom(ctx, msg));
+					case "input":
+						return (handleInput(ctx, msg));
 					default:
 						assertNever(msg);
 				}
