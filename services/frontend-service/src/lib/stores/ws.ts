@@ -81,24 +81,39 @@ function clearResumeToken(roomId: string) {
 /*                                  STORE                                     */
 /* ========================================================================== */
 
-function createWebSocketStore() {
-	const store = writable<WSStoreState>({
-		status: "disconnected",
-		messages: [],
-		lobbyTimer: null,
+/** State tied to a specific room session — cleared on join, leave, disconnect. */
+function roomSessionDefaults(): Pick<
+	WSStoreState,
+	| "latestState" | "segments" | "lastSegI" | "lobbyTimer"
+	| "winnerId" | "lastRoomClosed" | "afkTimer" | "pendingScene"
+> {
+	return {
 		latestState: null,
 		segments: [],
 		lastSegI: null,
+		lobbyTimer: null,
+		winnerId: null,
+		lastRoomClosed: null,
+		afkTimer: null,
+		pendingScene: null,
+	};
+}
+
+function initialState(): WSStoreState {
+	return {
+		status: "disconnected",
+		messages: [],
 		roomId: null,
 		playerId: null,
 		playerMetaById: {},
-		winnerId: null as string | null,
-		lastRoomClosed: null,
-		afkTimer: null,
 		resumeToken: null,
 		pendingCreateOrJoin: null,
-		pendingScene: null,
-	});
+		...roomSessionDefaults(),
+	};
+}
+
+function createWebSocketStore() {
+	const store = writable<WSStoreState>(initialState());
 
 	const { subscribe, set, update } = store;
 	let ws: WebSocket | null = null;
@@ -355,23 +370,7 @@ function createWebSocketStore() {
 		lastLoggedLobbyTimer = null;
 		lastLoggedAfkTimer = null;
 
-		set({
-			status: "disconnected",
-			messages: [],
-			lobbyTimer: null,
-			latestState: null,
-			segments: [],
-			lastSegI: null,
-			roomId: null,
-			playerId: null,
-			playerMetaById: {},
-			winnerId: null,
-			lastRoomClosed: null,
-			afkTimer: null,
-			resumeToken: null,
-			pendingCreateOrJoin: null,
-			pendingScene: null,
-		});
+		set(initialState());
 	}
 
 	function forceDisconnect(reason = "forced") {
@@ -443,6 +442,7 @@ function createWebSocketStore() {
 
 		update((s) => ({
 			...s,
+			...roomSessionDefaults(),
 			roomId,
 			playerId: player.playerId,
 			pendingCreateOrJoin: { roomId, seed, player },
@@ -514,18 +514,11 @@ function createWebSocketStore() {
 
 		update((x) => ({
 			...x,
+			...roomSessionDefaults(),
 			roomId: null,
 			playerId: null,
-			latestState: null,
-			lobbyTimer: null,
-			segments: [],
-			lastSegI: null,
 			playerMetaById: {},
-			winnerId: null,
-			lastRoomClosed: null,
-			afkTimer: null,
 			pendingCreateOrJoin: null,
-			pendingScene: null,
 		}));
 	}
 
