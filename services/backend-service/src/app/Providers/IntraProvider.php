@@ -12,7 +12,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
     /**
      * The scopes being requested.
      *
-     * @var array
+     * @var array<string>
      */
     protected $scopes = ['public'];
 
@@ -45,6 +45,8 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param  array<string>  $scopes
      */
     protected function formatScopes(array $scopes, $scopeSeperator = ' '): string
     {
@@ -53,6 +55,8 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param  array{id: int, first_name: string, displayname: string, email: string, image: array{link: string}|null}  $user
      */
     protected function mapUserToObject(array $user)
     {
@@ -69,7 +73,7 @@ class IntraProvider extends AbstractProvider implements ProviderInterface
      * Get the default options for an HTTP request.
      *
      * @param  string  $token
-     * @return array
+     * @return array<string, array{Accept: string, Authorization: string}>
      */
     protected function getRequestOptions($token)
     {

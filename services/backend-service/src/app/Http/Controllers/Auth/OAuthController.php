@@ -10,10 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OAuthController extends Controller
 {
-    public function initiate(Request $request)
+    public function initiate(Request $request): \Illuminate\Http\RedirectResponse
     {
         $clientId = config('services.oauth.client_id');
-        if (!$clientId) {
+        if (! $clientId) {
             abort(500, 'OAuth client ID not configured.');
         }
 
@@ -36,25 +36,24 @@ class OAuthController extends Controller
             'code_challenge_method' => 'S256',
         ]);
 
-        return redirect()->to(url('/oauth/authorize') . '?' . $query);
+        return redirect()->to(url('/oauth/authorize').'?'.$query);
     }
 
-    public function callback(Request $request)
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
         $frontendUrl = config('app.frontend_url', '/');
         // Ensure frontend_url has a protocol
-        if (!str_starts_with($frontendUrl, 'http://') && !str_starts_with($frontendUrl, 'https://')) {
-            $frontendUrl = 'http://' . $frontendUrl;
+        if (! str_starts_with($frontendUrl, 'http://') && ! str_starts_with($frontendUrl, 'https://')) {
+            $frontendUrl = 'http://'.$frontendUrl;
         }
 
-
         if ($request->filled('error')) {
-            return redirect($frontendUrl . '/callback?error=' . urlencode((string) $request->input('error')) . '&error_description=' . urlencode((string) $request->input('error_description')));
+            return redirect($frontendUrl.'/callback?error='.urlencode((string) $request->input('error')).'&error_description='.urlencode((string) $request->input('error_description')));
         }
 
         $clientId = config('services.oauth.client_id');
 
-        if (!$clientId) {
+        if (! $clientId) {
             abort(500, 'OAuth client ID not configured.');
         }
 
@@ -62,14 +61,13 @@ class OAuthController extends Controller
         $storedState = (string) $request->session()->pull('pkce_state');
         $codeVerifier = (string) $request->session()->pull('pkce_code_verifier');
 
-        if (!$state || !$storedState || $state !== $storedState || !$codeVerifier) {
+        if (! $state || ! $storedState || $state !== $storedState || ! $codeVerifier) {
             abort(400, 'Invalid OAuth state.');
         }
 
         $code = (string) $request->input('code');
 
-        if (!$code) {
-            dd('NO CODE');
+        if (! $code) {
             abort(400, 'Missing authorization code.');
         }
 
@@ -86,15 +84,15 @@ class OAuthController extends Controller
         $internalRequest = Request::create('/oauth/token', 'POST', $requestData);
         $response = app()->handle($internalRequest);
         if ($response->getStatusCode() !== Response::HTTP_OK) {
-            return redirect($frontendUrl . '/callback?error=token_exchange_failed');
+            return redirect($frontendUrl.'/callback?error=token_exchange_failed');
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $refreshToken = $tokenData['refresh_token'] ?? null;
 
-        if (!$accessToken) {
-            return redirect($frontendUrl . '/callback?error=token_missing');
+        if (! $accessToken) {
+            return redirect($frontendUrl.'/callback?error=token_missing');
         }
 
         $accessMinutes = max(1, (int) floor(((int) ($tokenData['expires_in'] ?? 900)) / 60));
@@ -110,19 +108,18 @@ class OAuthController extends Controller
             $cookies[] = cookie('refresh_token', $refreshToken, $refreshMinutes, '/', $domain, $secure, true, false, 'Lax');
         }
 
-        return redirect($frontendUrl . '/callback')
+        return redirect($frontendUrl.'/callback')
             ->withCookies($cookies);
     }
 
-    public function refresh(Request $request)
+    public function refresh(Request $request): \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
     {
         $refreshToken = $request->cookie('refresh_token');
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             Log::warning('Refresh attempt without refresh_token cookie');
+
             return response()->json(['message' => 'No refresh token'], 401);
         }
-
-        Log::info('Attempting token refresh', ['refresh_token_length' => strlen($refreshToken)]);
 
         $internalRequest = Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
@@ -138,14 +135,15 @@ class OAuthController extends Controller
                 'status' => $response->getStatusCode(),
                 'body' => $response->getContent(),
             ]);
+
             return response()->json(['message' => 'Token refresh failed'], 401);
         }
 
-        $tokenData = json_decode($response->getContent(), true);
+        $tokenData = $response->getContent() ? json_decode($response->getContent(), true) : [];
         $accessToken = $tokenData['access_token'] ?? null;
         $newRefresh = $tokenData['refresh_token'] ?? null;
 
-        if (!$accessToken) {
+        if (! $accessToken) {
             return response()->json(['message' => 'Token refresh failed'], 401);
         }
 
@@ -164,6 +162,7 @@ class OAuthController extends Controller
             $response = $response->withCookie($refreshCookie);
         }
         Log::info('Token refresh successful');
+
         return $response;
     }
 

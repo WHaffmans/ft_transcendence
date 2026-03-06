@@ -18,8 +18,9 @@
         "multiavatar/multiavatar-php": "^1.0"
     },
     "require-dev": {
-        "laravel/boost": "^1.8",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.0",
+        "laravel/boost": "^1.8",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.26",
         "laravel/sail": "^1.41",

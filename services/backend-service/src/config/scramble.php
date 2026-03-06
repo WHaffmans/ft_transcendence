@@ -130,7 +130,7 @@ return [
     'middleware' => [
         'web',
         // RestrictedDocsAccess::class, // Commented for evaluation purposes
-        ],
+    ],
 
     'extensions' => [],
 ];

@@ -26,6 +26,7 @@ class InternalAuthMiddleware
 
         if ($internalApiKey !== config('app.internal_api_key')) {
             \Log::warning('Internal API key mismatch');
+
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Game;
+use App\Models\User;
 use DB;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
             'id' => $clientId,
             'owner_id' => null,
             'owner_type' => null,
-            'name' => 'Frontend Service',
+            'name' => 'Achtung!',
             'secret' => null,
             'provider' => null,
             'redirect_uris' => json_encode(array_map('trim', explode(',', $redirects))),

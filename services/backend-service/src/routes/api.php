@@ -1,12 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\InternalAuthMiddleware;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\InternalAuthMiddleware;
+use Illuminate\Support\Facades\Route;
 
 // Internal API routes (no CSRF, uses X-Internal-Api-Key)
 Route::prefix('internal')->middleware(InternalAuthMiddleware::class)->group(function () {
@@ -20,7 +18,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout']);
 
     Route::get('/games/find', [App\Http\Controllers\GameController::class, 'findGame']);
-    Route::apiResource('games', App\Http\Controllers\GameController::class);
+    Route::apiResource('games', App\Http\Controllers\GameController::class)->only('show');
 
     Route::get('/user', [UserController::class, 'me']);
     Route::post('users/{user}/avatar', [AvatarController::class, 'upload']);
