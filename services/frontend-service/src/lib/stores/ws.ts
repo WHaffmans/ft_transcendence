@@ -81,23 +81,36 @@ function clearResumeToken(roomId: string) {
 /*                                  STORE                                     */
 /* ========================================================================== */
 
+/** State tied to a specific room session — cleared on join, leave, disconnect. */
+const ROOM_SESSION_DEFAULTS: Pick<
+	WSStoreState,
+	| "latestState" | "segments" | "lastSegI" | "lobbyTimer"
+	| "winnerId" | "lastRoomClosed" | "afkTimer" | "pendingScene"
+> = {
+	latestState: null,
+	segments: [],
+	lastSegI: null,
+	lobbyTimer: null,
+	winnerId: null,
+	lastRoomClosed: null,
+	afkTimer: null,
+	pendingScene: null,
+};
+
+const INITIAL_STATE: WSStoreState = {
+	status: "disconnected",
+	messages: [],
+	roomId: null,
+	playerId: null,
+	playerMetaById: {},
+	resumeToken: null,
+	pendingCreateOrJoin: null,
+	...ROOM_SESSION_DEFAULTS,
+};
+
 function createWebSocketStore() {
 	const store = writable<WSStoreState>({
-		status: "disconnected",
-		messages: [],
-		lobbyTimer: null,
-		latestState: null,
-		segments: [],
-		lastSegI: null,
-		roomId: null,
-		playerId: null,
-		playerMetaById: {},
-		winnerId: null as string | null,
-		lastRoomClosed: null,
-		afkTimer: null,
-		resumeToken: null,
-		pendingCreateOrJoin: null,
-		pendingScene: null,
+		...INITIAL_STATE,
 	});
 
 	const { subscribe, set, update } = store;
@@ -355,23 +368,7 @@ function createWebSocketStore() {
 		lastLoggedLobbyTimer = null;
 		lastLoggedAfkTimer = null;
 
-		set({
-			status: "disconnected",
-			messages: [],
-			lobbyTimer: null,
-			latestState: null,
-			segments: [],
-			lastSegI: null,
-			roomId: null,
-			playerId: null,
-			playerMetaById: {},
-			winnerId: null,
-			lastRoomClosed: null,
-			afkTimer: null,
-			resumeToken: null,
-			pendingCreateOrJoin: null,
-			pendingScene: null,
-		});
+		set({ ...INITIAL_STATE });
 	}
 
 	function forceDisconnect(reason = "forced") {
@@ -443,17 +440,10 @@ function createWebSocketStore() {
 
 		update((s) => ({
 			...s,
+			...ROOM_SESSION_DEFAULTS,
 			roomId,
 			playerId: player.playerId,
-			latestState: null,
-			segments: [],
-			lastSegI: null,
-			lobbyTimer: null,
-			winnerId: null,
-			lastRoomClosed: null,
-			afkTimer: null,
 			pendingCreateOrJoin: { roomId, seed, player },
-			pendingScene: null,
 		}));
 
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -522,18 +512,11 @@ function createWebSocketStore() {
 
 		update((x) => ({
 			...x,
+			...ROOM_SESSION_DEFAULTS,
 			roomId: null,
 			playerId: null,
-			latestState: null,
-			lobbyTimer: null,
-			segments: [],
-			lastSegI: null,
 			playerMetaById: {},
-			winnerId: null,
-			lastRoomClosed: null,
-			afkTimer: null,
 			pendingCreateOrJoin: null,
-			pendingScene: null,
 		}));
 	}
 
