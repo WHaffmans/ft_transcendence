@@ -3,7 +3,6 @@
 	import PlayerCard from "$lib/components/lobby/PlayerCard.svelte";
 	import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
 	import { wsStore } from "$lib/stores/ws";
-	import { userStore } from "$lib/stores/user";
 	import type { User } from "$lib/types/types";
 	import type { GamePhase } from "@ft/game-ws-protocol";
 	import { onDestroy } from "svelte";
@@ -220,7 +219,7 @@
 		backendStatus: GameStatus | null;
 	}) {
 		const { livePhase, backendStatus } = opts;
-		const userId = String($userStore?.id ?? "");
+		const userId = String(data.user.id);
 
 		// Prefer live phase from WS
 		if (livePhase) {
@@ -264,7 +263,7 @@
 				game={gameRecord!}
 				playerCount={playersInRoom.length}
 				lobbyId={data.lobbyId}
-				playerId={String($userStore?.id ?? '')}
+				playerId={String(data.user.id)}
 				sceneById={sceneByIdLive}
 				onLeave={() => {
 					cleanupLobby();
