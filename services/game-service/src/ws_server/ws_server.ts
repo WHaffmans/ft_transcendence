@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   external_ws.ts                                     :+:    :+:            */
+/*   ws_server.ts                                       :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 10:49:10 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 12:39:13 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,13 @@ import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 import type { IncomingMessage } from "http";
 import { RoomManager } from "../app/room_manager.js";
-import { safeSend } from "./send_ws.js";
-import { WsContext } from "./types_ws.js";
+import { safeSend } from "./ws_helpers/ws_send.js";
+import { WsContext } from "./ws_helpers/ws_types.js";
 
 import {
 	getAuthenticatedUserId,
 	verifyClaimedPlayerAuth,
-} from "./authenticate_ws.js";
+} from "./ws_helpers/ws_authenticate.js";
 
 import {
 	handleCreateOrJoinRoom,
@@ -28,11 +28,10 @@ import {
 	handleStartGame,
 	handleLeaveRoom,
 	handleInput,
-} from "./handler_ws.js";
+} from "./ws_helpers/ws_handlers.js";
 
 import {
 	ClientMsgSchema,
-	RoomId,
 	type ClientMsg,
 } from "@ft/game-ws-protocol";
 

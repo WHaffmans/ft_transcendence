@@ -1,19 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   authenticate_ws.ts                                 :+:    :+:            */
+/*   ws_authenticate.ts                                 :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:07:36 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 10:48:44 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 12:36:37 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import type WebSocket from "ws";
 import type { IncomingMessage } from "http";
 
-import { safeSendServer } from "./send_ws.js";
+import { safeSendServer } from "./ws_send.js";
 
 import {
 	type ClientMsg,

@@ -1,19 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   handler_ws.ts                                      :+:    :+:            */
+/*   ws_handlers.ts                                     :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:23:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 10:58:08 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 12:37:11 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-import type { GameConfig } from "../engine/config.js";
-import { DEFAULT_CONFIG } from "../engine/config.js";
-import { safeSendServer } from "./send_ws.js";
-import { WsContext } from "./types_ws.js";
+import type { GameConfig } from "../../engine/config.js";
+import { DEFAULT_CONFIG } from "../../engine/config.js";
+import { safeSendServer } from "./ws_send.js";
+import { WsContext } from "./ws_types.js";
 
 import {
 	type ClientMsg,
