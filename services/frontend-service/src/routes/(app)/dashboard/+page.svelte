@@ -22,8 +22,14 @@
       headers: { "Content-Type": "application/json" },
       credentials: "include",
     })
-      .then((response) => response.json())
-      .then((game) => goto(`/lobby/${game.id}`))
+      .then((response) => {
+        if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+        return response.json();
+      })
+      .then((game) => {
+        if (!game?.id) throw new Error("Invalid game data received");
+        return goto(`/lobby/${game.id}`);
+      })
       .catch((error) => {
         console.error("Error finding game:", error);
         toast.error("Failed to find a game. Please try again later.");
