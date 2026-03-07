@@ -136,6 +136,7 @@ class GameController extends Controller
      * (mu/sigma) and rank are stored on the pivot, and the user's global rating is updated.
      *
      * @response 200 scenario="Success" {"id": "uuid", "status": "completed", "users": [{"id": 1, "name": "John", "user_game": {"rank": 1, "rating_mu": 25.0, "rating_sigma": 8.0, "diff": 2.5}}]}
+     * @response 204 scenario="No results provided" null
      * @response 400 scenario="Invalid game state" {"message": "Game must be active to finish."}
      */
     public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
