@@ -141,10 +141,6 @@ class GameController extends Controller
      */
     public function finishGame(FinishGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
-        if ($game->status !== 'active') {
-            return response()->json(['message' => 'Game must be active to finish.'], 400);
-        }
-
         $results = $request->input('users', []);
         $resultUserIds = collect($results)->pluck('user_id')->filter();
         if ($resultUserIds->isEmpty()) {
