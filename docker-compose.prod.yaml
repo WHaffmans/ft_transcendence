@@ -118,16 +118,12 @@ services:
       - DOMAIN=${DOMAIN:-localhost}
     networks:
       - transcendence-production
-    ports:
-      - "8080:80"
-      - "8443:443"
-      - "127.0.0.1:8081:8080"
     volumes:
       - ./services/gateway/conf/prod/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./services/gateway/conf/prod:/etc/traefik/conf:ro
       - ./certs:/certs:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ping"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/ping"]
       start_period: 10s
       interval: 10s
       timeout: 5s

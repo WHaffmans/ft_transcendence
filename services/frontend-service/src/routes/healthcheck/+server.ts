@@ -46,15 +46,15 @@ const targets: HealthTarget[] = isProduction
 			{ name: 'frontend', check: httpCheck('https://localhost:3000/health') },
 			{ name: 'backend', check: httpCheck('https://backend-service:4443/up') },
 			{ name: 'game', check: tcpCheck('game-service', 3443) },
-			{ name: 'gateway', check: httpCheck('http://gateway:8080/ping') },
-			{ name: 'mariadb', check: tcpCheck('mariadb', 3306) }
+			{ name: 'gateway', check: httpCheck('http://gateway:80/ping') },
+			{ name: 'mariadb', check: httpCheck('https://backend-service:4443/db-health') }
 		]
 	: [
 			{ name: 'frontend', check: httpCheck('http://localhost:5173/health') },
 			{ name: 'backend', check: httpCheck('http://backend-service:4000/up') },
 			{ name: 'game', check: tcpCheck('game-service', 3003) },
 			{ name: 'gateway', check: httpCheck('http://gateway:80/ping') },
-			{ name: 'mariadb', check: tcpCheck('mariadb', 3306) }
+			{ name: 'mariadb', check: httpCheck('http://backend-service:4000/db-health') }
 		];
 
 export async function GET() {
