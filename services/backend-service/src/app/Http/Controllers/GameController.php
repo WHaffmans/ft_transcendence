@@ -80,6 +80,7 @@ class GameController extends Controller
      * @response 200 scenario="Left game" {"id": "uuid", "status": "pending", "users": []}
      * @response 204 scenario="Game deleted (last player left)"
      * @response 400 scenario="User not in game" {"message": "User is not part of this game."}
+     * @response 400 scenario="Game completed" {"message": "Cannot remove user from a completed game."}
      */
     public function leaveGame(LeaveGameRequest $request, Game $game): \Illuminate\Http\JsonResponse
     {
@@ -87,8 +88,9 @@ class GameController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        if ($game->status !== 'pending') {
-            return response()->json(null, status: 200);
+        // cant remove from completed games
+        if ($game->status == 'completed') {
+            return response()->json(['message' => 'Cannot remove user from a completed game.'], 400);
         }
 
         if (! $game->users->contains($request->input('user_id'))) {
