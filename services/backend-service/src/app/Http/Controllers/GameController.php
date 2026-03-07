@@ -158,7 +158,12 @@ class GameController extends Controller
 
         foreach ($results as $result) {
             $user = User::find((int) $result['user_id']);
+
             if ($user) {
+                // Game service is the source of truth — sync participants accordingly
+                if (! $game->users->contains($user)) {
+                    $game->users()->attach($user->id);
+                }
                 // Calculate rating difference: (new_rating - old_rating)
                 $old_rating = $user->rating_mu - (3 * $user->rating_sigma);
                 $new_rating = $result['rating_mu'] - (3 * $result['rating_sigma']);
