@@ -83,35 +83,36 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
 
 1.  **First-Time Setup**
 
-    For key holders, decrypt all `.env` files, and install dependencies.
+      **Key Holders**
+
+    If you have the encryption key, run the following command to decrypt all `.env` files, install dependencies, and start the application in one step.
 
     ```bash
     make init
     ```
 
-    For non key holders, create the `.env` file from the example. Edit `.env` to configure DB credentials and API keys.
+    <br/>
+
+
+    **Without Key**
+
+    If you do not have the encryption key, create the `.env` files manually from the provided examples and fill in the required values (DB credentials, API keys, etc.).
 
     ```bash
     cp .env.example .env
-    ``` 
-    <br/>
+    ```
 
-
-2.  **Start the Application**
-
-    Build the application using make.
+    Then build and start the application:
 
     ```bash
+    make deps
     make up
     ```
 
-    - Development: http://localhost:8080
-    - Production: https://transcendence.duinvoetje.nl
-
     <br/>
 
 
-3.  **Common Commands**
+2.  **Common Commands**
 
     ```bash
     make down        # Stop services
@@ -123,7 +124,7 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
     <br/>
 
 
-4.  **Switching Mode**
+3.  **Switching Mode**
 
     Switch between Prod and Dev.
 
@@ -134,7 +135,7 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
 
     Restart.
 
-    ```bash
+    ```bash 
     make re
     ```
 <br/>
@@ -197,6 +198,7 @@ Responsible for the design and implementation of the deterministic multiplayer g
 ### Willem Haffmans
 
 > **Tech Lead (Architecture)** • Architecture & System Design.
+> **Backend Developer** • Backend service, databse and API.
 
 Responsible for architectural direction, infrastructure, and environment management.
 
@@ -345,22 +347,7 @@ Svelte is a modern JavaScript framework for building user interfaces. With Svelt
 
 ## Backend
 
-**`Node.js (Fastify)`**
-
-Node.js is a JavaScript/TypeScript runtime. It allows you to run JavaScript on a server. Fastify is a web framework for Node.js that provides features such as routing out of the box.
-
-- Non-blocking & event-driven. This architecture lends itself well to the real-time demands of WebSocket and multiplayer game.
-
-- High performance with low overhead. A lightweight framework is necessary for the frequency of game state updates and concurrent users.
-
-- Strong TypeScript support and schema-based validation. TypeScript support and Zod / JSON schemas align seamlessly with the game engine and shared protocol types.
-
-<br/>
-
-
-## Database System
-
-### User Service
+### API and Auth
 
 **`Laravel (PHP)`**
 
@@ -398,11 +385,11 @@ A self-written collision detection system designed specifically for a determinis
 <br/>
 
 
-**`TrueSkill`**
+**`OpenSkill`**
 
-TrueSkill is a Bayesian skill rating algorithm originally developed by Microsoft for competitive multiplayer games (e.g., Xbox Live).
+Openskill is based on TrueSkill, a Bayesian skill rating algorithm originally developed by Microsoft for competitive multiplayer games (e.g., Xbox Live).
 
-- Fair and balanced ranking progression. TrueSkill accounts for uncertainty of new players and prevents large swings in single matches, resulting in more consistent rewards for players in multiplayer games.
+- Fair and balanced ranking progression. OpenSkill accounts for uncertainty of new players and prevents large swings in single matches, resulting in more consistent rewards for players in multiplayer games.
 
 <br/>
 
@@ -511,19 +498,23 @@ Join table linking users to games, plus per-game results and rating info.
 <br/>
 
 
-## Auth-related tables (Laravel defaults)
+## Laravel related tables (migrations, cache, auth, sessions)
 
-### `password_reset_tokens`
-
-- **PK:** `email` (string)
-- `token` (string)
-- `created_at` (timestamp, nullable)
-
-### `sessions`
-
-- **PK:** `id` (string)
-- `user_id` (foreignId, nullable, indexed — note: your migration doesn’t declare a foreign key constraint here)
-- `ip_address`, `user_agent`, `payload`, `last_activity`
+| Table | Description |
+|-------|-------------|
+| cache | Stores cached data for Laravel's cache driver |
+| cache_locks | Manages atomic locks for the cache system |
+| failed_jobs | Records failed queue job attempts for debugging/retry |
+| job_batches | Tracks batched queue job groups and their progress |
+| jobs | Queue of pending background jobs |
+| migrations | Tracks which database migrations have been run |
+| oauth_access_tokens | Passport access tokens for API authentication |
+| oauth_auth_codes | Passport authorization codes for the OAuth flow |
+| oauth_clients | Registered OAuth client applications (Passport) |
+| oauth_device_codes | Passport device authorization codes |
+| oauth_refresh_tokens | Passport refresh tokens for renewing access tokens |
+| password_reset_tokens | Temporary tokens for password reset requests |
+| sessions | Active user sessions (database session driver) |
 
 <br/>
 
@@ -539,283 +530,89 @@ Join table linking users to games, plus per-game results and rating info.
 
 ### Base URL
 
+Development:
 ```json
-http://localhost:8080/auth/api
+http://localhost:8080/api
+```
+Production:
+```json
+https://transcendence.duinvoetje.nl/api
 ```
 
 The backend exposes a REST API for authentication, games, and users.
 All responses are JSON.
 
-<br/>
+### API Docs
 
+For comprehensive API documentation, visit the interactive Scramble UI:
 
-## Authentication
+- **Development:** [http://localhost:8080/docs/api](http://localhost:8080/docs/api)
+- **Production:** [https://transcendence.duinvoetje.nl/docs/api](https://transcendence.duinvoetje.nl/docs/api)
 
-| Method | Endpoint  | Description                              |
-| ------ | --------- | ---------------------------------------- |
-| POST   | `/logout` | Log out the currently authenticated user |
-
-
-### Logout
-
-```json
-POST /logout
-```
-
-Logs out the currently authenticated user.
-
-```json
-{
-  "message": "Logged out"
-}
-```
-
-**Errors**
-
-| Code | Description     |
-| ---- | --------------- |
-| 401  | Unauthenticated |
-
+OpenAPI specification (JSON) is also available at `/docs/api.json`.
 
 <br/>
-
-
-## Games
-
-Game endpoints manage the lifecycle of multiplayer matches.
-
-| Method | Endpoint               | Description                      |
-| ------ | ---------------------- | -------------------------------- |
-| GET    | `/games`               | List all games                   |
-| POST   | `/games`               | Create a new game                |
-| GET    | `/games/find`          | Find a game available to join    |
-| GET    | `/games/{game}`        | Get game details                 |
-| PUT    | `/games/{game}`        | Update a game                    |
-| DELETE | `/games/{game}`        | Delete a game                    |
-| POST   | `/games/{game}/start`  | Start a game                     |
-| POST   | `/games/{game}/finish` | Finish a game and submit results |
-
-<br/>
-
-
-### Find Active Game
-
-```json
-GET /games/find
-```
-
-Returns a game that the user can join or is currently part of.
-
-<br/>
-
-
-### List Games
-
-```json
-GET /games
-```
-
-Returns all games.
-
-<br/>
-
-
-
-### Create Game
-
-```json
-POST /games
-```
-
-**Response**
-
-```json
-{
-  "id": "uuid",
-  "status": "string"
-}
-```
-
-<br/>
-
-
-
-### Get Game
-
-```json
-GET /games/{game}
-```
-
-Retrieve a specific game.
-
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| game      | UUID | Game ID     |
-
-<br/>
-
-
-### Start Game
-
-```json
-POST /games/{game}/start
-```
-
-Starts a game.
-
-<br/>
-
-
-
-### Finish Game
-
-```json
-POST /games/{game}/finish
-```
-
-Finishes a game and submits the final player rankings.
-
-**Request Body**
-
-```json
-{
-  "users": [
-    {
-      "user_id": 1,
-      "rank": 1,
-      "rating_mu": 25.0,
-      "rating_sigma": 8.3
-    }
-  ]
-}
-```
-
-<br/>
-
-
-### Update Game
-
-```json
-PUT /games/{game}
-```
-
-Updates game data.
-
-<br/>
-
-
-### Delete Game
-
-```json
-DELETE /games/{game}
-```
-
-Deletes a game.
-
-<br/>
-
-
-## Users
-
-User endpoints manage player profiles.
-
-| Method | Endpoint        | Description     |
-| ------ | --------------- | --------------- |
-| GET    | `/users`        | List all users  |
-| GET    | `/users/{user}` | Retrieve a user |
-| PUT    | `/users/{user}` | Update a user   |
-| DELETE | `/users/{user}` | Delete a user   |
-
-<br/>
-
-
-### List Users
-
-```json
-GET /users
-```
-
-Returns all users.
-
-<br/>
-
-
-### Get User
-
-```json
-GET /users/{user}
-```
-
-Retrieve a specific user.
-
-| Parameter | Type    | Description |
-| --------- | ------- | ----------- |
-| user      | integer | User ID     |
-
-
-<br/>
-
-
-### Update User
-
-```Json
-PUT /users/{user}
-```
-
-Updates user information.
-
-<br/>
-
-
-### Delete User
-
-```json
-DELETE /users/{user}
-```
-
-Removes a user.
-
-<br/>
-
-
-## Data Models
-
-### Game
-
-```json
-{
-  "id": "string",
-  "status": "string",
-  "created_at": "datetime",
-  "updated_at": "datetime"
-}
-```
-<br/>
-
 
 ### User
 
-```json
-{
-  "id": 1,
-  "name": "string",
-  "email": "string",
-  "avatar_url": "string | null",
-  "rating_mu": 25,
-  "rating_sigma": 8.3
-}
-```
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | /api/user | Get the authenticated user's profile |
+| GET | /api/users | List all registered users |
+| GET | /api/users/{user} | Get a specific user's profile |
+| PUT/PATCH | /api/users/{user} | Update a user's profile |
+| DELETE | /api/users/{user} | Delete a user account |
+| POST | /api/users/{user}/avatar | Upload/update a user's avatar |
+| GET | /api/online-users | List currently online users |
 
-<br/>
+### Game
 
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | /api/games/find | Find available games to join |
+| GET | /api/games/{game} | Get details of a specific game |
+| POST | /api/internal/games/{game}/finish | Internal: mark a game as completed |
+| POST | /api/internal/games/{game}/leave | Internal: remove a player from a game |
+| POST | /api/internal/games/{game}/start | Internal: start a game session |
 
-## Common Errors
+### Miscellaneous
 
-| Code | Description        |
-| ---- | ------------------ |
-| 401  | Unauthenticated    |
-| 404  | Resource not found |
-| 422  | Validation error   |
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | /api/leaderboard | Get the player leaderboard/rankings |
+| GET | /api/online-users | Count currently online users |
+| GET | /storage/{path} | Serve files from local storage (avatars, etc.) |
+| GET | /db-health | Database health check endpoint |
+| GET | /up | Application health check (Laravel default) |
+| GET | /docs/api | Scramble API documentation UI |
+| GET | /docs/api.json | Scramble API documentation (OpenAPI JSON) |
+
+### Auth 
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | /login | Show login page |
+| POST | /login | Submit login credentials |
+| POST | /auth/refresh | Refresh an OAuth access token |
+| GET | /api/verify | Verify the current session/token (used by Traefik forwardAuth) |
+| POST | /api/logout | Log out the current user |
+| GET | /callback/{provider} | OAuth callback from social provider |
+| GET | /oauth/authorize | Passport: show authorization prompt |
+| POST | /oauth/authorize | Passport: approve authorization |
+| DELETE | /oauth/authorize | Passport: deny authorization |
+| GET | /oauth/callback | OAuth callback handler |
+| GET | /oauth/device | Passport: device authorization page |
+| GET | /oauth/device/authorize | Passport: show device auth prompt |
+| POST | /oauth/device/authorize | Passport: approve device authorization |
+| DELETE | /oauth/device/authorize | Passport: deny device authorization |
+| POST | /oauth/device/code | Passport: request a device code |
+| GET | /oauth/initiate | Start the OAuth flow with a provider |
+| POST | /oauth/token | Passport: issue an access token |
+| POST | /oauth/token/refresh | Passport: refresh an access token |
+| GET | /redirect/{provider} | Redirect to social OAuth provider |
+| GET | /register | Show registration page |
+| POST | /register | Submit registration form |
+
 
 
 <br/>
