@@ -18,12 +18,20 @@
 	/*                           REST / GAME RECORD                           */
 	/* ====================================================================== */
 
+	/**
+	 * Reactive game record loaded from page data.
+	 */
 	const gameRecord = $derived(data.gameRecord);
 
+	/**
+	 * User lookup table keyed by uid.
+	 * `Map<uid, User>`
+	 */
 	const userDirectory = $derived.by(() => {
 		const map = new Map<string, User>();
-		for (const u of gameRecord?.users ?? []) map.set(String(u.id), u);
-		return map;
+		for (const u of gameRecord?.users ?? [])
+			map.set(String(u.id), u);
+		return (map);
 	});
 
 
@@ -42,6 +50,10 @@
 			.filter(Boolean) as User[]
 	);
 
+	/**
+	 * Player Metadata Sync
+	 * Keep WebSocket player metadata aligned with the REST-loaded users for this lobby.
+	 */
 	$effect(() => {
 		const users = gameRecord?.users ?? [];
 		for (const u of users) {
@@ -71,6 +83,7 @@
 		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
 	}
 
+
 	/* ====================================================================== */
 	/*                                CLEANUP                                 */
 	/* ====================================================================== */
@@ -86,10 +99,15 @@
 		wsStore.disconnect();
 	}
 
+
 	/* ====================================================================== */
 	/*                                TRIGGERS                                */
 	/* ====================================================================== */
 
+	/**
+	 * Lobby Session Join
+	 * Join the lobby WebSocket session once for the current lobby and authenticated user.
+	 */
 	$effect(() => {
 		if (didCleanup) return;
 
@@ -97,17 +115,29 @@
 		const user = data.user;
 		const playerId = String(user.id);
 
-		// Join WS session
 		if (!lobbyId) return;
-		const shouldEnsure = $wsStore.status !== "open";
-		const joinKey = `${lobbyId}:${playerId}:${shouldEnsure ? "ensure" : "open"}`;
-		if (lastJoinedKey !== joinKey) {
-			lastJoinedKey = joinKey;
-			if (shouldEnsure) joinLobbySession(lobbyId, user);
-			else if (!liveRoomState) joinLobbySession(lobbyId, user);
-		}
+
+		const isSameBinding =
+			$wsStore.roomId === lobbyId &&
+			$wsStore.playerId === playerId;
+
+		const isOpenForThisLobby =
+			isSameBinding && $wsStore.status === "open";
+
+		if (isOpenForThisLobby) return;
+
+		// Join WS Session
+		const joinKey = `${lobbyId}:${playerId}`;
+		if (lastJoinedKey === joinKey) return;
+
+		lastJoinedKey = joinKey;
+		joinLobbySession(lobbyId, user);
 	});
 
+	/**
+	 * Lobby Roster Refresh
+	 * Revalidate the page data when the live room membership changes while still in the lobby phase.
+	 */
 	let lastRosterKey = "";
 	$effect(() => {
 		const ids = roomPlayerIdsLive.map(String).sort();
@@ -128,9 +158,9 @@
 		invalidate('app:gameRecord');
 	});
 
-
 	/**
 	 * Room closed
+	 * Handle a server-side room closure for this lobby by notifying the user and redirecting away.
 	*/
 	$effect(() => {
 		const lobbyId = data.lobbyId;
@@ -171,6 +201,10 @@
 		return redirectTo({ livePhase, backendStatus });
 	});
 
+	/**
+	 * Lobby Redirect
+	 * Navigate away from the lobby once the derived live/backend state produces a redirect target.
+	 */
 	$effect(() => {
 		if (didRedirect) return;
 		const target = redirectTarget;
@@ -180,6 +214,7 @@
 		didRedirect = true;
 		goto(target, { replaceState: true });
 	});
+
 
 	/* ====================================================================== */
 	/*                       CLEANUP ON NAVIGATE AWAY                         */

@@ -471,8 +471,6 @@
     opacity: 0;
     transition: opacity 160ms ease;
     backdrop-filter: blur(var(--overlay-blur));
-    -webkit-backdrop-filter: blur(var(--overlay-blur));
-    background: rgba(0, 0, 0, 0.15);
   }
 
   .overlayBackdrop.show {

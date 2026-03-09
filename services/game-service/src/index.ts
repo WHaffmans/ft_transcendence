@@ -6,12 +6,12 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 16:22:50 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/10 10:24:04 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/06 12:38:23 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { RoomManager } from "./app/room_manager.js";
-import { startPublicWsServer } from "./transport/external_ws.js";
+import { startPublicWsServer } from "./ws_server/ws_server.js";
 import https from "https";
 import fs from "fs";
 import "dotenv/config";

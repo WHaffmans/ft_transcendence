@@ -1,6 +1,47 @@
-# Game Service
+<h1 align="center">
+    Game Service
+</h1>
 
-## Setup help
+The **Game Service** is responsible for the real-time simulation layer of the multiplayer game implemented in the *ft_transcendence* project. It manages deterministic game state updates, player movement, collision detection, and synchronization between connected clients through WebSocket communication.
+
+The service is designed to operate as a dedicated microservice within the overall system architecture, enabling scalable and responsive multiplayer gameplay. At its core lies a tick-based simulation engine that advances the game state at fixed intervals, ensuring deterministic behaviour across all connected players.
+
+One of the key technical challenges addressed by the Game Service is efficient collision detection in a continuously growing trail environment. Each player's movement generates persistent trail segments that must be checked for collisions in real time. To maintain performance as the number of segments increases, the system implements a two-stage collision detection pipeline consisting of:
+
+- **Broad-phase spatial partitioning** using spatial hashing
+- **Narrow-phase geometric collision testing** using exact segment distance calculations
+
+This document describes the setup of the Game Service as well as the mathematical and algorithmic principles underlying the collision detection system used within the simulation engine.
+
+<br/>
+
+---
+<br/>
+<br/>
+
+
+
+# Table of Contents
+
+- [Introduction](#introduction)
+- [Setup Help](#setup-help)
+- [Collision Detection](#collision-detection)
+  - [Problem Statement](#problem-statement)
+  - [Data Representation](#data-representation)
+  - [Broad-phase: Spatial Hashing & DDA Grid Traversal](#broad-phase-spatial-hashing--dda-grid-traversal)
+  - [Narrow-phase: Exact Distance Test Using Squared Distances](#narrow-phase-exact-distance-test-using-squared-distances)
+  - [Summary](#summary)
+- [Sources](#sources)
+
+<br/>
+
+---
+<br/>
+<br/>
+
+
+
+# Setup Help
 
 1.  Run compose install:
 
@@ -32,25 +73,7 @@
 	docker compose up -d --build game-service
 ```
 
-5. Add env vars
-
-```bash
-	# game-service <--> backend-service (internal)
-	BACKEND_INTERNAL_BASE_URL=http://backend-service:4000/internal
-	BACKEND_INTERNAL_API_KEY=<key>
-```
-
-6. Test backend service with key
-
-```bash
-	# In backend container
-	docker compose exec backend-service sh
-
-	# Use fetch
-	node -e 'fetch("http://backend-service:4000/internal/test",{headers:{"X-Internal-Api-Key":"<key>"}}).then(async r=>{console.log("status",r.status); console.log(await r.text())}).catch(console.error)'
-```
-
-7. Ensure npm packages
+5. Ensure npm packages
 
 ```bash
 	npm i -D tsx
@@ -63,104 +86,10 @@
 	npm i dotenv
 ```
 
-8. Strong typing checking
-
-```bash
-	npm -w services/game-service run build
-	ls services/game-service/dist
-	npm -w services/game-service run start
-
-	# Watch
-	npm -w services/game-service run typecheck:watch
-```
+<br/>
 
 ---
 <br/>
-
-
-
-# Rooms
-
-## Manual testing
-
-Install wscat globally
-
-```bash
-npm i -g wscat
-```
-
-Run game-service
-
-```bash
-cd services/game-service
-npm run dev
-```
-
-In a new terminal
-
-```bash
-wscat -c ws://localhost:3002/internal
-```
-
-Send `create_room`:
-
-```json
-{"type":"create_room","roomId":"r1","seed":1,"config":{"tickHz":30},"players":[{"playerId":"p1"},{"playerId":"p2"}]}
-```
-
-Send inputs:
-
-```json
-{"type":"input","roomId":"r1","playerId":"p1","turn":-1}
-{"type":"input","roomId":"r1","playerId":"p2","turn":1}
-```
-
----
-<br/>
-
-
-## Testing in Browser
-
-Open JavaScript terminal
-
-Open the web socket
-
-```JavaScript
-const ws = new WebSocket("ws://localhost:3003/ws");
-
-ws.onopen = () => console.log("WS open");
-ws.onmessage = (e) => console.log("WS msg:", e.data);
-ws.onerror = (e) => console.log("WS error:", e);
-ws.onclose = (e) => console.log("WS close:", e.code, e.reason);
-
-const send = (obj) => ws.send(JSON.stringify(obj));
-```
-
-Send `create_room`
-
-```JavaScript
-send({
-  type: "create_room",
-  roomId: "r1",
-  seed: 1,
-  config: {}, // optional overrides
-  players: [{ playerId: "p1" }, { playerId: "p2" }]
-});
-```
-
-Join the room
-
-```JavaScript
-send({ type: "join_room", roomId: "r1", playerId: "p1" });
-```
-
-Send input
-
-```JavaScript
-send({ type: "input", turn: -1 });
-```
-
----
 <br/>
 
 
@@ -191,8 +120,12 @@ We will adopt a common two-stage approach used in real-time collision detection:
 1. **broad-phase:** candidate reduction
 1. **narrow-phase:** exact testing
 
+<br/>
+
 ---
 <br/>
+<br/>
+
 
 
 ## Data representation
@@ -205,8 +138,12 @@ Trail segments as persistent primitives. Each tick appends one tail segment per 
 
 This representation turns "where the player has been" into a geometric set (polyline), enabling collision tests without needing a tilemap.
 
+<br/>
+
 ---
 <br/>
+<br/>
+
 
 
 ## Broad-phase: Spatial hashing & DDA grid traversal
@@ -266,8 +203,12 @@ Broad-phase cost per tick (per-player):
 
 Overall: $O(k + m)$, typically far smaller than O(N).
 
+<br/>
+
 ---
 <br/>
+<br/>
+
 
 
 ## Narrow-phase: Exact distance test using squared distances
@@ -283,8 +224,12 @@ $$ d^2 (S, T) ≤ r^2 ⇒ collision$$
 
 Each candidate check is $O(1)$, so narrow-phase is $O(m)$.
 
+<br/>
+
 ---
 <br/>
+<br/>
+
 
 
 ## Summary
@@ -295,3 +240,29 @@ Per tick, per player:
 - narrow-phase: exact checks only on candidates $ ≈ O(m) $
 
 This keeps collision cost stable as the trail grows, instead of degrading with total segment count $N$.
+
+<br/>
+
+---
+<br/>
+<br/>
+
+
+# Sources
+
+## Collision Detection & Optimisation
+
+- Ericson, C. (2005).  
+  *Real-Time Collision Detection.* Morgan Kaufmann.
+
+- Teschner, M., Heidelberger, B., Müller, M., Pomeranets, D., & Gross, M. (2003).  
+  *Optimized Spatial Hashing for Collision Detection of Deformable Objects.*
+
+- Amanatides, J., & Woo, A. (1987).  
+  *A Fast Voxel Traversal Algorithm for Ray Tracing.*
+
+<br/>
+
+---
+
+*Document written by Quentin Beukelman*
