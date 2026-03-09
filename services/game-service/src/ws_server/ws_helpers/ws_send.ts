@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   send_ws.ts                                         :+:    :+:            */
+/*   ws_send.ts                                         :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:17:52 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 09:18:07 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 13:52:12 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ export function safeSendServer(ws: WebSocket, msg: ServerMsg) {
 
 	const parsed = ServerMsgSchema.safeParse(msg);
 	if (!parsed.success) {
-		console.error("BUG: invalid ServerMsg being sent", parsed.error.format(), msg);
+		console.error("[ws:error] invalid ServerMsg being sent", parsed.error.format(), msg);
 		return;
 	}
 

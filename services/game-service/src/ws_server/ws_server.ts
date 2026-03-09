@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 12:39:13 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 13:50:52 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ function assertNever(x: never): never {
 
 
 /* ====================================================================== */
-/*                              HEARTBREAK                                */
+/*                              HEARTBEAT                                 */
 /* ====================================================================== */
 
 function attachHeartbeat(ws: WebSocket) {
@@ -73,7 +73,7 @@ function attachHeartbeat(ws: WebSocket) {
 }
 
 /**
- * Heartbreak
+ * Heartbeat
  * `ping` all client HEARTBEAT_INTERVAL_MS. Close connection if client
  * does not respond with `pong`. Avoid zombie from silent network drop.
  */
@@ -83,7 +83,6 @@ function startHeartbeat(wss: WebSocketServer) {
 			const alive = client as AliveWebSocket;
 
 			if (!alive.isAlive) {
-				console.log("heartbeat: terminating unresponsive client");
 				alive.terminate();
 				continue;
 			}
@@ -168,11 +167,6 @@ export function startPublicWsServer(
 				setBound: (roomId, playerId) => { boundRoomId = roomId; boundPlayerId = playerId; },
 			};
 
-			console.log("[ws:transport] connection headers", {
-				xUserId: req.headers["x-user-id"],
-				secWebSocketKey: req.headers["sec-websocket-key"],
-			});
-
 			console.log("[ws:transport] incoming message", {
 				type: msg.type,
 				boundRoomId,
@@ -223,6 +217,4 @@ export function startPublicWsServer(
 			}
 		});
 	});
-
-	console.log(`public WS on ws://localhost:${opts.port}${opts.path ?? "/ws"}`);
 }
