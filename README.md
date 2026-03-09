@@ -315,8 +315,8 @@ Responsible for the design and implementation of the deterministic multiplayer g
 
 ### Willem Haffmans
 
-> **Tech Lead (Architecture)** • Architecture & System Design.
-> **Backend Developer** • Backend service, databse and API.
+> **Tech Lead (Architecture)** • Architecture & System Design. <br/>
+> **Backend Developer** • Backend service, database and API.
 
 Responsible for architectural direction, infrastructure, and environment management.
 
