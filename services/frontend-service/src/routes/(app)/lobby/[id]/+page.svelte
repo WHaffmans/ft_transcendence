@@ -69,8 +69,11 @@
 	/*                          FIRST-TIME ONBOARDING                         */
 	/* ====================================================================== */
 
+	let onboardingShown = false;
+
 	$effect(() => {
-		if (data.completedGames === 0) {
+		if (!onboardingShown && data.completedGames === 0) {
+			onboardingShown = true;
 			modalStore.open('onboarding');
 		}
 	});
