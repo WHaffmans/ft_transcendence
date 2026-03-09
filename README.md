@@ -497,8 +497,9 @@ Join table linking users to games, plus per-game results and rating info.
 
 <br/>
 
-
-## Laravel related tables (migrations, cache, auth, sessions)
+<h3 align="center">
+   Table showing Laravel-related tables (migrations, cache, auth, sessions)
+</h3>
 
 | Table | Description |
 |-------|-------------|
