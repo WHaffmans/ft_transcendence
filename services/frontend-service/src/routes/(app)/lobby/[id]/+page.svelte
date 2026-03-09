@@ -8,6 +8,7 @@
 	import { onDestroy } from "svelte";
 	import { goto, beforeNavigate, invalidate } from "$app/navigation";
 	import { toast } from "svelte-sonner";
+	import { modalStore } from "$lib/components/modal/modal";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
 	
@@ -63,6 +64,17 @@
 			});
 		}
 	});
+
+	/* ====================================================================== */
+	/*                          FIRST-TIME ONBOARDING                         */
+	/* ====================================================================== */
+
+	$effect(() => {
+		if (data.completedGames === 0) {
+			modalStore.open('onboarding');
+		}
+	});
+
 
 	let lastJoinedKey: string | null = null;
 
