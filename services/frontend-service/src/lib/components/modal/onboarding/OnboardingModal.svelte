@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { modalStore } from '../modal';
+  import { modalStore } from '$lib/components/modal/modal';
 
   function dismiss() {
     modalStore.close();
