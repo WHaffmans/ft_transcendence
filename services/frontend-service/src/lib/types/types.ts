@@ -1,3 +1,8 @@
+export interface UserGame {
+    id: string;
+    status: string;
+}
+
 export interface User {
     id: number;
     name: string;
@@ -8,6 +13,7 @@ export interface User {
     rating: number;
     created_at: string;
     updated_at: string;
+    games?: UserGame[];
 }
 
 export interface Game {

@@ -5,11 +5,6 @@ import type { Game } from "$lib/types/types";
 
 export const ssr = false;
 
-interface UserGame {
-    id: string;
-    status: string;
-}
-
 export const load: PageLoad = async ({ params, fetch, parent, depends }) => {
     depends('app:gameRecord');
 
@@ -30,8 +25,7 @@ export const load: PageLoad = async ({ params, fetch, parent, depends }) => {
         console.error("[lobby] load: failed to fetch game record", err);
     }
 
-    const userGames: UserGame[] = (user as any).games ?? [];
-    const completedGames = userGames.filter((g) => g.status === 'completed').length;
+    const completedGames = (user!.games ?? []).filter((g) => g.status === 'completed').length;
 
     return {
         lobbyId: id,
