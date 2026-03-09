@@ -6,7 +6,11 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
+<<<<<<< HEAD
 /*   Updated: 2026/03/06 12:25:52 by hein          ########   odam.nl         */
+=======
+/*   Updated: 2026/03/06 12:51:45 by quentinbeuk   ########   odam.nl         */
+>>>>>>> 73f2ef2 (feat(game-service): reorder api calls room_manager #232)
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -705,7 +709,7 @@ export class RoomManager {
 
 
 	/* ====================================================================== */
-	/*                             CLOSE ROOM                                 */
+	/*                             ROOM CLEANUP                               */
 	/* ====================================================================== */
 
 	/**
@@ -899,22 +903,6 @@ export class RoomManager {
 		});
 
 		this.broadcastState(roomId);
-	}
-
-	/**
-	 * Notify API of player leave.
-	 */
-	private async persistLeaveRoom(roomId: string, playerId: string) {
-		const userId = Number(playerId);
-		const payload = {
-			user_id: userId,
-		};
-		try {
-			await leaveGame(roomId, payload);
-			logInfo("backend.leave_ok", { roomId });
-		} catch (err) {
-			logError("backend.leave_failed", { roomId, err });
-		}
 	}
 
 	/**
@@ -1295,7 +1283,6 @@ export class RoomManager {
 		}, dtMs);
 	}
 
-	// TODO: Use this helper
 	/**
 	 * Stops the room tick timer
 	 */
@@ -1422,6 +1409,27 @@ export class RoomManager {
 		}
 
 		room.finishOrder = [];
+	}
+
+
+	/* ====================================================================== */
+	/*                               API PERSISTENCE                          */
+	/* ====================================================================== */
+
+	/**
+	 * Notify API of player leave.
+	 */
+	private async persistLeaveRoom(roomId: string, playerId: string) {
+		const userId = Number(playerId);
+		const payload = {
+			user_id: userId,
+		};
+		try {
+			await leaveGame(roomId, payload);
+			logInfo("backend.leave_ok", { roomId });
+		} catch (err) {
+			logError("backend.leave_failed", { roomId, err });
+		}
 	}
 
 
