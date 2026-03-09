@@ -44,7 +44,7 @@ This document describes the setup of the Game Service as well as the mathematica
 # Setup Help
 
 1.  Run compose install:
-q
+
 ```bash
 	# PHP composer
 	cd services/backend-service/src
