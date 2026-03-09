@@ -3,11 +3,18 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 
-Route::get('/', function () {
-    return view('welcome');
+
+Route::get('/db-health', function () {
+    try {
+        DB::select('SELECT 1');
+        return response()->json(['status' => 'ok'], 200);
+    } catch (\Throwable) {
+        return response()->json(['status' => 'error'], 503);
+    }
 });
 
 // Authentication routes

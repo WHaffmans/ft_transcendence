@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/06 12:51:45 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 08:15:52 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -508,7 +508,10 @@ export class RoomManager {
 			});
 
 			if (secondsLeft <= 0) {
+				// Timer reached zero — stop everything and trigger expiry.
+				// This is the sole expiry path; no separate setTimeout race.
 				this.stopAutoStartTimer(live);
+				this.onAutoStartTimerExpired(roomId);
 				return;
 			}
 		};
@@ -516,9 +519,6 @@ export class RoomManager {
 		broadcastTick();
 
 		replaceInterval(room, "autoStartTimerInterval", LIFETIME_BROADCAST_INTERVAL, broadcastTick);
-		replaceTimeout(room, "autoStartTimerTimeout", ms, () => {
-			this.autoStartTimerTimeout(roomId);
-		});
 
 		logInfo("room.lobby_timer_started", {
 			roomId,
@@ -559,6 +559,19 @@ export class RoomManager {
 						roomId,
 						playerId,
 					});
+
+					// Notify the kicked player directly before dropping them,
+					// since dropPlayer unsubscribes their WS and they won't
+					// receive any further broadcasts.
+					const kickedWs = still.wsByPlayerId[playerId];
+					if (kickedWs) {
+						safeSend(kickedWs, {
+							type: "room_closed",
+							roomId,
+							reason: "You were removed from the lobby.",
+						});
+					}
+
 					await this.dropPlayer(roomId, playerId);
 				}
 			}
@@ -653,6 +666,19 @@ export class RoomManager {
 		this.stopAfkTimer(room, playerId);
 
 		this.broadcast(roomId, { type: "left", roomId, playerId });
+
+		// Notify the AFK player directly before dropping them,
+		// since dropPlayer unsubscribes their WS and they won't
+		// receive any further broadcasts.
+		const afkWs = room.wsByPlayerId[playerId];
+		if (afkWs) {
+			safeSend(afkWs, {
+				type: "room_closed",
+				roomId,
+				reason: "You were removed for inactivity.",
+			});
+		}
+
 		void this.willLeaveLobby(roomId, playerId);
 	}
 

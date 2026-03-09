@@ -7,23 +7,33 @@
   import { goto } from "$app/navigation";
 
   let { data } = $props();
+  let isFinding = $state(false);
 
   function handleFindMatch() {
+    if (isFinding) return;
     if (!data.user) {
       toast.error("You must be logged in to find a game.");
       return;
     }
 
+    isFinding = true;
     fetch("/api/games/find", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
     })
-      .then((response) => response.json())
-      .then((game) => goto(`/lobby/${game.id}`))
+      .then((response) => {
+        if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+        return response.json();
+      })
+      .then((game) => {
+        if (!game?.id) throw new Error("Invalid game data received");
+        return goto(`/lobby/${game.id}`);
+      })
       .catch((error) => {
         console.error("Error finding game:", error);
         toast.error("Failed to find a game. Please try again later.");
+        isFinding = false;
       });
   }
 </script>
@@ -51,10 +61,11 @@
 
         <button
           onclick={handleFindMatch}
-          class="btn-primary h-14 w-55 gap-2 text-sm"
+          disabled={isFinding}
+          class="gap-2 text-sm btn-primary h-14 w-55"
         >
           <span class="h-2 w-2 animate-pulse rounded-full bg-[#0f8]"></span>
-          FIND MATCH
+          {isFinding ? "FINDING..." : "FIND MATCH"}
         </button>
       </div>
     </section>

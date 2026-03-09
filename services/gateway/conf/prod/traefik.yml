@@ -2,9 +2,12 @@ api:
   insecure: true
   dashboard: true
 
-ping: {}
+ping:
+  entryPoint: "web"
 
 entryPoints:
+  web:
+    address: ":80"
   websecure:
     address: ":443"
     http:
@@ -14,8 +17,6 @@ entryPoints:
             sans:
               - "*.localhost"
               - "127.0.0.1"
-  metrics:
-    address: ":8082"
 
 providers:
   file:

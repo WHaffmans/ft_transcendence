@@ -3,11 +3,10 @@
 	import PlayerCard from "$lib/components/lobby/PlayerCard.svelte";
 	import MatchSettings from "$lib/components/lobby/MatchSettings.svelte";
 	import { wsStore } from "$lib/stores/ws";
-	import { userStore } from "$lib/stores/user";
-	import type { Game, User } from "$lib/types/types";
+	import type { User } from "$lib/types/types";
 	import type { GamePhase } from "@ft/game-ws-protocol";
-	import { onMount, onDestroy } from "svelte";
-	import { goto, beforeNavigate } from "$app/navigation";
+	import { onDestroy } from "svelte";
+	import { goto, beforeNavigate, invalidate } from "$app/navigation";
 	import { toast } from "svelte-sonner";
 
 	type GameStatus = "pending" | "ready" | "active" | "completed" | "cancelled"; 
@@ -19,26 +18,8 @@
 	/*                           REST / GAME RECORD                           */
 	/* ====================================================================== */
 
-	let gameRecord = $state<Game | null>(null);
+	const gameRecord = $derived(data.gameRecord);
 	let lastLoadedLobbyId: string | null = null;
-
-	async function loadGameRecord(lobbyId: string) {
-		try {
-			const res = await fetch(`/api/games/${lobbyId}`, {
-				method: "GET",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-			});
-			if (res.status === 404) {
-				gameRecord = null;
-				return;
-			}
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			gameRecord = await res.json();
-		} catch (err) {
-			console.error("loadGameRecord failed:", err);
-		}
-	}
 
 	const userDirectory = $derived.by(() => {
 		const map = new Map<string, User>();
@@ -91,12 +72,28 @@
 		wsStore.updatePlayerScene(lobbyId, player.playerId, "lobby");
 	}
 
+	/* ====================================================================== */
+	/*                                CLEANUP                                 */
+	/* ====================================================================== */
+
+	let didCleanup = false;
+	let isClientNavigation = false;
+
+	function cleanupLobby() {
+		if (didCleanup) return;
+		console.log("[lobby] cleanupLobby");
+		didCleanup = true;
+		wsStore.leaveRoom();
+		wsStore.disconnect();
+	}
 
 	/* ====================================================================== */
 	/*                                TRIGGERS                                */
 	/* ====================================================================== */
 
 	$effect(() => {
+		if (didCleanup) return;
+
 		const lobbyId = data.lobbyId;
 		const user = $userStore ?? null;
 
@@ -130,9 +127,6 @@
 
 	let lastRosterKey = "";
 	$effect(() => {
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
 		const ids = roomPlayerIdsLive.map(String).sort();
 		const key = ids.join(",");
 		if (key === lastRosterKey) return;
@@ -142,29 +136,15 @@
 		// Don't re-fetch if the lobby is empty (player was kicked/left)
 		if (ids.length === 0) return;
 
-		loadGameRecord(lobbyId);
+		// Don't re-fetch if we're leaving the lobby (phase changed to ready/running).
+		// invalidate() would start an async load that blocks goto() navigation.
+		const phase = liveRoomState?.phase ?? null;
+		if (phase && phase !== "lobby") return;
+
+		// Re-run the +page.ts load to refresh the game record
+		invalidate('app:gameRecord');
 	});
 
-	/**
-	 * Detect when the current player is kicked (no longer in playerIds)
-	 */
-	$effect(() => {
-		if (didRedirect) return;
-
-		const ids = roomPlayerIdsLive;
-		if (ids.length === 0) return; // no state yet
-
-		const userId = String($userStore?.id ?? "");
-		if (!userId) return;
-
-		if (!ids.includes(userId)) {
-			console.log("[lobby] kicked — player not in playerIds", { userId, ids });
-			didRedirect = true;
-			wsStore.disconnect();
-			toast.info("You were removed from the lobby.");
-			goto("/dashboard", { replaceState: true });
-		}
-	});
 
 	/**
 	 * Room closed
@@ -218,45 +198,32 @@
 		goto(target, { replaceState: true });
 	});
 
-	onMount(async () => {
-		const lobbyId = data.lobbyId;
-		if (!lobbyId) return;
-
-		if (lastLoadedLobbyId !== lobbyId) {
-			lastLoadedLobbyId = lobbyId;
-			await loadGameRecord(lobbyId);
-		}
-		// After loading, the derived `redirectTarget` will recompute
-		// and the effect above will handle the redirect if needed.
-	});
-
 	/* ====================================================================== */
 	/*                       CLEANUP ON NAVIGATE AWAY                         */
 	/* ====================================================================== */
 
-	let didCleanup = false;
-
-	function cleanupLobby() {
-		if (didCleanup) return;
-		console.log("[lobby] cleanupLobby");
-		didCleanup = true;
-		wsStore.leaveRoom();
-		wsStore.disconnect();
-	}
-
 	beforeNavigate(({ to }) => {
+		// `to` is null when leaving the app (refresh, close tab, external link).
+		// In that case let the socket die naturally — onPlayerSocketLost on the
+		// game-service keeps the player in the room for reconnection.
+		if (!to) return;
+
+		isClientNavigation = true;
+
 		if (didRedirect) return;  // already handled (kicked, room closed, etc.)
 
 		// Don't clean up when transitioning to the game page (legitimate redirect)
-		const dest = to?.url?.pathname ?? "";
+		const dest = to.url?.pathname ?? "";
 		if (dest.startsWith("/game/")) return;
 
 		cleanupLobby();
 	});
 
 	onDestroy(() => {
-		// Safety net for cases beforeNavigate doesn't cover (e.g. full page unload)
-		if (!didRedirect) cleanupLobby();
+		// Only clean up during SvelteKit client navigations.
+		// On full page reload the socket dies naturally and onPlayerSocketLost
+		// on the game-service keeps the player in the room for reconnection.
+		if (!didRedirect && isClientNavigation) cleanupLobby();
 	});
 
 
@@ -269,7 +236,7 @@
 		backendStatus: GameStatus | null;
 	}) {
 		const { livePhase, backendStatus } = opts;
-		const userId = String($userStore?.id ?? "");
+		const userId = String(data.user.id);
 
 		// Prefer live phase from WS
 		if (livePhase) {
@@ -308,8 +275,12 @@
 				game={gameRecord!}
 				playerCount={playersInRoom.length}
 				lobbyId={data.lobbyId}
-				playerId={String($userStore?.id ?? '')}
+				playerId={String(data.user.id)}
 				sceneById={sceneByIdLive}
+				onLeave={() => {
+					cleanupLobby();
+					goto('/dashboard', { replaceState: true });
+				}}
 			/>
 		</div>
 	</div>
