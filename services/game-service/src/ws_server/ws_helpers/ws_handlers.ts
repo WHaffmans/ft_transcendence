@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:23:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 14:03:54 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 14:09:01 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ export function handleUpdateScene(
 	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
 
 	if (!boundRoomId || !boundPlayerId) {
-		throw new Error("Must join_room first");
+		throw new Error("Must create_or_join_room first");
 	}
 
 	if (msg.roomId !== boundRoomId || msg.playerId !== boundPlayerId) {
@@ -176,7 +176,7 @@ export function handleLeaveRoom(
 	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
 
 	if (!boundRoomId || !boundPlayerId) {
-		throw new Error("Must join_room first");
+		throw new Error("Must create_or_join_room first");
 	}
 
 	if (msg.roomId !== boundRoomId || msg.playerId !== boundPlayerId) {
@@ -207,7 +207,7 @@ export function handleInput(
 	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
 
 	if (!boundRoomId || !boundPlayerId) {
-		throw new Error("Must join_room first");
+		throw new Error("Must create_or_join_room first");
 	}
 
 	const room = rooms.get(boundRoomId);
