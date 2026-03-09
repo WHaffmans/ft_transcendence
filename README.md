@@ -739,7 +739,7 @@ This section provides an overview of all implemented features, including a short
 
 # Modules
 
-> TOTAL POINTS: **17**
+> TOTAL POINTS: **19**
 
 This section outlines the module-based scoring structure of the project. The evaluation system is divided into **major** and **minor** modules, where each major module is worth 2 points and each minor module is worth 1 point.
 
@@ -797,7 +797,7 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 ### Module 6: Gaming and user experience
 
-> POINTS: **4**
+> POINTS: **6**
 
 - `2` **Complete multiplayer game (real-time | live matches | clear rules | 2D).** <br/>
   Delivered a fully playable competitive experience with deterministic real-time mechanics. <br/>
