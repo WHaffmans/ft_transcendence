@@ -13,5 +13,8 @@ export const modalConfig: Record<Exclude<ModalType, null>, ModalMetadata> = {
 	},
 	profileSettings: {
 		title: 'Profile Settings'
+	},
+	onboarding: {
+		title: 'How to Play'
 	}
 };

@@ -7,6 +7,6 @@ export const load: PageLoad = ({ params }) => {
     const { roomId } = params;
 
     return {
-        roomId: roomId,
+        roomId,
     };
-}
+};

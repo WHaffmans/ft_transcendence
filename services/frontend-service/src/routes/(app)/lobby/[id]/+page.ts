@@ -1,7 +1,7 @@
 
 import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
-import type { Game } from "$lib/types/types";
+import type { Game, User } from "$lib/types/types";
 
 export const ssr = false;
 
@@ -25,9 +25,12 @@ export const load: PageLoad = async ({ params, fetch, parent, depends }) => {
         console.error("[lobby] load: failed to fetch game record", err);
     }
 
+    const completedGames = ((user as User).games ?? []).filter((g) => g.status === 'completed').length;
+
     return {
         lobbyId: id,
         user: user!,
         gameRecord,
+        completedGames,
     };
 };
