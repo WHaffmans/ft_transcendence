@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 13:54:19 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 14:07:00 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,8 +74,9 @@ function attachHeartbeat(ws: WebSocket) {
 
 /**
  * Heartbeat
- * `ping` all client HEARTBEAT_INTERVAL_MS. Close connection if client
- * does not respond with `pong`. Avoid zombie from silent network drop.
+ * Ping all clients every HEARTBEAT_INTERVAL_MS.
+ * Terminate connections that fail to respond with pong,
+ * preventing zombie sockets after silent network drops.
  */
 function startHeartbeat(wss: WebSocketServer) {
 	const interval = setInterval(() => {
