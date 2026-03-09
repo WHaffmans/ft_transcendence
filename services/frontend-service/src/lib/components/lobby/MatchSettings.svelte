@@ -4,6 +4,7 @@
   import ActionButton from "$lib/components/common/ActionButton.svelte";
   import type { Game } from "$lib/types/types";
   import { wsStore } from "$lib/stores/ws";
+  import { modalStore } from "$lib/components/modal/modal";
 
   interface Props {
     game: Game;
@@ -131,6 +132,7 @@
 
   function handleEnter(e: KeyboardEvent) {
     if (e.key !== 'Enter') return;
+    if ($modalStore.type) return;
     if (!isReady && !canReady) return;
     toggleReady();
   }
