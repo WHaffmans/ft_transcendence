@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/18 10:10:00 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 16:25:33 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 16:49:33 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,7 +138,24 @@ function worldToCell(hash: SpatialHash, x: number, y: number) {
 }
 
 /**
- * Collide if the swept path comes within radius of any tail segment
+ * Collide if the swept path comes within radius of any tail segment:
+ *
+ * Pythagorean theorem:
+ *  For a right triangle with side lengths `dx` and `dy`,
+ *  the squared length of the hypotenuse is:
+ *
+ *  	distance^2 = dx^2 + dy^2
+ *
+ *  So instead of computing:
+ *
+ *  	distance = sqrt(dx^2 + dy^2)
+ *
+ *  we keep the squared form:
+ *
+ *  	distanceSq = dx^2 + dy^2
+ *
+ *  This is enough for collision checks, because we only need to compare
+ *  the distance against `radius`, not compute the exact distance itself.
  */
 function distSegToSegSq(a: Segment, b: Segment): number {
 	if (segmentsIntersect(a, b))
@@ -194,7 +211,6 @@ export function checkCollisionThisTick(
 
 	// Returns indices into `segments[]` for segments whose registered cells overlap this AABB.
 	const candidates = queryAabb(hash, minX, minY, maxX, maxY);
-	const r2 = radius * radius;
 
 	// Compute ignore window for SELF
 	const selfIgnoreLo =
@@ -217,7 +233,10 @@ export function checkCollisionThisTick(
 				continue;
 		}
 
+		// “Is the distance between these two segments less than or equal to radius?”
 		const d2 = distSegToSegSq(move, s);
+		const r2 = radius * radius;
+
 		if (d2 <= r2) {
 			return (true);
 		}

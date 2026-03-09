@@ -7,6 +7,12 @@ type SegmentDelta =
   | { kind: "added"; index: number; x1: number; y1: number; x2: number; y2: number }
   | { kind: "extended"; index: number; x1: number; y1: number; x2: number; y2: number };
 
+
+/**
+ * Append a new trail segment or extend the previous segment for the same player.
+ * 
+ * @param posEpsilon: 0.000000001, 1-billionth, (10^-9)
+ */
 export function pushOrExtendSegment(
 	segments: Segment[],
 	p: PlayerState,
@@ -28,10 +34,10 @@ export function pushOrExtendSegment(
 		!isTurning &&
 		!isGap &&
 		last != null &&
-		last.ownerId === p.id &&
-		last.isGap === isGap &&						// Don't extend across boundru
-		Math.abs(last.x2 - prevX) <= posEpsilon &&
-		Math.abs(last.y2 - prevY) <= posEpsilon;
+		last.ownerId === p.id &&						// Ensure the previous segment belongs to this player
+		last.isGap === isGap &&							// Prevent extending across gap/non-gap boundaries
+		Math.abs(last.x2 - prevX) <= posEpsilon &&		// Keep `x` the same if it differs by a tiny amount
+		Math.abs(last.y2 - prevY) <= posEpsilon;		// Keep `y` the same if it differs by a tiny amount
 
 	if (canExtend) {
 		const oldX2 = last.x2;
@@ -50,7 +56,7 @@ export function pushOrExtendSegment(
 		};
 	}
 
-	// get player-specific sequence number for this new segment
+	// New sequence number for this new segment
 	p.tailOwnerSeq += 1;
 	
 	const i = segments.length;

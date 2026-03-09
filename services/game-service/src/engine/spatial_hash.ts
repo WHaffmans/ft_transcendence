@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/18 08:11:13 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2025/12/22 12:38:11 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 16:35:03 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ function addToBucket(hash: SpatialHash, key: number, segIndex: number) {
  * Insert a segment into the spatial hash.
  * 
  * A line segment can cross multiple cells, so we "walk along the line"
- * and add this segment index to every well we pass through.
+ * and add this segment index to every cell we pass through.
  * 
  * This uses DDA-style sampling (Digital Differential Analyzer).
  * 		- An algorithm used in computer graphics to draw a streight line between two points.
