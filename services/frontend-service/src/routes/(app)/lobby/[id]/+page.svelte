@@ -115,14 +115,18 @@
 		const user = data.user;
 		const playerId = String(user.id);
 
-		// Join WS Session
 		if (!lobbyId) return;
-		const alreadyBound =
+
+		const isSameBinding =
 			$wsStore.roomId === lobbyId &&
 			$wsStore.playerId === playerId;
 
-		if (alreadyBound) return;
+		const isOpenForThisLobby =
+			isSameBinding && $wsStore.status === "open";
 
+		if (isOpenForThisLobby) return;
+
+		// Join WS Session
 		const joinKey = `${lobbyId}:${playerId}`;
 		if (lastJoinedKey === joinKey) return;
 
@@ -153,7 +157,6 @@
 		// Re-run the +page.ts load to refresh the game record
 		invalidate('app:gameRecord');
 	});
-
 
 	/**
 	 * Room closed
