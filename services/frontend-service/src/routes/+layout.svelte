@@ -8,6 +8,7 @@
 	import PrivacyPolicyModal from '$lib/components/modal/privacy/PrivacyPolicyModal.svelte';
 	import TermsOfServiceModal from '$lib/components/modal/terms/TermsOfServiceModal.svelte';
 	import ProfileSettingsModal from '$lib/components/modal/profile-settings/ProfileSettingsModal.svelte';
+	import OnboardingModal from '$lib/components/modal/onboarding/OnboardingModal.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import type { LayoutData } from './$types';
 	import type { User } from '$lib/types/types';
@@ -118,5 +119,14 @@
 		autoHeight={true}
 	>
 		<ProfileSettingsModal />
+	</Modal>
+{:else if $modalStore.type === 'onboarding'}
+	<Modal
+		open={true}
+		title={modalConfig.onboarding.title}
+		onClose={() => modalStore.close()}
+		autoHeight={true}
+	>
+		<OnboardingModal />
 	</Modal>
 {/if}
