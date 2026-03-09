@@ -380,7 +380,7 @@ Responsible for authentication architecture, backend endpoints, and gateway secu
 
 Responsible for frontend architecture and overall user experience.
 
-- Frontend Development (SvelteKit):
+- Frontend Development (Svelte / SvelteKit):
 
     - Designed component architecture and page routing.
     - Implemented state-driven and responsive UI systems.
