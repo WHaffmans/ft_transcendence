@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 13:50:52 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 13:54:19 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@ import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 import type { IncomingMessage } from "http";
 import { RoomManager } from "../app/room_manager.js";
-import { safeSend } from "./ws_helpers/ws_send.js";
+import { safeSendServer } from "./ws_helpers/ws_send.js";
 import { WsContext } from "./ws_helpers/ws_types.js";
 
 import {
@@ -141,14 +141,14 @@ export function startPublicWsServer(
 			try {
 				raw = JSON.parse(buf.toString());
 			} catch {
-				safeSend(ws, { type: "error", message: "Invalid JSON" });
+				safeSendServer(ws, { type: "error", message: "Invalid JSON" });
 				return;
 			}
 
 			// Validate message shape
 			const parsed = ClientMsgSchema.safeParse(raw);
 			if (!parsed.success) {
-				safeSend(ws, { type: "error", message: "Invalid message shape" });
+				safeSendServer(ws, { type: "error", message: "Invalid message shape" });
 				return;
 			}
 
@@ -191,7 +191,7 @@ export function startPublicWsServer(
 				}
 			} catch (e) {
 				console.error("[ws:transport] message handling error", { type: msg.type, error: e instanceof Error ? e.message : String(e) });
-				safeSend(ws, {
+				safeSendServer(ws, {
 					type: "error",
 					message: e instanceof Error ? e.message : String(e),
 				});
