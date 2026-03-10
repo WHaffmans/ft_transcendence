@@ -357,6 +357,8 @@
 
     if (!canvas) return;
 
+    wsStore.readyGame();
+
     const renderer = createCanvasRenderer(canvas, {
       w: 806,
       h: 806,
