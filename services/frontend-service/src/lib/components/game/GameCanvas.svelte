@@ -1,6 +1,10 @@
 
 <script lang="ts">
-  export let canvas: HTMLCanvasElement | null = null;
+  interface Props {
+    canvas?: HTMLCanvasElement | null;
+  }
+
+  let { canvas = $bindable(null) }: Props = $props();
 </script>
 
 <div class="glass rounded-2xl relative">

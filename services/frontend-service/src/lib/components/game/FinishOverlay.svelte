@@ -1,13 +1,19 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  interface Props {
+    show: boolean;
+    winnerName?: string;
+    winnerAvatar?: string | null;
+    countdown?: number;
+    onGoDashboard: () => void;
+  }
 
-  export let show: boolean;
-
-  export let winnerName: string = "No winner";
-  export let winnerAvatar: string | null = null;
-  export let countdown: number = 0;
-
-  export let onGoDashboard: () => void;
+  let {
+    show,
+    winnerName = "No winner",
+    winnerAvatar = null,
+    countdown = 0,
+    onGoDashboard,
+  }: Props = $props();
 
   function normalizeAvatarUrl(url: string | null) {
     if (!url) return null;
@@ -15,7 +21,7 @@
     return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
   }
 
-  $: normalizedAvatar = normalizeAvatarUrl(winnerAvatar);
+  const normalizedAvatar = $derived(normalizeAvatarUrl(winnerAvatar));
 
   function onKeyDown(ev: KeyboardEvent) {
     if (!show) return;
@@ -25,15 +31,11 @@
     }
   }
 
-  $: {
+  $effect(() => {
     if (show) window.addEventListener("keydown", onKeyDown);
     else window.removeEventListener("keydown", onKeyDown);
-  }
-
-  onDestroy(() => {
-    window.removeEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   });
-
 </script>
 
 {#if show}
@@ -57,7 +59,7 @@
         Redirecting to dashboard in <span class="countdown">{countdown}</span>s
       </div>
 
-      <button class="finishBtn" type="button" on:click={onGoDashboard}>
+      <button class="finishBtn" type="button" onclick={onGoDashboard}>
         Go to dashboard
       </button>
     </div>

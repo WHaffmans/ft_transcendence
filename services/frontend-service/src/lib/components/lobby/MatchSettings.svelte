@@ -2,12 +2,10 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
-  import type { Game } from "$lib/types/types";
   import { wsStore } from "$lib/stores/ws";
   import { modalStore } from "$lib/components/modal/modal";
 
   interface Props {
-    game: Game;
     playerCount: number;
     lobbyId: string;
     playerId: string;
@@ -18,7 +16,6 @@
   type Notice = { title: string; body: string };
 
   let {
-    game,
     playerCount,
     lobbyId,
     playerId,
@@ -163,7 +160,7 @@
 
   <!-- Content -->
   <div class="flex-1 px-6 py-6">
-    <div class="h-full w-full max-w-[28rem] mx-auto flex flex-col">
+    <div class="h-full w-full max-w-md mx-auto flex flex-col">
 
       <!-- Timer + Warnings -->
       <div class="w-full space-y-2">

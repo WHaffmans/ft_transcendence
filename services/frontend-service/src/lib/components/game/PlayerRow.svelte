@@ -1,10 +1,13 @@
 <script lang="ts">
-  export let name: string;
-  export let alive: boolean;
-  export let isYou: boolean;
+  interface Props {
+    name: string;
+    alive: boolean;
+    isYou: boolean;
+    colorCss: string;
+    ringCss: string;
+  }
 
-  export let colorCss: string;
-  export let ringCss: string;
+  let { name, alive, isYou, colorCss, ringCss }: Props = $props();
 </script>
 
 <div class="playerRow" data-alive={alive}>
