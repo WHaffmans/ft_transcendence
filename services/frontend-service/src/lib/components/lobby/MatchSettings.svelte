@@ -163,7 +163,7 @@
 
   <!-- Content -->
   <div class="flex-1 px-6 py-6">
-    <div class="h-full w-full max-w-[28rem] mx-auto flex flex-col">
+    <div class="h-full w-full max-w-md mx-auto flex flex-col">
 
       <!-- Timer + Warnings -->
       <div class="w-full space-y-2">
