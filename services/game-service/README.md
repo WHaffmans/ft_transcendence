@@ -106,7 +106,7 @@ $$P_0 = (x_{t - 1}, y_{t - 1})$$
 
 $$P_1 = (x_t, y_t)$$
 
-The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the tail / player) of any trail segment:
+The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the trail / player) of any trail segment:
 
 $$\min_i d(S, T_i) \le r$$
 
@@ -130,7 +130,7 @@ We will adopt a common two-stage approach used in real-time collision detection:
 
 ## Data representation
 
-Trail segments as persistent primitives. Each tick appends one tail segment per alive player (with possible gaps). Each stored tail segment is:
+Trail segments as persistent primitives. Each tick appends one trail segment per alive player (with possible gaps). Each stored trail segment is:
 
 - endpoints $A=(a_x, a_y), B=(b_x, b_y)$
 - an axis-aligend bounding box (AABB) around $\overline{AB}$, extended by radius $r$.

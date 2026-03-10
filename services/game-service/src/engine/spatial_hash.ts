@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/18 08:11:13 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 16:35:03 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/10 09:21:12 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,11 +73,12 @@ export function insertSegmentDDA(hash: SpatialHash, x1: number, y1: number, x2: 
   		return;
   	}
 	
-	// Compute the direction vector start -> end
+	// Compute the direction vector start → end
 	const dx = x2 - x1
 	const dy = y2 - y1;
 	
 	// Compute the segment length
+	// `hypot()` does `sqr(dx^2 + dy^2)`
 	const len = Math.hypot(dx, dy);
 	if (len === 0) return;
 
@@ -90,7 +91,7 @@ export function insertSegmentDDA(hash: SpatialHash, x1: number, y1: number, x2: 
 	// From segment start to segment end
 	for (let i = 0; i <= n; i++) {
 		
-		// t goes 0 -> 1 across the segment
+		// t is a position along the segment
 		const t = i / n;
 
 		// Sample point at fraction t of the segment
@@ -101,7 +102,7 @@ export function insertSegmentDDA(hash: SpatialHash, x1: number, y1: number, x2: 
 		const cx = Math.floor(x / hash.cellSize);
 		const cy = Math.floor(y / hash.cellSize);
 
-		// Store this segment index in that cell's bucket
+		// Store this segment `index` in that cell's bucket
 		addToBucket(hash, cellKey(hash, cx, cy), segIndex);
   }
 }
