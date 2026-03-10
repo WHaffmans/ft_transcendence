@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:35:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 08:15:52 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/10 12:09:00 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1217,13 +1217,19 @@ export class RoomManager {
 	/**
 	 * Start the game loop, will broadcast state
 	 */
-	async startRoom(roomId: string) {
+	async startRoomBackEnd(roomId: string) {
 		try {
 			await startGame(roomId);
 			logInfo("backend.start_ok", { roomId });
 		} catch (err) {
 			logError("backend.start_failed", { roomId, err });
 		}
+	}
+
+	/**
+	 * Start the game loop, will broadcast state
+	 */
+	async startRoom(roomId: string) {
 		this.startLoop(roomId);
 	}
 
