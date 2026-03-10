@@ -3,21 +3,28 @@
 
   type ColorRGBA = { r: number; g: number; b: number; a: number };
 
-  export let status: "open" | "closed" | "error" | string;
+  interface Props {
+    status: "open" | "closed" | "error" | (string & {});
+    players?: Array<{
+      id: string;
+      alive: boolean;
+      x: number;
+      y: number;
+      angle: number;
+      color: ColorRGBA;
+    }>;
+    youId?: string | null;
+    metaById?: Record<string, { name?: string; avatar_url?: string }>;
+    onLeave?: (() => void | Promise<void>) | null;
+  }
 
-  export let players: Array<{
-    id: string;
-    alive: boolean;
-    x: number;
-    y: number;
-    angle: number;
-    color: ColorRGBA;
-  }> = [];
-
-  export let youId: string | null = null;
-  export let metaById: Record<string, { name?: string; avatar_url?: string }> = {};
-
-  export let onLeave: (() => void | Promise<void>) | null = null;
+  let {
+    status,
+    players = [],
+    youId = null,
+    metaById = {},
+    onLeave = null,
+  }: Props = $props();
 
   function displayName(playerId: string) {
     return metaById[String(playerId)]?.name ?? `Player ${playerId}`;
@@ -59,9 +66,6 @@
               name={displayName(p.id)}
               alive={p.alive}
               isYou={isYou(p.id)}
-              x={p.x}
-              y={p.y}
-              angleRad={p.angle}
               colorCss={rgbaToCss(p.color)}
               ringCss={rgbaToCss(p.color, 0.18)}
             />
@@ -78,7 +82,7 @@
       class="leaveBtn"
       aria-label="Leave game"
       title="Leave game"
-      on:click={() => onLeave?.()}
+      onclick={() => onLeave?.()}
     >
       <img class="leaveIcon" src="/assets/exit_icon.png" alt="" />
     </button>
