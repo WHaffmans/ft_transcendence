@@ -292,10 +292,6 @@ export class RoomManager {
 
 		this.executeAutoStartTimer(roomId);
 		this.broadcastState(roomId);
-
-		if (room.phase === "lobby" && room.sceneById[pid] === "lobby") {
-			this.startAfkTimer(roomId, pid);
-		}
 	}
 
 	/**
@@ -373,6 +369,11 @@ export class RoomManager {
 			if (ws && subscribed)
 				this.unsubscribe(args.roomId, ws);
 			throw err;
+		}
+
+		// Start AFK timer after WS subscription so the joining player receives the broadcast
+		if (room.phase === "lobby" && room.sceneById[effectivePlayer.playerId] === "lobby") {
+			this.startAfkTimer(args.roomId, effectivePlayer.playerId);
 		}
 
 		const afterCount = room.players.length;
