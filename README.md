@@ -42,19 +42,25 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
 - [Instructions](#instructions)
   - [Prerequisites](#prerequisites)
   - [Setup & Installation](#setup--installation)
+- [Features](#features)
+  - [User Management](#user-management)
+  - [Lobby System](#lobby-system)
+  - [Game Engine & Real-Time Systems](#game-engine--real-time-systems)
+  - [Backend & Infrastructure](#backend--infrastructure)
 - [Team Information & Project Management](#team-information--project-management)
   - [Communication & Project Management](#communication--project-management)
   - [Task & Role Distribution](#task--role-distribution)
 - [Technical Stack](#technical-stack)
   - [Frontend](#frontend)
   - [Backend](#backend)
-  - [Database System](#database-system)
-  - [Game Engine](#game-engine)
 - [Database Schema](#database-schema)
 - [API Documentation](#api-documentation)
-- [Features](#features)
 - [Modules](#modules)
-- [Sources](#sources)
+  - [Module 1: Web](#module-1-web)
+  - [Module 3: User Management](#module-3-user-management)
+  - [Module 6: Gaming and user experience](#module-6-gaming-and-user-experience)
+  - [Module 7: DevOps](#module-7-devops)
+- [Resources](#resources)
   - [Artwork](#artwork)
   - [Rating System](#rating-system)
   - [Collision Detection & Optimisation](#collision-detection--optimisation)
@@ -146,6 +152,118 @@ Welcome to *Achtung, die Kurve!*, — reimagined for the modern web.
 
 
 
+# Features
+
+This section provides an overview of all implemented features, including a short description and the primary contributors responsible for each part.
+
+<br/>
+
+
+## User Management
+
+- ### Authentication (Local & OAuth) <br/>
+  Secure login system with email/password and third-party authentication (Google, GitHub). Includes session handling and route protection. <br/>
+  *Contributors: Quinten Mennen*
+
+- ### User Profile & Avatar Management <br/>
+  Users can upload or change their avatar and manage profile information, which is reflected in lobbies, matches, and leaderboards. <br/>
+  *Contributors: Quinten Mennen (Backend), Willem Haffmans (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
+
+- ### Player Statistics & Match History <br/>
+  Persistent tracking of match results, ranks, rating changes, and historical performance per user. <br/>
+  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
+
+- ### Leaderboard <br/>
+  Global ranking overview based on rating calculations (mu/sigma), displaying competitive ordering of players. <br/>
+  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
+
+- ### Score Graph <br/>
+  Graph-based visualization of player rating progression over time. <br/>
+  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
+
+<br/>
+
+
+## Lobby System
+
+- ### Player Matching <br/>
+  Players can join or create game sessions and are grouped into lobbies before a match begins. <br/>
+  *Contributors: Willem Haffmans (Backend).*
+
+- ### Lobby Mechanics (Ready System & Timers) <br/>
+  Implements ready-state logic, automatic match start conditions, countdown timers, and lobby expiration. <br/>
+  *Contributors: Quentin Beukelman (Game Service), Ferry Ras (Frontend).*
+
+<br/>
+
+
+## Game Engine & Real-Time Systems
+
+- ### Game Engine & Real-Time Systems <br/>
+  Server-authoritative state machine controlling game phases (lobby → active → finished) with consistent tick-based updates. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Real-Time WebSocket Communication <br/>
+  Bidirectional low-latency communication between clients and the game service with validation and structured protocol messages. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Collision Detection & Optimization <br/>
+  Spatial hashing and broad-phase/narrow-phase collision detection to ensure performance with multiple players and trails. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Sliding Window Segment Optimization (Frontend) <br/>
+  Client-side optimization to limit rendered trail segments and improve rendering performance. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Canvas Rendering System <br/>
+  High-performance 2D canvas rendering with dynamic player trails and real-time updates at 30Hz. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### HUD & Overlay System <br/>
+  In-game heads-up display showing player states and match status, including start and finish overlays. <br/>
+  *Contributors: Quentin Beukelman, Ferry Ras*
+
+- ### Multiplayer Support (2+ Players) <br/>
+  Supports three or more concurrent players with synchronized state updates and fair mechanics. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Reconnection & Timeout Handling <br/>
+  Handles player disconnects, reconnection attempts, AFK detection, network heartbeat, and match cleanup.
+  *Contributors: Quentin Beukelman, Willem Haffmans, Ferry Ras*
+
+<br/>
+
+
+## Backend & Infrastructure
+
+- ### Public REST API <br/>
+  Structured endpoints for user management, match records, statistics, and rating updates. <br/>
+  *Contributors: Willem Haffmans, Quinten Mennen.*
+
+- ### ORM-Based Database Layer <br/>
+  Schema-driven database design using migrations and ORM abstractions for consistent persistence. <br/>
+  *Contributors: Willem Haffmans, Quinten Mennen.*
+
+- ### Rating System (Mu/Sigma) <br/>
+  Competitive rating calculation using mu and sigma values with post-match updates and ranking logic. <br/>
+  *Contributors: Quentin Beukelman.*
+
+- ### Microservice Architecture <br/>
+  Separated services for frontend, backend API, and game engine with clear interfaces and responsibilities. <br/>
+  *Contributors: All team members*
+
+- ### Dockerized Development & Production Environments <br/>
+  Multi-stage builds, service orchestration, TLS configuration, and environment management. <br/>
+  *Contributors: Willem Haffmans.*
+
+<br/>
+
+---
+<br/>
+<br/>
+
+
+
 # Team Information & Project Management
 
 ## Communication & Project Management
@@ -197,8 +315,8 @@ Responsible for the design and implementation of the deterministic multiplayer g
 
 ### Willem Haffmans
 
-> **Tech Lead (Architecture)** • Architecture & System Design.
-> **Backend Developer** • Backend service, databse and API.
+> **Tech Lead (Architecture)** • Architecture & System Design. <br/>
+> **Backend Developer** • Backend service, database and API.
 
 Responsible for architectural direction, infrastructure, and environment management.
 
@@ -262,7 +380,7 @@ Responsible for authentication architecture, backend endpoints, and gateway secu
 
 Responsible for frontend architecture and overall user experience.
 
-- Frontend Development (SvelteKit):
+- Frontend Development (Svelte / SvelteKit):
 
     - Designed component architecture and page routing.
     - Implemented state-driven and responsive UI systems.
@@ -625,118 +743,6 @@ OpenAPI specification (JSON) is also available at `/docs/api.json`.
 
 
 
-# Features
-
-This section provides an overview of all implemented features, including a short description and the primary contributors responsible for each part.
-
-<br/>
-
-
-## User Management
-
-- ### Authentication (Local & OAuth) <br/>
-  Secure login system with email/password and third-party authentication (Google, GitHub). Includes session handling and route protection. <br/>
-  *Contributors: Quinten Mennen*
-
-- ### User Profile & Avatar Management <br/>
-  Users can upload or change their avatar and manage profile information, which is reflected in lobbies, matches, and leaderboards. <br/>
-  *Contributors: Quinten Mennen (Backend), Willem Haffmans (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
-
-- ### Player Statistics & Match History <br/>
-  Persistent tracking of match results, ranks, rating changes, and historical performance per user. <br/>
-  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
-
-- ### Leaderboard <br/>
-  Global ranking overview based on rating calculations (mu/sigma), displaying competitive ordering of players. <br/>
-  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
-
-- ### Score Graph <br/>
-  Graph-based visualization of player rating progression over time. <br/>
-  *Contributors: Willem Haffmans (Database/API), Quinten Mennen (Backend), Ferry Ras (Frontend), Hein Smolder (Frontend).*
-
-<br/>
-
-
-## Lobby System
-
-- ### Player Matching <br/>
-  Players can join or create game sessions and are grouped into lobbies before a match begins. <br/>
-  *Contributors: Willem Haffmans (Backend).*
-
-- ### Lobby Mechanics (Ready System & Timers) <br/>
-  Implements ready-state logic, automatic match start conditions, countdown timers, and lobby expiration. <br/>
-  *Contributors: Quentin Beukelman (Game Service), Ferry Ras (Frontend).*
-
-<br/>
-
-
-## Game Engine & Real-Time Systems
-
-- ### Game Engine & Real-Time Systems <br/>
-  Server-authoritative state machine controlling game phases (lobby → active → finished) with consistent tick-based updates. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Real-Time WebSocket Communication <br/>
-  Bidirectional low-latency communication between clients and the game service with validation and structured protocol messages. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Collision Detection & Optimization <br/>
-  Spatial hashing and broad-phase/narrow-phase collision detection to ensure performance with multiple players and trails. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Sliding Window Segment Optimization (Frontend) <br/>
-  Client-side optimization to limit rendered trail segments and improve rendering performance. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Canvas Rendering System <br/>
-  High-performance 2D canvas rendering with dynamic player trails and real-time updates at 30Hz. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### HUD & Overlay System <br/>
-  In-game heads-up display showing player states and match status, including start and finish overlays. <br/>
-  *Contributors: Quentin Beukelman, Ferry Ras*
-
-- ### Multiplayer Support (2+ Players) <br/>
-  Supports three or more concurrent players with synchronized state updates and fair mechanics. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Reconnection & Timeout Handling <br/>
-  Handles player disconnects, reconnection attempts, AFK detection, network heartbreak, and match cleanup.
-  *Contributors: Quentin Beukelman, Willem Haffmans, Ferry Ras*
-
-<br/>
-
-
-## Backend & Infrastructure
-
-- ### Public REST API <br/>
-  Structured endpoints for user management, match records, statistics, and rating updates. <br/>
-  *Contributors: Willem Haffmans, Quinten Mennen.*
-
-- ### ORM-Based Database Layer <br/>
-  Schema-driven database design using migrations and ORM abstractions for consistent persistence. <br/>
-  *Contributors: Willem Haffmans, Quinten Mennen.*
-
-- ### Rating System (Mu/Sigma) <br/>
-  Competitive rating calculation using mu and sigma values with post-match updates and ranking logic. <br/>
-  *Contributors: Quentin Beukelman.*
-
-- ### Microservice Architecture <br/>
-  Separated services for frontend, backend API, and game engine with clear interfaces and responsibilities. <br/>
-  *Contributors: All team members*
-
-- ### Dockerized Development & Production Environments <br/>
-  Multi-stage builds, service orchestration, TLS configuration, and environment management. <br/>
-  *Contributors: Willem Haffmans.*
-
-<br/>
-
----
-<br/>
-<br/>
-
-
-
 # Modules
 
 > TOTAL POINTS: **19**
@@ -830,7 +836,7 @@ Below is an overview of the modules selected by our team, including a brief expl
 
 
 
-# Sources
+# Resources
 
 ### Artwork
 
