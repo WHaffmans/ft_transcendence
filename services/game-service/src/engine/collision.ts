@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/18 10:10:00 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/02/18 16:25:33 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/10 09:02:24 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,32 +36,32 @@ function clamp(v: number, lo: number, hi: number) {
 }
 
 /**
- * Squared distance from a POINT P(px,py) to a LINE SEGMENT AB.
+ * Shortest squared distance from a POINT P(px,py) to a LINE SEGMENT AB.
  *
  * Why squared distance?
  *	- avoids sqrt (faster)
  *	- we can compare squared distances: distSq <= radius^2
  *
  * Method (closest point on segment):
- *	1. Project point P onto the infinite line through A->B using dot products.
- *	2. Clamp the projection to the segment (t in [0,1]).
- *	3. Compute distance between P and the closest point on the segment.
+ *		1. Project point P onto the infinite line through A->B using dot products.
+ *		2. Clamp the projection to the segment (t in [0,1]).
+ *		3. Compute distance between P and the closest point on the segment.
  *
  * Terms:
- *  - Dot product: measure how much two vectors point in the same direction.
- *  - Clamp: forcing a value to stay inside a range.
+ *  	- Dot product: measure how much two vectors point in the same direction.
+ *  	- Clamp: forcing a value to stay inside a range.
  */
 function distPointToSegSq(
   	px: number, py: number,
 	ax: number, ay: number,
 	bx: number, by: number
 ): number {
-
 	// Vector AB
-	const abx = bx - ax, aby = by - ay;
+	const abx = bx - ax,	aby = by - ay;
 	// Vector AP
-	const apx = px - ax, apy = py - ay;
-	// Length squared of AB
+	const apx = px - ax,	apy = py - ay;
+
+	// Length squared of segment AB 
 	const abLenSq = abx * abx + aby * aby;
 	
 	// If A and B are the same point, distance is just |AP|^2
@@ -69,8 +69,9 @@ function distPointToSegSq(
 		return (apx * apx + apy * apy);
 	
 	// Projection factor t = (AP·AB) / |AB|^2, clamped to [0..1]
-	// t=0 => closest point is A
-	// t=1 => closest point is B
+	// Calculate a perpendicular from a point to a line.
+	// 		t=0 => closest point is A
+	// 		t=1 => closest point is B
 	const t = clamp((apx * abx + apy * aby) / abLenSq, 0, 1);
 
 	// Closest point C on the segment
@@ -84,22 +85,22 @@ function distPointToSegSq(
 
 
 /**
- * Used to test if two segments intersect.
+ * Used to test on which side of the directed line `A` → `B` a third point `C` lies.
  *
  * Returns:
- *	- `>` 0 if C is to the "left" of the directed line A->B
+ *	- `>` 0 if C is to the "left" of the directed line A→B
  *	- `<` 0 if C is to the "right"
- *	- `=` 0 if A, B, C are collinear
+ *	- `=` 0 if A, B, C are "collinear" (multiple points lie on the same straight line)
  */
 function orient(ax: number, ay: number, bx: number, by: number, cx: number, cy: number) {
-  	return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+	return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
 }
 
 /**
  * Check if point P lies on the segment AB, the "bounding box" check.
  */
 function onSegment(ax: number, ay: number, bx: number, by: number, px: number, py: number) {
-  	return (
+	return (
 		Math.min(ax, bx) <= px && px <= Math.max(ax, bx) &&
 		Math.min(ay, by) <= py && py <= Math.max(ay, by)
 	);
@@ -131,14 +132,25 @@ function segmentsIntersect(a: Segment, b: Segment): boolean {
   	return (false);
 }
 
-function worldToCell(hash: SpatialHash, x: number, y: number) {
-  	const cx = Math.floor(x / hash.cellSize);
-  	const cy = Math.floor(y / hash.cellSize);
-  	return { cx, cy, key: `${cx},${cy}` };
-}
-
 /**
- * Collide if the swept path comes within radius of any tail segment
+ * Collide if the swept path comes within radius of any tail segment:
+ *
+ * Pythagorean theorem:
+ *  For a right triangle with side lengths `dx` and `dy`,
+ *  the squared length of the hypotenuse is:
+ *
+ *  	distance^2 = dx^2 + dy^2
+ *
+ *  So instead of computing:
+ *
+ *  	distance = sqrt(dx^2 + dy^2)
+ *
+ *  we keep the squared form:
+ *
+ *  	distanceSq = dx^2 + dy^2
+ *
+ *  This is enough for collision checks, because we only need to compare
+ *  the distance against `radius`, not compute the exact distance itself.
  */
 function distSegToSegSq(a: Segment, b: Segment): number {
 	if (segmentsIntersect(a, b))
@@ -194,7 +206,6 @@ export function checkCollisionThisTick(
 
 	// Returns indices into `segments[]` for segments whose registered cells overlap this AABB.
 	const candidates = queryAabb(hash, minX, minY, maxX, maxY);
-	const r2 = radius * radius;
 
 	// Compute ignore window for SELF
 	const selfIgnoreLo =
@@ -211,13 +222,17 @@ export function checkCollisionThisTick(
 		const s = segments[idx];
 		if (!s) continue;
 
+		// Self ignore
 		if (s.ownerId === ownerId && selfTailSegIndex >= 0) {
 			if (s.ownerSeq >= selfTailOwnerSeq - (selfIgnoreCount - 1)) continue;
 			if (idx >= selfIgnoreLo && idx <= selfIgnoreHi)
 				continue;
 		}
 
+		// “Is the distance between these two segments less than or equal to radius?”
 		const d2 = distSegToSegSq(move, s);
+		const r2 = radius * radius;
+
 		if (d2 <= r2) {
 			return (true);
 		}

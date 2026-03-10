@@ -6,7 +6,7 @@
 /*   By: qbeukelm <qbeukelm@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/12/16 12:12:32 by qbeukelm      #+#    #+#                 */
-/*   Updated: 2026/03/04 18:04:37 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/09 16:32:06 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,18 @@ export type StepResult = {
 	winnerId: string | null;
 };
 
+/**
+ * Random int
+ * Including min and max. Rounded to nearest decimal.
+ */
 function randIntInclusive(rng: any, min: number, max: number) {
 	const t = rng.nextFloat();
-	return min + Math.floor(t * (max - min + 1));
+	return (min + Math.floor(t * (max - min + 1)));
 }
 
+/**
+ * 
+ */
 function recordDeath(state: GameState, playerId: string) {
 	for (const id of state.deathIdByIndex.values()) {
 		if (id === playerId) return;
@@ -46,7 +53,7 @@ export function step(
 ): StepResult {
 
 	// Clone state
-	const next: GameState = {
+	const nextState: GameState = {
 		...state,
 		tick: state.tick + 1,
 		players: state.players.map(p => ({ ...p })),
@@ -57,23 +64,33 @@ export function step(
 	const rng = makeRng(state.rngState);
 	const deathsThisTick: string[] = [];
 
-	// Loop through players
-	for (const p of next.players) {
+	// Update each living player
+	for (const p of nextState.players) {
 		if (!p.alive) continue;
 
 		const turn = inputsById[p.id] ?? 0;
-		p.angle += turn * config.turnRate;
-		const speed = config.speed * (turn !== 0 ? config.turnSpeedModifier : 1); // reduce speed when turning
+
+		// Convert player input into angular rotation
+		const rotation = turn * config.turnRate;
+
+		// Apply movement speed
+		// Reduced speed when turning
+		p.angle += rotation;
+		const speed = config.speed * (turn !== 0 ? config.turnSpeedModifier : 1);
 
 		const prevX = p.x, prevY = p.y;
 
+		// New player position:
+		// 		- `cos` gives the horizontal part of the direction
+		// 		- `sin` gives the vertical part of the direction
+		//		- Multiplying by `speed` scales that unit direction
 		p.x += Math.cos(p.angle) * speed;
 		p.y += Math.sin(p.angle) * speed;
 
 		// Wall death
 		if (p.x < 0 || p.x > config.arenaWidth || p.y < 0 || p.y > config.arenaHeight) {
 			p.alive = false;
-			recordDeath(next, p.id);
+			recordDeath(nextState, p.id);
 			deathsThisTick.push(p.id);
 			continue;
 		}
@@ -81,8 +98,8 @@ export function step(
 		// Collision
 		const effectiveRadius = config.playerRadius;
 		const hit = checkCollisionThisTick(
-			next.spatial,
-			next.segments,
+			nextState.spatial,
+			nextState.segments,
 			p.id,
 			prevX,
 			prevY,
@@ -96,12 +113,14 @@ export function step(
 
 		if (hit) {
 			p.alive = false;
-			recordDeath(next, p.id);
+			recordDeath(nextState, p.id);
 			deathsThisTick.push(p.id);
 			continue;
 		}
 
-		// Gap handling
+		// Gap handling:
+		// 		- Randomly decide wheather to start gap
+		//		- If gap starts, it lasts for a random number of ticks
 		if (p.gapTicksLeft <= 0) {
 			if (rng.nextFloat() < config.gapChance) {
 				p.gapTicksLeft = randIntInclusive(rng, config.gapMinTicks, config.gapMaxTicks);
@@ -109,41 +128,40 @@ export function step(
   		}
 
 		const isGap = p.gapTicksLeft > 0;
-
 		if (isGap) {
 			p.gapTicksLeft -= 1;
 		}
 
-		const delta = pushOrExtendSegment(next.segments, p, prevX, prevY, p.x, p.y, turn, isGap, p.color);
+		const newSegment = pushOrExtendSegment(nextState.segments, p, prevX, prevY, p.x, p.y, turn, isGap, p.color);
 
 		// Add to spacial hash
 		if (!isGap) {
-			p.tailSegIndex = delta.index;
-			insertSegmentDDA(next.spatial, delta.x1, delta.y1, delta.x2, delta.y2, delta.index);
+			p.tailSegIndex = newSegment.index;
+			insertSegmentDDA(nextState.spatial, newSegment.x1, newSegment.y1, newSegment.x2, newSegment.y2, newSegment.index);
 		}
 	}
 
-	next.rngState = rng.state;
+	nextState.rngState = rng.state;
 
 	// Compute winner
-	const alive = next.players.filter(p => p.alive);
+	const alive = nextState.players.filter(p => p.alive);
 	let winnerId: string | null = null;
 
 	if (alive.length === 1) {
 		winnerId = alive[0]!.id;
-		next.winnerId = winnerId;
+		nextState.winnerId = winnerId;
 	
 	// Avoid deadlock, simultanious deaths
 	} else if (alive.length === 0) {
 		deathsThisTick.sort();
 		if (deathsThisTick.length > 0) {
 			winnerId = deathsThisTick[deathsThisTick.length - 1]!; // survived longest this tick
-			next.winnerId = winnerId;
+			nextState.winnerId = winnerId;
 		}
 	}
 
 	return {
-		state: next,
+		state: nextState,
 		justFinished: winnerId !== null,
 		winnerId,
 	};

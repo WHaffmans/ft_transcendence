@@ -106,14 +106,14 @@ $$P_0 = (x_{t - 1}, y_{t - 1})$$
 
 $$P_1 = (x_t, y_t)$$
 
-The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the tail / player) of any trail segment:
+The game maintains a growing set of trail segments $Ti$ representing where players have been. A collision occurs when the moving player's swept segment comes within radius $r$ (the "thickness" of the trail / player) of any trail segment:
 
 $$\min_i d(S, T_i) \le r$$
 
 - $d(.,.)$ the minimum Euclidean distance between two line segments.
 - $T_i$ the i-th trail segment.
 
-A naive approah checks $S$ against all trail segments each tick, yeilding $O(N)$ tests per player per tick (where $N$ is the number of existing trail segments). Because $N$ grows over time, this becomes the dominiant cost.
+A naive approach checks $S$ against all trail segments each tick, yielding $O(N)$ tests per player per tick (where $N$ is the number of existing trail segments). Because $N$ grows over time, this becomes the dominant cost.
 
 We will adopt a common two-stage approach used in real-time collision detection:
 
@@ -130,11 +130,11 @@ We will adopt a common two-stage approach used in real-time collision detection:
 
 ## Data representation
 
-Trail segments as persistent primitives. Each tick appends one tail segment per alive player (with possible gaps). Each stored tail segment is:
+Trail segments as persistent primitives. Each tick appends one trail segment per alive player (with possible gaps). Each stored trail segment is:
 
 - endpoints $A=(a_x, a_y), B=(b_x, b_y)$
 - an axis-aligend bounding box (AABB) around $\overline{AB}$, extended by radius $r$.
-- an element in a spacial index.
+- an element in a spatial index.
 
 This representation turns "where the player has been" into a geometric set (polyline), enabling collision tests without needing a tilemap.
 
@@ -160,9 +160,9 @@ We overlay a uniform grid with cell size $h$ and store each segment $T_i$ in all
 
 We do this using a bounding box **AABB (Axis Aligned Bounding Box)**:
  
-- A bounging box is the smallest **axis-alighend** rectangle that contains a single trail segment.
+- A bounding box is the smallest **axis-alighend** rectangle that contains a single trail segment.
 - We expand it by $r$ so that the broad-phase is conservative.
-- We map the box to grid cell coordinates and store the segment index in each overlapped vell bucket.
+- We map the box to grid cell coordinates and store the segment index in each overlapped cell bucket.
 
 Expanded AABB for each segment $\overline{AB}$:
 
@@ -178,7 +178,7 @@ $$
 <br/>
 
 
-### 2) DDA gird traversal
+### 2) DDA grid traversal
 
 ![DDA Algorithm](documentation/DDA%20Algorithm.png)
 
@@ -194,12 +194,12 @@ Candidate generation procedure:
 
 1. Traverse all cells intersected by the swept segment $S$ using DDA.
 2. For each visited cell, query the spatial hash bucket and collect segment indices.
-3. Avoid narrow-phase duplicate tests with dedulplicate references.
+3. Avoid narrow-phase duplicate tests with deduplicate references.
 
 Broad-phase cost per tick (per-player):
 
 - $k$ visited cells $⇒ O(k)$
-- $m$ unique candidates returned $⇒ O(N)$
+- $m$ unique candidates returned $⇒ O(m)$
 
 Overall: $O(k + m)$, typically far smaller than O(N).
 
