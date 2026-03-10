@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/01/06 14:36:09 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 14:07:00 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/10 12:12:50 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ import {
 	handleStartGame,
 	handleLeaveRoom,
 	handleInput,
+	handleReadyGame,
 } from "./ws_helpers/ws_handlers.js";
 
 import {
@@ -181,6 +182,8 @@ export function startPublicWsServer(
 						return (handleCreateOrJoinRoom(ctx, msg));
 					case "update_scene":
 						return (handleUpdateScene(ctx, msg));
+					case "ready_game":
+						return (handleReadyGame(ctx, msg));
 					case "start_game":
 						return (handleStartGame(ctx, msg));
 					case "leave_room":

@@ -485,6 +485,22 @@ function createWebSocketStore() {
 		console.log("[ws] updatePlayerScene sending immediately");
 		sendClient({ type: "update_scene", roomId, playerId, scene });
 	}
+
+	function readyGame() {
+		const s = get(store);
+		if (!s.roomId) {
+			console.log("[ws] readyGame aborted (no roomId)");
+			return;
+		}
+
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			console.log("[ws] readyGame aborted (ws not open)");
+			return;
+		}
+
+		console.log("[ws] readyGame", { roomId: s.roomId });
+		sendClient({ type: "ready_game", roomId: s.roomId });
+	}
 	
 	function startGame() {
 		const s = get(store);
@@ -564,6 +580,7 @@ function createWebSocketStore() {
 		connect,
 		createOrJoinRoom,
 		updatePlayerScene,
+		readyGame,
 		startGame,
 		disconnect,
 		sendClient,

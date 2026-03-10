@@ -38,6 +38,11 @@ export const StartGameMsgSchema = z.object({
 	roomId: RoomId,
 });
 
+export const ReadyGameMsgSchema = z.object({
+	type: z.literal("ready_game"),
+	roomId: RoomId,
+});
+
 export const LeaveRoomMsgSchema = z.object({
 	type: z.literal("leave_room"),
 	roomId: RoomId,
@@ -53,6 +58,7 @@ export const ClientMsgSchema = z.discriminatedUnion("type", [
 	CreateRoomMsgSchema,
 	UpdateSceneMsgSchema,
 	StartGameMsgSchema,
+	ReadyGameMsgSchema,
 	LeaveRoomMsgSchema,
 	InputMsgSchema,
 ]);

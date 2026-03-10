@@ -6,7 +6,7 @@
 /*   By: quentinbeukelman <quentinbeukelman@stud      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 09:23:21 by quentinbeuk   #+#    #+#                 */
-/*   Updated: 2026/03/09 14:09:01 by quentinbeuk   ########   odam.nl         */
+/*   Updated: 2026/03/10 12:13:00 by quentinbeuk   ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,6 +130,18 @@ export function handleUpdateScene(
 /* ====================================================================== */
 /*                              START GAME                                */
 /* ====================================================================== */
+export function handleReadyGame(
+	ctx: WsContext,
+	msg: Extract<ClientMsg, { type: "ready_game" }>
+) {
+	const { rooms } = ctx;
+	const { roomId: boundRoomId, playerId: boundPlayerId } = ctx.getBound();
+
+	if (!boundRoomId || !boundPlayerId) {
+		throw new Error("Must `create_or_join_room` first");
+	}
+	rooms.startRoomBackEnd(boundRoomId);
+}
 
 export function handleStartGame(
 	ctx: WsContext,
