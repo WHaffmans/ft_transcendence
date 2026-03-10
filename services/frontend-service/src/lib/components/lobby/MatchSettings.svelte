@@ -2,12 +2,10 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import ActionButton from "$lib/components/common/ActionButton.svelte";
-  import type { Game } from "$lib/types/types";
   import { wsStore } from "$lib/stores/ws";
   import { modalStore } from "$lib/components/modal/modal";
 
   interface Props {
-    game: Game;
     playerCount: number;
     lobbyId: string;
     playerId: string;
@@ -18,7 +16,6 @@
   type Notice = { title: string; body: string };
 
   let {
-    game,
     playerCount,
     lobbyId,
     playerId,

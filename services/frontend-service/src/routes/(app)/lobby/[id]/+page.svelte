@@ -305,7 +305,6 @@
 		<!-- Right Section - Match Settings -->
 		<div class="w-full lg:w-ranking shrink-0">
 			<MatchSettings
-				game={gameRecord!}
 				playerCount={playersInRoom.length}
 				lobbyId={data.lobbyId}
 				playerId={String(data.user.id)}
