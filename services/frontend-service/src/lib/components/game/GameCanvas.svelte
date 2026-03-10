@@ -1,7 +1,7 @@
 
 <script lang="ts">
   interface Props {
-    canvas: HTMLCanvasElement | null;
+    canvas?: HTMLCanvasElement | null;
   }
 
   let { canvas = $bindable(null) }: Props = $props();
